@@ -1,0 +1,39 @@
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { InsuranceProduct } from './entities/insurance-product.entity';
+import { InsuranceProductService } from './insurance-product.service';
+import { forwardRef, Module } from '@nestjs/common';
+import { Branch } from '@modules/branch/entities/branch.entity';
+import { InsuranceSubType } from './entities/insurance-subtype.entity';
+import { InsuranceProductController } from './insurance-product-controller';
+import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
+import { InsuranceUser } from '@modules/insurance-ticket/entities/insurance-user.entity';
+import { InsuranceAgent } from '@modules/insurance-ticket/entities/insurance-agent.entity';
+import { InsurancePurchasedProduct } from './entities/insurance-puchased-product.entity';
+import { User } from '@modules/user/user.entity';
+import { UserService } from '@modules/user/user.service';
+import { UserModule } from '@modules/user/user.module';
+import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
+import { AuthModule } from '@modules/auth/auth.module';
+
+
+@Module({
+    imports: [
+        TypeOrmModule.forFeature([
+            InsuranceProduct,
+            Branch,
+            InsuranceCompanies,
+            InsuranceSubType,
+            InsuranceCompanies,
+            InsuranceUser,
+            InsuranceAgent,
+            InsurancePurchasedProduct,
+            User
+        ]),
+        forwardRef(() => UserModule),
+        forwardRef(() => AuthModule)
+    ],
+    controllers: [InsuranceProductController],
+    providers: [InsuranceProductService],
+    exports: [InsuranceProductService]
+})
+export class InsuranceProductModule {}

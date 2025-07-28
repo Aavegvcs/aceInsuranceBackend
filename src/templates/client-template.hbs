@@ -1,0 +1,1019 @@
+<html lang='en'>
+
+<head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>New Client Face Sheet</title>
+    <style>
+        #logo {
+            width: 180px;
+        }
+
+        .flex {
+            display: flex;
+            justify-content:
+                space-between;
+        }
+
+        .flex>* {
+            width: 50%;
+        }
+
+        .pink {
+            color: #e05697;
+            print-color-adjust: exact;
+        }
+
+        h2 {
+            color: darkslategrey;
+            print-color-adjust: exact;
+        }
+
+        @media print {
+            body {
+                page-break-before: always;
+            }
+        }
+
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 14px;
+            font-weight: 400;
+            padding: 0px 30px;
+            print-color-adjust: exact;
+            color: #070707;
+        }
+
+        .page {
+            position: relative;
+            min-height: 1100px;
+        }
+
+        .divider {
+            position: relative;
+            width: 100%;
+            height: 4px;
+            background-color:
+                lightgrey;
+            print-color-adjust: exact;
+            margin: 10px 0px 16px;
+        }
+
+        .field {
+            color: slategray;
+            print-color-adjust: exact;
+            font-weight: 600;
+        }
+
+        span {
+            font-weight: 300;
+            color: black;
+            print-color-adjust: exact;
+        }
+
+        footer {
+            position: absolute;
+            width: 100%;
+            bottom: 1%;
+        }
+
+        svg {
+            width:
+                18px;
+            margin-right: 4px;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        #signature {
+            height: 15%;
+            width: 50%;
+            border: 1px solid gray;
+            padding: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .checkbox {
+            border: 1px solid #e05697;
+        }
+
+        /* Define the appearance of the custom checkbox when checked */
+        .checkbox:checked {
+            accent-color: #e05697;
+        }
+    </style>
+</head>
+
+<body>
+    {{! page 1 }}
+    <div class='page'>
+        <header>
+            <div style='display: flex; justify-content: space-between'>
+                <img id='logo' src='https://www.insighttherapysolutions.com/images/logo-insight.svg'
+                    alt='insight logo' />
+                <h1 class='pink'>Client InTake</h1>
+            </div>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+        </header>
+        <h2>New Client Face Sheet</h2>
+        <div>
+            <div style='display: flex; flex-direction: column; gap: 40px'>
+                <div class='flex'>
+                    <div class='field'>
+                        Client Legal Name<br /><span>{{client.firstName}}
+                            {{client.lastName}}</span>
+                    </div>
+                    <div class='field'>
+                        Preferred Name<br /><span>{{client.preferredName}}</span>
+                    </div>
+                </div>
+                <div class='flex'>
+                    <div class='field'>
+                        Preferred Pronouns<br /><span>{{client.preferredPronouns}}</span>
+                    </div>
+                    <div class='field'>
+                        Date of Birth<br /><span>{{localDate client.dateOfBirth}}</span>
+                    </div>
+                </div>
+                <div class='flex'>
+                    <div class='field'>
+                        Email Address<br /><span>{{client.email}}</span>
+                    </div>
+                    <div class='field'>
+                        Phone Number<br /><span>{{client.phoneNumber}}</span>
+                    </div>
+                </div>
+                <div class='flex'>
+                    <div class='field'>
+                        Street Address<br /><span>{{client.address}}</span>
+                    </div>
+                </div>
+                <div class='flex'>
+                    <div class='field'>
+                        City<br /><span>{{client.city}}</span>
+                    </div>
+                    <div class='field'>
+                        State/Province<br /><span>{{client.state}}</span>
+                    </div>
+                </div>
+                <div class='flex'>
+                    <div class='field'>
+                        Zip Code<br /><span>{{client.zip}}</span>
+                    </div>
+                    <div class='field'>
+                        Country<br /><span>{{client.country}}</span>
+                    </div>
+                </div>
+                <div class='flex'>
+                    <div class='field'>
+                        Insurance Name<br /><span>{{clientData.insuranceCompany}}</span>
+                    </div>
+                    <div class='field'>
+                        Insurance Number<br /><span>{{clientData.insuranceNumber}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+            <div style='
+                    display: flex;
+                    width: 100%;
+                    justify-content: space-between;
+                '>
+                <div style='display: flex;gap:40px;'>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            888-409-8976
+                        </span>
+                    </div>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            inquiries@insighttherapy.us
+                        </span>
+                    </div>
+                </div>
+                <span class='field'>01</span>
+            </div>
+        </footer>
+    </div>
+
+    {{! page 2 }}
+    <div class='page'>
+        <header>
+            <div style='display: flex; justify-content: space-between'>
+                <img id='logo' src='https://www.insighttherapysolutions.com/images/logo-insight.svg'
+                    alt='insight logo' />
+                <h1 class='pink'>Client InTake</h1>
+            </div>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+        </header>
+        <h2>Informed Consent for Psychotherapy</h2>
+        <div>
+            <h4>Confidentiality:</h4>
+            <p>State law requires health care workers and certain other
+                professionals in their occupational capacity to report abuse
+                of children and people who are disabled or who are at least
+                60 years old. These professionals must make this report as
+                soon as reasonably practicable but not later than 24 hours
+                after the profes- sional knows or has reasonable cause to
+                believe that the child, older person or vulnerable person
+                has been abused, neglected, exploited, isolated or
+                abandoned. These reports must be made to: Child Protective
+                Services Office of Aging and Disability Services Division of
+                the Department of Health and Human Services Local
+                Sheriff/Police Department</p>
+        </div>
+        <div>
+            <h4>Telehealth:</h4>
+            <p>The Health Insurance Portability and Accountability Act and
+                supplemental legislation collectively referred to as the
+                HIPAA rules (HIPAA) lay out privacy and security standards
+                that protect the confidentiality of protected health 1.
+                Insight Therapy Solutions Client Intake information (PHI).
+                In terms of Unified Communication systems, the solution and
+                security architec- ture must comply with the applicable
+                standards, implementation specifications and requirements
+                with respect to electronic PHI of a covered entity. Insight
+                Therapy Solutions complies with all relevant HIPAA rules and
+                regulations.</p>
+        </div>
+        <div>
+            <h4>Insurance Billing:</h4>
+            <p>Your insurance policy is a contract between you and your
+                insurance company. It is your responsibility to provide all
+                accurate and current information regarding insurances and be
+                aware of the benefits and coverage of your insurance plan.
+                It is your responsibility to know your benefits and how they
+                would apply to your treatment. We will bill your insurance
+                for services that we provide; however, any account balance
+                that is not paid by your insurance company will be the
+                responsi- bility of you (or the guarantor listed on your
+                insurance policy). If our office does not participate with
+                your insurance, it is your responsibility to file your
+                insurance claims directly with your insurance. If you fail
+                to notify us of an insurance change on your primary or
+                secondary insurance information, you are fully responsible
+                for any amount not paid by your insurance company. If you
+                neglect to disclose an insurance that you are enrolled in,
+                we have the right to refuse future service and you may be
+                responsible for all charges. All deductibles and co-payments
+                will be collected in full 24 hours prior to the service. Any
+                account unpaid over 90 days is considered past due and will
+                be charged a $60.00 late fee. If payment is not received,
+                the account will be turned over to our collection agency
+                and/or attorney, this will be subject to a charge to cover
+                the collector's fee.</p>
+        </div>
+        <div>
+            <h4>Medicare:</h4>
+            <p>We are a participating provider for the Medicare program. We
+                will accept assignment on all of the claims. Patients are
+                responsible for meeting their annual deductible and paying
+                their co-payments. We do file with secondary/supplemental
+                carriers. However, if the supplementary does not pay,
+                patients will be billed the remaining balance.</p>
+        </div>
+        <div>
+            <h4>Cancellation/No Show Policy:</h4>
+            <p>Please notify our office at least 24 hours in advance if you
+                are unable to keep your scheduled teletherapy appointment.
+                Patients failing to cancel their appointment as indicated
+                above (at least 24 hours in advance) will be charged a
+                cancella- tion/no show fee of $100.00.:</p>
+        </div>
+        <footer>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+            <div style='
+                    display: flex;
+                    width: 100%;
+                    justify-content: space-between;
+                '>
+                <div style='display: flex;gap:40px;'>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            888-409-8976
+                        </span>
+                    </div>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            inquiries@insighttherapy.us
+                        </span>
+                    </div>
+                </div>
+                <span class='field'>02</span>
+            </div>
+        </footer>
+    </div>
+
+    {{!-- page 3 --}}
+    <div class="page">
+        <header>
+            <div style='display: flex; justify-content: space-between'>
+                <img id='logo' src='https://www.insighttherapysolutions.com/images/logo-insight.svg'
+                    alt='insight logo' />
+                <h1 class='pink'>Client InTake</h1>
+            </div>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+        </header>
+        <div>
+            <div>
+                <h4>Credit Card:</h4>
+                <p>I authorize my credit card on file to be charged if there is
+                    an outstanding balance due.:</p>
+            </div>
+            <div>
+                <h4>Administrative Fees:</h4>
+                <p>All medical record requests are subject to a preparation fee
+                    of $25.00. Please allow up to fourteen (14) working days to
+                    complete the request. A fee (to be determined) will be
+                    collected for completing and returning administrative forms
+                    (i.e. FMLA, Disability, etc.).:</p>
+            </div>
+            <div style="display: flex; gap:2px;">
+                <input class="checkbox" checked={{client.consentCheck}} type="checkbox" />
+                <p>Acknowledgement and Authorization: I have read, understand and agree to abide by the above Office and
+                    Financial Policies.</p>
+            </div>
+        </div>
+        <footer>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+            <div style='
+                    display: flex;
+                    width: 100%;
+                    justify-content: space-between;
+                '>
+                <div style='display: flex;gap:40px;'>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            888-409-8976
+                        </span>
+                    </div>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            inquiries@insighttherapy.us
+                        </span>
+                    </div>
+                </div>
+                <span class='field'>03</span>
+            </div>
+        </footer>
+    </div>
+
+    {{!-- page 4 --}}
+    <div class="page">
+        <header>
+            <div style='display: flex; justify-content: space-between'>
+                <img id='logo' src='https://www.insighttherapysolutions.com/images/logo-insight.svg'
+                    alt='insight logo' />
+                <h1 class='pink'>Client InTake</h1>
+            </div>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+        </header>
+        <div>
+            <h2>Privacy Practices</h2>
+            <h4>THIS NOTICE DESCRIBES HOW HEALTH INFORMATION MAY BE USED AND DISCLOSED AND
+                HOW YOU CAN GET ACCESS TO THIS INFORMATION. PLEASE REVIEW IT CAREFULLY.</h4>
+
+            <h4>I. MY PLEDGE REGARDING HEALTH INFORMATION:</h4>
+            <p>
+                I understand that health information about you and your health care is personal. I am committed to
+                protecting health
+                information about you. I create a record of the care and services you receive from me. I need this
+                record to provide
+                you with quality care and to comply with certain legal requirements. This notice applies to all of the
+                records of your
+                care generated by this mental health care practice. This notice will tell you about the ways in which I
+                may use and
+                disclose health information about you. I also describe your rights to the health information I keep
+                about you, and
+                describe certain obligations I have regarding the use and disclosure of your health information. I am
+                required by law
+                to:
+            </p>
+            <ul>
+                <li>Make sure that protected health information (“PHI”) that identifies you is kept private.</li>
+                <li>Give you this notice of my legal duties and privacy practices with respect to health information.
+                </li>
+                <li>Follow the terms of the notice that is currently in effect.</li>
+                <li>I can change the terms of this Notice, and such changes will apply to all information I have about
+                    you. The new
+                    Notice will be available upon request, in my office, and on my website.</li>
+            </ul>
+
+            <h4>II. HOW I MAY USE AND DISCLOSE HEALTH INFORMATION ABOUT YOU:</h4>
+            <p>
+                The following categories describe different ways that I use and disclose health information. For each
+                category of
+                uses or disclosures I will explain what I mean and try to give some examples. Not every use or
+                disclosure in a
+                category will be listed. However, all of the ways I am permitted to use and disclose information will
+                fall within one of
+                the categories.
+            </p>
+            <p>
+                For Treatment Payment, or Health Care Operations: Federal privacy rules and regulations allow health
+                care
+                providers who have direct treatment relationship with the client to use or disclose the client’s
+                personal health
+                information without the client’s written authorization, to carry out the health care provider’s own
+                treatment, payment
+                or health care operations. I may also disclose your protected health information for the treatment
+                activities of any
+                health care provider. This too can be done without your written authorization. For example, if a
+                clinician were to
+                consult with another licensed health care provider about your condition, we would be permitted to use
+                and disclose
+                your person health information, which is otherwise confidential, in order to assist the clinician in
+                diagnosis and
+                treatment of your mental health condition.
+            </p>
+            <p>
+                Disclosures for treatment purposes are not limited to the minimum necessary standard. Because therapists
+                and
+                other health care providers need access to the full record and/or full and complete information in order
+                to provide
+                quality care. The word “treatment” includes, among other things, the coordination and management of
+                health care
+                providers with a third party, consultations between health care providers and referrals of a patient for
+                health care
+                from one health care provider to another.
+            </p>
+            <p>
+                Lawsuits and Disputes: If you are involved in a lawsuit, I may disclose health information in response
+                to a court or
+                administrative order. I may also disclose health information about your child in response to a subpoena,
+                discovery
+                request, or other lawful process by someone else involved in the dispute, but only if efforts have been
+                made to tell
+                you about the request or to obtain an order protecting the information requested.
+            </p>
+        </div>
+        <footer>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+            <div style='
+                    display: flex;
+                    width: 100%;
+                    justify-content: space-between;
+                '>
+                <div style='display: flex;gap:40px;'>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            888-409-8976
+                        </span>
+                    </div>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            inquiries@insighttherapy.us
+                        </span>
+                    </div>
+                </div>
+                <span class='field'>04</span>
+            </div>
+        </footer>
+    </div>
+
+    {{!-- page 5 --}}
+    <div class="page">
+        <header>
+            <div style='display: flex; justify-content: space-between'>
+                <img id='logo' src='https://www.insighttherapysolutions.com/images/logo-insight.svg'
+                    alt='insight logo' />
+                <h1 class='pink'>Client InTake</h1>
+            </div>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+        </header>
+        <div>
+            <h4>III. CERTAIN USES AND DISCLOSURES REQUIRE YOUR AUTHORIZATION:</h4>
+            <p>
+                <strong>1. Psychotherapy Notes:</strong> I do keep “psychotherapy notes” as that term is defined in 45
+                CFR § 164.501,
+                and any use or disclosure of such notes requires your Authorization unless the use or disclosure is:
+            </p>
+            <ol type="a">
+                <li>For my use in treating you.</li>
+                <li>For my use in training or supervising mental health practitioners to help them improve their skills
+                    in group, joint,
+                    family, or individual counseling or therapy.</li>
+                <li>For my use in defending myself in legal proceedings instituted by you.</li>
+                <li>For use by the Secretary of Health and Human Services to investigate my compliance with HIPAA.</li>
+                <li>Required by law and the use or disclosure is limited to the requirements of such law.</li>
+                <li>Required by law for certain health oversight activities pertaining to the originator of the
+                    psychotherapy notes.</li>
+                <li>Required by a coroner who is performing duties authorized by law.</li>
+                <li>Required to help avert a serious threat to the health and safety of others.</li>
+            </ol>
+            <p>
+                <strong>2. Marketing Purposes:</strong> As a psychotherapist, I will not use or disclose your PHI for
+                marketing purposes.
+            </p>
+            <p>
+                <strong>3. Sale of PHI:</strong> As a psychotherapist, I will not sell your PHI in the regular course of
+                my business.
+            </p>
+
+            <h4>IV. CERTAIN USES AND DISCLOSURES DO NOT REQUIRE YOUR AUTHORIZATION:</h4>
+            <p>
+                1. When disclosure is required by state or federal law, and the use or disclosure complies with
+                and is limited to the
+                relevant requirements of such law.
+            </p>
+            <p>
+                2. For public health activities, including reporting suspected child, elder, or dependent adult
+                abuse, or preventing or
+                reducing a serious threat to anyone’s health or safety.
+            </p>
+            <p>
+                3. For health oversight activities, including audits and investigations.
+            </p>
+            <p>
+                4. For judicial and administrative proceedings, including responding to a court or
+                administrative order, although my
+                preference is to obtain an Authorization from you before doing so.
+            </p>
+            <p>
+                5. For law enforcement purposes, including reporting crimes occurring on my premises.
+            </p>
+            <p>
+                6. To coroners or medical examiners, when such individuals are performing duties authorized by
+                law.
+            </p>
+            <p>
+                7. For research purposes, including studying and comparing the mental health of patients who
+                received one form of
+                therapy versus those who received another form of therapy for the same condition.
+            </p>
+            <p>
+                8. Specialized government functions, including, ensuring the proper execution of military
+                missions; protecting the
+                President of the United States; conducting intelligence or counter-intelligence operations; or,
+                helping to ensure the
+                safety of those working within or housed in correctional institutions.
+            </p>
+            <p>
+                9. For workers' compensation purposes. Although my preference is to obtain an Authorization from
+                you, I may
+                provide your PHI in order to comply with workers' compensation laws.
+            </p>
+            <p>
+                10. Appointment reminders and health related benefits or services. I may use and disclose your
+                PHI to contact you
+                to remind you that you have an appointment with me. I may also use and disclose your PHI to tell you
+                about
+                treatment alternatives, or other health care services or benefits that I offer.
+            </p>
+        </div>
+        <footer>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+            <div style='
+                    display: flex;
+                    width: 100%;
+                    justify-content: space-between;
+                '>
+                <div style='display: flex;gap:40px;'>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            888-409-8976
+                        </span>
+                    </div>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            inquiries@insighttherapy.us
+                        </span>
+                    </div>
+                </div>
+                <span class='field'>05</span>
+            </div>
+        </footer>
+    </div>
+
+    {{!-- page 6 --}}
+    <div class="page">
+        <header>
+            <div style='display: flex; justify-content: space-between'>
+                <img id='logo' src='https://www.insighttherapysolutions.com/images/logo-insight.svg'
+                    alt='insight logo' />
+                <h1 class='pink'>Client InTake</h1>
+            </div>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+        </header>
+        <div>
+            <h4>V. CERTAIN USES AND DISCLOSURES REQUIRE YOU TO HAVE THE OPPORTUNITY TO OBJECT:</h4>
+            <p>
+                Disclosures to family, friends, or others. I may provide your PHI to a family member, friend, or other
+                person that
+                you indicate is involved in your care or the payment for your health care, unless you object in whole or
+                in part. The
+                opportunity to consent may be obtained retroactively in emergency situations.
+            </p>
+
+            <h4>VI. YOU HAVE THE FOLLOWING RIGHTS WITH RESPECT TO YOUR PHI:</h4>
+            <ol>
+                <li>The Right to Request Limits on Uses and Disclosures of Your PHI. You have the right to ask me not to
+                    use or
+                    disclose certain PHI for treatment, payment, or health care operations purposes. I am not required
+                    to agree to your
+                    request, and I may say “no” if I believe it would affect your health care.</li>
+                <li>The Right to Request Restrictions for Out-of-Pocket Expenses Paid for In Full. You have the right to
+                    request
+                    restrictions on disclosures of your PHI to health plans for payment or health care operations
+                    purposes if the PHI
+                    pertains solely to a health care item or a health care service that you have paid for out-of-pocket
+                    in full.</li>
+                <li>The Right to Choose How I Send PHI to You. You have the right to ask me to contact you in a specific
+                    way (for
+                    example, home or office phone) or to send mail to a different address, and I will agree to all
+                    reasonable requests.</li>
+                <li>The Right to See and Get Copies of Your PHI. Other than “psychotherapy notes,” you have the right to
+                    get an
+                    electronic or paper copy of your medical record and other information that I have about you. I will
+                    provide you with a
+                    copy of your record, or a summary of it, if you agree to receive a summary, within 30 days of
+                    receiving your written
+                    request, and I may charge a reasonable, cost based fee for doing so.</li>
+                <li>The Right to Get a List of the Disclosures I Have Made. You have the right to request a list of
+                    instances in which I
+                    have disclosed your PHI for purposes other than treatment, payment, or health care operations, or
+                    for which you
+                    provided me with an Authorization. I will respond to your request for an accounting of disclosures
+                    within 60 days of
+                    receiving your request. The list I will give you will include disclosures made in the last six years
+                    unless you request
+                    a shorter time. I will provide the list to you at no charge, but if you make more than one request
+                    in the same year, I
+                    will charge you a reasonable cost based fee for each additional request.</li>
+                <li>The Right to Correct or Update Your PHI. If you believe that there is a mistake in your PHI, or that
+                    a piece of
+                    important information is missing from your PHI, you have the right to request that I correct the
+                    existing information
+                    or add the missing information. I may say “no” to your request, but I will tell you why in writing
+                    within 60 days of
+                    receiving your request.</li>
+                <li>The Right to Get a Paper or Electronic Copy of this Notice. You have the right get a paper copy of
+                    this Notice,
+                    and you have the right to get a copy of this notice by e-mail. And, even if you have agreed to
+                    receive this Notice via
+                    e-mail, you also have the right to request a paper copy of it.</li>
+            </ol>
+        </div>
+        <footer>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+            <div style='
+                    display: flex;
+                    width: 100%;
+                    justify-content: space-between;
+                '>
+                <div style='display: flex;gap:40px;'>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            888-409-8976
+                        </span>
+                    </div>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            inquiries@insighttherapy.us
+                        </span>
+                    </div>
+                </div>
+                <span class='field'>06</span>
+            </div>
+        </footer>
+    </div>
+
+    {{!-- page 7 --}}
+    <div class="page">
+        <header>
+            <div style='display: flex; justify-content: space-between'>
+                <img id='logo' src='https://www.insighttherapysolutions.com/images/logo-insight.svg'
+                    alt='insight logo' />
+                <h1 class='pink'>Client InTake</h1>
+            </div>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+        </header>
+        <div>
+            <h2>Acknowledgement of receipt of privacy notice</h2>
+            <div style="display: flex; gap:2px">
+                <input class="checkbox" checked={{client.acknowledgementCheck}} type="checkbox" />
+                <p>Under the Health Insurance Portability and Accountability Act of 1996 (HIPAA), you have certain
+                    rights regarding the
+                    use and disclosure of your protected health information. By signing this document, you are
+                    acknowledging that you
+                    have received a copy of HIPPA Notice of Privacy Practices.</p>
+            </div>
+            <div style="margin-bottom: 4px;" class="field">Applicant's Signature*</div>
+            <div id="signature">
+                <img style="max-width: 100%;max-height: 100%;" src={{client.signature}} />
+            </div>
+            <div style="margin-top: 20px;margin-bottom: 4px;" class="field">Date Signed</div>
+            <span id="dateSigned">{{localDate client.dateSigned}}</span>
+        </div>
+        <footer>
+            <div class='divider'>
+                <span style='
+                        width: 8%;
+                        height: 100%;
+                        background-color: #e05697;
+                        position: absolute;
+                    '></span>
+            </div>
+            <div style='
+                    display: flex;
+                    width: 100%;
+                    justify-content: space-between;
+                '>
+                <div style='display: flex;gap:40px;'>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            888-409-8976
+                        </span>
+                    </div>
+                    <div style='display: flex;align-items: center;'>
+                        <svg id='Layer_1' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 15.88 15.88'>
+                            <defs>
+                                <style>
+                                    .cls-1 {
+                                        fill: #d05f95;
+                                    }
+                                </style>
+                            </defs>
+                            <title>icon</title>
+                            <path class='cls-1'
+                                d='M7.47,0H8.4L9,.07A7.83,7.83,0,0,1,13.19,2a7.8,7.8,0,0,1,2.57,4.59c.05.29.08.6.12.9v.93c0,.2,0,.4-.07.6a7.77,7.77,0,0,1-2.46,4.74,7.78,7.78,0,0,1-6.9,2,7.5,7.5,0,0,1-4.32-2.39,7.76,7.76,0,0,1-2-6.89A7.69,7.69,0,0,1,2.6,2.06a7.8,7.8,0,0,1,4-1.94C6.88.07,7.18,0,7.47,0ZM3.76,5.64a3.09,3.09,0,0,0,.31,1.45A8.57,8.57,0,0,0,5.92,9.77,8.36,8.36,0,0,0,9.51,12a2.11,2.11,0,0,0,1.54-.13,3.48,3.48,0,0,0,.92-.75.36.36,0,0,0,0-.59L10.59,9.15a.37.37,0,0,0-.59,0l-.75.76a.72.72,0,0,1-1,.08A10.15,10.15,0,0,1,5.93,7.72a.71.71,0,0,1,.06-1l.78-.78a.34.34,0,0,0,0-.56L5.38,3.93a.36.36,0,0,0-.57,0l-.41.4A2.07,2.07,0,0,0,3.76,5.64Z' />
+                        </svg>
+                        <span class='field'>
+                            inquiries@insighttherapy.us
+                        </span>
+                    </div>
+                </div>
+                <span class='field'>07</span>
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>
