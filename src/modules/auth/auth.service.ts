@@ -626,7 +626,7 @@ export class AuthService {
             where: {
                 email: reqBody.email,
                 company: {
-                    id: 2
+                    id: 1
                 }
             },
             relations: ['company']
@@ -639,7 +639,6 @@ export class AuthService {
         }
 
         const isMatch = await compare(reqBody.password, user.password);
-        // console.log('after this pass match', isMatch, user.password, reqBody.password);
         if (!isMatch) {
             throw new BadRequestException('wrong password');
         }
@@ -651,29 +650,8 @@ export class AuthService {
             .leftJoinAndSelect('user.employee', 'employee')
             .leftJoinAndSelect('employee.branch', 'branch');
         const detailedUser = await query.where('user.id = :id', { id: user.id }).getOne();
-        // console.log('after this pass match', isMatch);
-        // Get Role Information
         const dbRole = await this.roleService.findOneByName(detailedUser.userType);
         const roleName = dbRole?.roleName ?? null;
-        // console.log('inauth service????????????????????????????????????????????????????', dbRole, dbRole.id, dbRole.roleName);
-
-        // this code is old. after that procudure is used.
-        // const rolePermissions = await this.insRolePermissionRepo
-        //     .createQueryBuilder('rolePermission')
-        //     .leftJoinAndSelect('rolePermission.permission', 'permission')
-        //     .where('rolePermission.role = :roleId', { roleId: dbRole.id })
-        //     .andWhere('rolePermission.is_active = :rpActive', { rpActive: true })
-        //     .andWhere('permission.is_active = :permActive', { permActive: true })
-        //     .getMany();
-
-        // console.log('permissionsByType===========', rolePermissions);
-        // const permissionsByType = {};
-        // for (const { permission } of rolePermissions) {
-        //     const { type, name } = permission;
-        //     if (!permissionsByType[type]) permissionsByType[type] = [];
-        //     permissionsByType[type].push(name);
-        // }
-        //old code is ended here.
 
         const permissionResult = await this.userRepository.query('CALL get_roleAccess(?)', [roleName]);
         const permissionsByType = permissionResult[0].reduce((acc, { type, name }) => {

@@ -20,6 +20,8 @@ import { branchModelsArr } from 'src/utils/app.utils';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { Dealer } from '@modules/employee/entities/dealer.entity';
 import { Company } from '@modules/company/entities/company.entity';
+import { User } from '@modules/user/user.entity';
+import { Department } from '@modules/department/entities/department.entity';
 
 @Entity()
 export class Branch extends BaseEntity {
@@ -132,6 +134,13 @@ export class Branch extends BaseEntity {
 
     @OneToMany(() => InsuranceTicket, (data) => data.barnchId)
     tickets: InsuranceTicket[];
+
+    @OneToMany(() => User, (user) => user.branch)
+    user: User[];
+
+    
+    @OneToMany(() => Department, (data) => data.branch)
+    department: Department[];
 
     @ManyToMany(() => Dealer, (dealer) => dealer.branches)
     @JoinTable({

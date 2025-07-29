@@ -94,28 +94,6 @@ const redisClient = new Redis({ host: 'localhost', port: 6379 });
         ReportModule,
         InsuranceQuotationModule,
         InsuranceRolePermissionModule,
-        // CacheModule.registerAsync({
-        //     useFactory: async () => {
-        //       return {
-        //         stores: [
-        //           createKeyv('redis://localhost:6379'),
-        //         ],
-        //       };
-        //     },
-        //   }),
-        // ⬇️ This is new — for Redis-based caching
-        //  const redis = new KeyvRedis(`redis://${process.env.REDIS_HOST || 'localhost'}:6379`);
-        // CacheModule.registerAsync({
-        //     isGlobal: true,
-        //     useFactory: async () => {
-               
-        //         const redis = new KeyvRedis('redis://localhost:6379');
-        //         return {
-        //             store: new Keyv({ store: redis }),
-        //             ttl: 120 // default TTL (300 - 5 minutes, 3600- 1 hour)
-        //         };
-        //     }
-        // }),
 
         BullModule.forRoot({
             redis: {

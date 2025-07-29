@@ -6,6 +6,7 @@ import {
     Injectable,
     InternalServerErrorException,
     Logger,
+    NotFoundException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, DeepPartial, EntityManager, In, Repository } from 'typeorm';
@@ -25,6 +26,10 @@ import { bulkUpsert } from 'src/utils/sql.utils';
 import { SegmentRevenue } from '@modules/report/entities/segment-revenue.entity';
 import { DealerRMRevenue, RevenueRole } from './entities/dealer-rm-revenue.entity';
 import { Client } from '@modules/client/entities/client.entity';
+import { throws } from 'assert';
+import { exceptions } from 'winston';
+import { Company } from '@modules/company/entities/company.entity';
+import { Console } from 'console';
 
 export interface DealerRMListDataType {
     fullName: string;
@@ -36,7 +41,6 @@ export interface DealerRMListDataType {
     lumpsum: number;
     tradedClients: number;
 }
-
 
 @Injectable()
 export class EmployeeService {
@@ -62,7 +66,9 @@ export class EmployeeService {
         @Inject(forwardRef(() => DepartmentService))
         private readonly departmentService: DepartmentService,
         private readonly dataSource: DataSource,
-    ) { }
+        @InjectRepository(Company)
+        private readonly companyRepo: Repository<Company>
+    ) {}
 
     async create(body: CreateEmployeeDto): Promise<Employee> {
         if (!body.branchId) {
@@ -74,7 +80,7 @@ export class EmployeeService {
             firstName: body.firstName,
             lastName: body.lastName,
             company: body.companyId,
-            roleId: body.roleId ?? roleIds.staff,
+            roleId: body.roleId ?? roleIds.staff
         };
 
         const newUser = await this.userService.createUser(userData);
@@ -103,7 +109,7 @@ export class EmployeeService {
             probation: body.probation,
             status: EmployeeStatus.ACTIVE,
             leaveDays: body.leaveDays,
-            department,
+            department
         });
 
         const savedEmployee = await this.employeeRepo.save(newEmployee);
@@ -114,7 +120,7 @@ export class EmployeeService {
 
         const userRole = this.userRoleRepo.create({
             userId: newUser.id,
-            roleId: body.roleId ?? roleIds.staff,
+            roleId: body.roleId ?? roleIds.staff
         });
         await this.userRoleRepo.upsert(userRole, ['userId']);
 
@@ -126,7 +132,7 @@ export class EmployeeService {
                 dealerType: DealerType.EQUITY,
                 target: 0,
                 targetCompleted: 0,
-                branches: [branch],
+                branches: [branch]
             });
             await this.dealerRepo.save(dealer);
         }
@@ -145,7 +151,7 @@ export class EmployeeService {
             return {
                 statusCode: 400,
                 message: 'No employees provided',
-                data: { total, created: 0, failed: 0, errors: [], createdEntities: [] },
+                data: { total, created: 0, failed: 0, errors: [], createdEntities: [] }
             };
         }
 
@@ -160,8 +166,8 @@ export class EmployeeService {
                     error: {
                         row,
                         entityName: 'User',
-                        error: `Missing email for employeeId ${dto.employeeId || 'unknown'}`,
-                    },
+                        error: `Missing email for employeeId ${dto.employeeId || 'unknown'}`
+                    }
                 });
             }
             if (!dto.firstName) {
@@ -169,8 +175,8 @@ export class EmployeeService {
                     error: {
                         row,
                         entityName: 'User',
-                        error: `Missing firstName for employeeId ${dto.employeeId || 'unknown'}`,
-                    },
+                        error: `Missing firstName for employeeId ${dto.employeeId || 'unknown'}`
+                    }
                 });
             }
             if (!dto.branchId) {
@@ -178,21 +184,21 @@ export class EmployeeService {
                     error: {
                         row,
                         entityName: 'Employee',
-                        error: `Missing branchId for employeeId ${dto.employeeId || 'unknown'}`,
-                    },
+                        error: `Missing branchId for employeeId ${dto.employeeId || 'unknown'}`
+                    }
                 });
             }
             if (dto.dealerId) {
                 const dealerExists = employeeDtos.some(
-                    (otherDto, otherIdx) => otherIdx !== idx && otherDto.dealerId === dto.dealerId && dto.dealerId,
+                    (otherDto, otherIdx) => otherIdx !== idx && otherDto.dealerId === dto.dealerId && dto.dealerId
                 );
                 if (dealerExists) {
                     validationErrors.push({
                         error: {
                             row,
                             entityName: 'Dealer',
-                            error: `Duplicate dealerId ${dto.dealerId} for employeeId ${dto.employeeId}`,
-                        },
+                            error: `Duplicate dealerId ${dto.dealerId} for employeeId ${dto.employeeId}`
+                        }
                     });
                 }
             }
@@ -207,8 +213,8 @@ export class EmployeeService {
                     created: 0,
                     failed: total,
                     errors: validationErrors.map((e) => e.error),
-                    createdEntities: [],
-                },
+                    createdEntities: []
+                }
             };
         }
 
@@ -227,8 +233,8 @@ export class EmployeeService {
                     error: {
                         row,
                         entityName: 'Employee',
-                        error: `Branch with ID ${dto.branchId} not found for employeeId ${dto.employeeId}`,
-                    },
+                        error: `Branch with ID ${dto.branchId} not found for employeeId ${dto.employeeId}`
+                    }
                 });
             }
             const deptId = dto.departmentId || 3;
@@ -237,8 +243,8 @@ export class EmployeeService {
                     error: {
                         row,
                         entityName: 'Employee',
-                        error: `Department with ID ${deptId} not found for employeeId ${dto.employeeId}`,
-                    },
+                        error: `Department with ID ${deptId} not found for employeeId ${dto.employeeId}`
+                    }
                 });
             }
         });
@@ -252,8 +258,8 @@ export class EmployeeService {
                     created: 0,
                     failed: total,
                     errors: validationErrors.map((e) => e.error),
-                    createdEntities: [],
-                },
+                    createdEntities: []
+                }
             };
         }
 
@@ -279,7 +285,7 @@ export class EmployeeService {
                         company: dto.companyId ? { id: dto.companyId } : { id: 1 },
                         userType: dto.roleId === roleIds.admin ? Roles.admin : isDealer ? Roles.dealer : Roles.staff,
                         employeeId: id,
-                        password: dto.password || null,
+                        password: dto.password || null
                     });
 
                     employees.push({
@@ -293,7 +299,7 @@ export class EmployeeService {
                         leaveDays: dto.leaveDays || 0,
                         panNumber: dto.panNumber || null,
                         probation: dto.probation ?? false,
-                        status: dto.status || EmployeeStatus.ACTIVE,
+                        status: dto.status || EmployeeStatus.ACTIVE
                     });
 
                     employeeIdsInBatch.push(id);
@@ -307,16 +313,16 @@ export class EmployeeService {
                             terminals: terminals.some((t) => !t || typeof t !== 'string')
                                 ? null
                                 : terminals.length > 0
-                                    ? terminals
-                                    : null,
+                                  ? terminals
+                                  : null,
                             dealerType: DealerType.EQUITY,
                             target: 0,
-                            targetCompleted: 0,
+                            targetCompleted: 0
                         });
 
                         branchDealerMappings.push({
                             branchId: dto.branchId,
-                            dealerId,
+                            dealerId
                         });
                     }
                 });
@@ -326,7 +332,7 @@ export class EmployeeService {
                     const { results, errors: userErrs } = await this.bulkUpsertUsers(
                         users,
                         employeeIdsInBatch,
-                        manager,
+                        manager
                     );
                     userErrs.forEach((e) => errors.push({ row: start + e.row, entityName: 'User', error: e.error }));
                     upUsers = results;
@@ -350,7 +356,7 @@ export class EmployeeService {
                         errors.push({
                             row,
                             entityName: 'Employee',
-                            error: `No user ID found for employeeId ${e.id}`,
+                            error: `No user ID found for employeeId ${e.id}`
                         });
                     }
                 });
@@ -386,7 +392,7 @@ export class EmployeeService {
                             errors.push({
                                 row,
                                 entityName: 'Dealer',
-                                error: `Employee with ID ${dealer.employee.id} not found for dealerId ${dealer.dealerId}`,
+                                error: `Employee with ID ${dealer.employee.id} not found for dealerId ${dealer.dealerId}`
                             });
                         }
                     });
@@ -395,10 +401,10 @@ export class EmployeeService {
                         const { affected, errors: dealerErrs } = await this.bulkUpsertDealers(
                             validDealers,
                             employeeIdsInBatch,
-                            manager,
+                            manager
                         );
                         dealerErrs.forEach((e) =>
-                            errors.push({ row: start + e.row, entityName: 'DealerBatch', error: e.error }),
+                            errors.push({ row: start + e.row, entityName: 'DealerBatch', error: e.error })
                         );
                         dealerResults = await manager
                             .createQueryBuilder(Dealer, 'dealer')
@@ -412,7 +418,7 @@ export class EmployeeService {
                 if (createdEmployees.length > 0) {
                     const userUpdates = createdEmployees.map((employee) => ({
                         id: employee.user.id,
-                        employeeId: employee.id,
+                        employeeId: employee.id
                     }));
 
                     await manager
@@ -420,7 +426,7 @@ export class EmployeeService {
                         .update(User)
                         .set({
                             employeeId: () =>
-                                `CASE id ${userUpdates.map((u) => `WHEN ${u.id} THEN '${u.employeeId}'`).join(' ')} END`,
+                                `CASE id ${userUpdates.map((u) => `WHEN ${u.id} THEN '${u.employeeId}'`).join(' ')} END`
                         })
                         .where('id IN (:...ids)', { ids: userUpdates.map((u) => u.id) })
                         .execute();
@@ -428,7 +434,7 @@ export class EmployeeService {
 
                 const userRoles: Partial<UserRole>[] = createdEmployees.map((employee, idx) => ({
                     userId: employee.user.id,
-                    roleId: batch[idx].roleId ?? roleIds.staff,
+                    roleId: batch[idx].roleId ?? roleIds.staff
                 }));
                 if (userRoles.length > 0) {
                     const { errors: roleErrs } = await this.bulkUpsertUserRoles(userRoles, manager);
@@ -452,7 +458,7 @@ export class EmployeeService {
                             errors.push({
                                 row,
                                 entityName: 'BranchDealer',
-                                error: `Dealer with ID ${mapping.dealerId} not found for branchId ${mapping.branchId}`,
+                                error: `Dealer with ID ${mapping.dealerId} not found for branchId ${mapping.branchId}`
                             });
                         }
                     });
@@ -460,10 +466,10 @@ export class EmployeeService {
                     if (validMappings.length > 0) {
                         const { errors: mappingErrs } = await this.bulkUpsertBranchDealerMappings(
                             validMappings,
-                            manager,
+                            manager
                         );
                         mappingErrs.forEach((e) =>
-                            errors.push({ row: start + e.row, entityName: 'BranchDealerBatch', error: e.error }),
+                            errors.push({ row: start + e.row, entityName: 'BranchDealerBatch', error: e.error })
                         );
                     }
                 }
@@ -486,21 +492,21 @@ export class EmployeeService {
             return {
                 statusCode: 400,
                 message: 'All rows failed validation or processing',
-                data: { total, created: 0, failed, errors, createdEntities: [] },
+                data: { total, created: 0, failed, errors, createdEntities: [] }
             };
         }
 
         return {
             statusCode: processed === total ? 201 : failed > 0 ? 207 : 400,
             message: `Bulk upsert completed: ${processed} of ${total}`,
-            data: { total, created: processed, failed, errors, createdEntities: createdOrUpdatedEmployees },
+            data: { total, created: processed, failed, errors, createdEntities: createdOrUpdatedEmployees }
         };
     }
 
     async bulkUpsertUsers(
         users: DeepPartial<User>[],
         employeeIds: string[],
-        manager: EntityManager,
+        manager: EntityManager
     ): Promise<{
         results: { id: number; employeeId: string }[];
         errors: { row: number; error: string }[];
@@ -553,7 +559,7 @@ export class EmployeeService {
                             : parseInt(user.company as string, 10) || 1,
                     userType: user.userType || 'staff',
                     employeeId: user.employeeId,
-                    password: user.password || null,
+                    password: user.password || null
                 };
             })
             .filter((data): data is any => data !== null);
@@ -574,7 +580,7 @@ export class EmployeeService {
 
         const upsertData = userData.map((u) => ({
             ...u,
-            id: existingEmployeeIdMap.get(u.employeeId) || null,
+            id: existingEmployeeIdMap.get(u.employeeId) || null
         }));
 
         const { affected, errors: upsertErrors } = await bulkUpsert(
@@ -583,7 +589,7 @@ export class EmployeeService {
             ['id', 'email', 'firstName', 'phoneNumber', 'status', 'company', 'userType', 'employeeId', 'password'],
             ['email', 'firstName', 'phoneNumber', 'status', 'company', 'userType', 'password'],
             manager,
-            1000,
+            1000
         );
 
         upsertErrors.forEach((error) => {
@@ -607,20 +613,20 @@ export class EmployeeService {
             if (!results.some((r) => r.employeeId === employeeId) && !processedRows.has(index + 1)) {
                 errors.push({
                     row: index + 1,
-                    error: `Failed to associate user with employeeId ${employeeId}`,
+                    error: `Failed to associate user with employeeId ${employeeId}`
                 });
             }
         });
 
         return {
             results,
-            errors: [...new Map(errors.map((e) => [`${e.row}-${e.error}`, e])).values()],
+            errors: [...new Map(errors.map((e) => [`${e.row}-${e.error}`, e])).values()]
         };
     }
 
     async bulkUpsertEmployees(
         employees: Partial<Employee>[],
-        manager: EntityManager,
+        manager: EntityManager
     ): Promise<{ affected: number; errors: { batch: number; error: string }[] }> {
         const values = employees.map((e) => ({
             id: e.id!,
@@ -636,7 +642,7 @@ export class EmployeeService {
             leaveDays: e.leaveDays || 0,
             panNumber: e.panNumber || null,
             departmentId: e.department?.id || 3,
-            branchId: e.branch?.id || null,
+            branchId: e.branch?.id || null
         }));
 
         try {
@@ -655,7 +661,7 @@ export class EmployeeService {
                     'leaveDays',
                     'panNumber',
                     'departmentId',
-                    'branchId',
+                    'branchId'
                 ],
                 [
                     'userId',
@@ -668,15 +674,15 @@ export class EmployeeService {
                     'leaveDays',
                     'panNumber',
                     'departmentId',
-                    'branchId',
+                    'branchId'
                 ],
                 manager,
-                1000,
+                1000
             );
 
             return {
                 affected: result.affected,
-                errors: [...new Map(result.errors.map((e) => [e.error, e])).values()],
+                errors: [...new Map(result.errors.map((e) => [e.error, e])).values()]
             };
         } catch (error) {
             this.logger.error(`Failed to upsert employee batch: ${error.message}`);
@@ -687,7 +693,7 @@ export class EmployeeService {
     async bulkUpsertDealers(
         dealers: DeepPartial<Dealer>[],
         employeeIds: string[],
-        manager: EntityManager,
+        manager: EntityManager
     ): Promise<{ affected: number; errors: { row: number; error: string }[] }> {
         const dealerData = dealers.map((dealer, index) => ({
             dealerId: dealer.dealerId!,
@@ -695,7 +701,7 @@ export class EmployeeService {
             terminals: dealer.terminals ? dealer.terminals.join(',') : null,
             dealerType: dealer.dealerType || 'EQUITY',
             target: dealer.target || 0,
-            targetCompleted: dealer.targetCompleted || 0,
+            targetCompleted: dealer.targetCompleted || 0
         }));
 
         try {
@@ -705,12 +711,12 @@ export class EmployeeService {
                 ['dealerId', 'employeeId', 'terminals', 'dealerType', 'target', 'targetCompleted'],
                 ['employeeId', 'terminals', 'dealerType', 'target', 'targetCompleted'],
                 manager,
-                1000,
+                1000
             );
 
             return {
                 affected: result.affected,
-                errors: result.errors.map((e) => ({ row: -1, error: e.error })),
+                errors: result.errors.map((e) => ({ row: -1, error: e.error }))
             };
         } catch (error) {
             this.logger.error(`Failed to upsert dealer batch: ${error.message}`);
@@ -720,11 +726,11 @@ export class EmployeeService {
 
     async bulkUpsertUserRoles(
         userRoles: Partial<UserRole>[],
-        manager: EntityManager,
+        manager: EntityManager
     ): Promise<{ affected: number; errors: { row: number; error: string }[] }> {
         const userRoleData = userRoles.map((role) => ({
             userId: role.userId!,
-            roleId: role.roleId!,
+            roleId: role.roleId!
         }));
 
         try {
@@ -732,7 +738,7 @@ export class EmployeeService {
 
             return {
                 affected: result.affected,
-                errors: result.errors.map((e) => ({ row: -1, error: e.error })),
+                errors: result.errors.map((e) => ({ row: -1, error: e.error }))
             };
         } catch (error) {
             this.logger.error(`Failed to upsert user role batch: ${error.message}`);
@@ -742,7 +748,7 @@ export class EmployeeService {
 
     async bulkUpsertBranchDealerMappings(
         mappings: { branchId: string; dealerId: string }[],
-        manager: EntityManager,
+        manager: EntityManager
     ): Promise<{ affected: number; errors: { row: number; error: string }[] }> {
         const errors: { row: number; error: string }[] = [];
 
@@ -772,7 +778,7 @@ export class EmployeeService {
                 ['branchId', 'dealerId'],
                 ['branchId', 'dealerId'],
                 manager,
-                1000,
+                1000
             );
 
             const affected = result.affected || 0;
@@ -810,29 +816,33 @@ export class EmployeeService {
         const limit = parseInt(req?.QUERY_STRING?.limit) || 100;
         const skip = parseInt(req?.QUERY_STRING?.skip) || 0;
 
-        const baseQuery = this.dataSource.getRepository(DealerRMRevenue)
+        const baseQuery = this.dataSource
+            .getRepository(DealerRMRevenue)
             .createQueryBuilder('revenue')
             .leftJoin('revenue.employee', 'employee')
             .leftJoin('employee.user', 'user')
             .leftJoin('revenue.clients', 'client')
             .select('employee.id', 'id')
             .addSelect('user.firstName', 'fullName')
-            .addSelect(`
+            .addSelect(
+                `
       SUM(CASE WHEN revenue.terminalId IS NOT NULL THEN revenue.netBrokerage ELSE 0 END)
-    `, 'terminalBrokerage')
-            .addSelect(`
+    `,
+                'terminalBrokerage'
+            )
+            .addSelect(
+                `
       SUM(CASE WHEN revenue.terminalId IS NULL THEN revenue.netBrokerage ELSE 0 END)
-    `, 'clientBrokerage')
+    `,
+                'clientBrokerage'
+            )
             .addSelect('COUNT(DISTINCT client.id)', 'tradedClients')
             .andWhere(req?.QUERY_STRING?.where || '1=1')
             .orderBy(orderByKey({ key: req?.QUERY_STRING?.orderBy?.key, repoAlias: 'report' }), orderByValue({ req }))
             .groupBy('employee.id')
             .addGroupBy('user.firstName');
 
-        const itemsRaw = await baseQuery
-            .offset(skip)
-            .limit(limit)
-            .getRawMany(); // Note: getRawMany() cannot give total count directly; we compute count separately
+        const itemsRaw = await baseQuery.offset(skip).limit(limit).getRawMany(); // Note: getRawMany() cannot give total count directly; we compute count separately
 
         const items: DealerRMListDataType[] = itemsRaw.map((row) => ({
             id: row.id,
@@ -842,11 +852,12 @@ export class EmployeeService {
             tradedClients: Number(row.tradedClients),
             franchiseeRevenue: 0,
             sipValue: 0,
-            lumpsum: 0,
+            lumpsum: 0
         }));
 
         // Get total count separately (of distinct employees)
-        const qb = this.dataSource.getRepository(DealerRMRevenue)
+        const qb = this.dataSource
+            .getRepository(DealerRMRevenue)
             .createQueryBuilder('revenue')
             .leftJoin('revenue.employee', 'employee')
             .leftJoin('employee.user', 'user')
@@ -854,14 +865,13 @@ export class EmployeeService {
             .andWhere(req?.QUERY_STRING?.where || '1=1')
             .select([]);
 
-
         return { items, qb };
     }
 
-
     async getDealersPerBranch(branchId: string): Promise<any> {
         const [dealers, employees] = await Promise.all([
-            this.branchRepo.query(`
+            this.branchRepo.query(
+                `
                 SELECT 
                     d.dealerId AS id,
                     CONCAT_WS(' ', u.firstName, u.lastName) AS fullName
@@ -869,36 +879,41 @@ export class EmployeeService {
                 INNER JOIN employee AS e ON e.id = d.employeeId AND e.deletedAt IS NULL
                 LEFT JOIN user AS u ON u.id = e.userId AND u.deletedAt IS NULL
                 WHERE e.branchId = ? AND d.deletedAt IS NULL
-            `, [branchId]),
-            this.branchRepo.query(`
+            `,
+                [branchId]
+            ),
+            this.branchRepo.query(
+                `
                 SELECT 
                     e.id AS id,
                     CONCAT_WS(' ', u.firstName, u.lastName) AS fullName
                 FROM employee AS e
                 LEFT JOIN user AS u ON u.id = e.userId AND u.deletedAt IS NULL
                 WHERE e.branchId = ? AND e.deletedAt IS NULL
-            `, [branchId]),
+            `,
+                [branchId]
+            )
         ]);
         const mappedEmployees = employees.map((e) => ({
             value: String(e.id),
-            label: e.fullName,
+            label: e.fullName
         }));
         const mappedDealers = dealers.map((e) => ({
             value: String(e.id),
-            label: e.fullName,
+            label: e.fullName
         }));
 
         return {
             RM: mappedEmployees,
             EQUITY: mappedDealers,
             COMMODITY1: mappedDealers,
-            COMMODITY2: mappedDealers,
+            COMMODITY2: mappedDealers
         };
     }
 
     async createBranchManagersForAllBranches(): Promise<BulkInsertResult<Employee>> {
         const branches = await this.branchRepo.find({
-            where: { deletedAt: null, model: BranchModels.BRANCH },
+            where: { deletedAt: null, model: BranchModels.BRANCH }
         });
 
         const branchManagers: CreateEmployeeDto[] = branches.map((branch) => ({
@@ -917,7 +932,7 @@ export class EmployeeService {
             leaveDays: 0,
             password: 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f',
             probation: false,
-            dateOfJoining: branch.activationDate || new Date(),
+            dateOfJoining: branch.activationDate || new Date()
         }));
 
         return await this.bulkCreate(branchManagers);
@@ -936,8 +951,8 @@ export class EmployeeService {
             dateOfBirth: body.dateOfBirth,
             gender: body.gender,
             dateOfJoining: body.dateOfJoining,
-            company: 2,
-            roleId: body.roleId ?? roleIds.staff,
+            company: 1,
+            roleId: body.roleId ?? roleIds.staff
         };
 
         const newUser = await this.userService.createInsuranceUser(userData);
@@ -962,16 +977,84 @@ export class EmployeeService {
             probation: body.probation || false,
             status: EmployeeStatus.ACTIVE,
             leaveDays: body.leaveDays || 0,
-            department,
+            department
         });
         return await this.employeeRepo.save(newEmployee);
     }
 
-    async calculateDealerRevenue(
-        employeeId?: string,
-        terminalId?: string,
-        cocd?: string,
-    ): Promise<void> {
+    async updateInsuranceEmployee(body: any): Promise<any> {
+        // console.log("jaghe pe jata=====================================")
+        if (!body.branchId) {
+            throw new BadRequestException('Branch ID is required');
+        }
+        const {
+            user_id,
+            email,
+            firstName,
+            lastName,
+            middleName,
+            phone,
+            dateOfBirth,
+            gender,
+            dateOfJoining,
+            branchId,
+            departmentId,
+            roleId,
+            company,
+            designation,
+            probation,
+            leaveDays,
+            salary,
+            status
+        } = body;
+
+        const user = await this.userRepo.findOne({ where: { id: user_id } });
+
+        if (!user) {
+            throw new NotFoundException('User details not found');
+        }
+        const branch = await this.branchRepo.findOne({
+            where: { id: branchId },
+            relations: ['company'] // this is essential to load the company
+        });
+
+        console.log("COMPANY id", branch.company.id);
+        
+        if (!branch) {
+            throw new BadRequestException('Invalid Branch ID');
+        }
+        const existcompany = await this.companyRepo.findOne({
+            where: { id: branch.company.id }
+        });
+        console.log("existeing company", existcompany.id);
+        const existDepartment = await this.departmentRepo.findOne({where:{id:departmentId}})
+        // Set new values to existing user
+        user.email = email;
+        user.firstName = firstName;
+        user.middleName = middleName;
+        user.lastName = lastName;
+        user.phoneNumber = phone;
+        user.dateOfBirth = dateOfBirth;
+        user.gender = gender;
+        user.userType = roleId ?? Roles.staff;
+        user.branch = branch;
+        user.company = existcompany;
+        user.department = existDepartment || null;
+
+        // Save updated user
+        const updatedUser = await this.userRepo.save(user);
+        if (!updatedUser) {
+            
+            throw new InternalServerErrorException('Failed to update user');
+        }
+        return {
+            status: 'success',
+            message: 'User update successfully',
+            data: null
+        };
+    }
+
+    async calculateDealerRevenue(employeeId?: string, terminalId?: string, cocd?: string): Promise<void> {
         const segmentRevenues = await this.dataSource
             .getRepository(SegmentRevenue)
             .createQueryBuilder('sr')
@@ -1000,8 +1083,8 @@ export class EmployeeService {
                 'commodityDealer1.employee',
                 'commodityDealer2',
                 'commodityDealer2.employee',
-                'rm',
-            ],
+                'rm'
+            ]
         });
         const clientMap = new Map(clients.map((c) => [c.id, c]));
 
@@ -1037,14 +1120,15 @@ export class EmployeeService {
                 { emp: client.equityDealer?.employee, role: RevenueRole.DEALER },
                 { emp: client.commodityDealer1?.employee, role: RevenueRole.DEALER },
                 { emp: client.commodityDealer2?.employee, role: RevenueRole.DEALER },
-                { emp: client.rm, role: RevenueRole.RM },
+                { emp: client.rm, role: RevenueRole.RM }
             ];
 
             for (const { emp, role } of entities) {
                 if (!emp) continue;
 
-                const id = `${emp.id}_${role}_${group.terminalId || 'no-terminal'}_${periodStart.toISOString().split('T')[0]
-                    }_${group.cocd || 'no-cocd'}`;
+                const id = `${emp.id}_${role}_${group.terminalId || 'no-terminal'}_${
+                    periodStart.toISOString().split('T')[0]
+                }_${group.cocd || 'no-cocd'}`;
 
                 upsertData.push({
                     id,
@@ -1058,7 +1142,7 @@ export class EmployeeService {
                             ? parseFloat(group.netBrokerage) || 0
                             : group.netBrokerage || 0,
                     tradeAmount: group.tradeAmount,
-                    clients: [client],
+                    clients: [client]
                 });
             }
         }
@@ -1067,7 +1151,7 @@ export class EmployeeService {
             await this.dataSource.getRepository(DealerRMRevenue).upsert(upsertData, {
                 conflictPaths: ['id'],
                 skipUpdateIfNoValuesChanged: true,
-                upsertType: 'on-conflict-do-update',
+                upsertType: 'on-conflict-do-update'
             });
         } else {
             this.logger.warn('No DealerRMRevenue records to upsert');
@@ -1085,9 +1169,9 @@ export class EmployeeService {
         };
     } {
         return revenues.reduce((acc, revenue) => {
-            const key = `${revenue.clientId}_${revenue.terminalId}_${revenue.cocd}_${new Date(
-                revenue.tradeDate,
-            ).toISOString().split('T')[0]}`;
+            const key = `${revenue.clientId}_${revenue.terminalId}_${revenue.cocd}_${
+                new Date(revenue.tradeDate).toISOString().split('T')[0]
+            }`;
 
             if (!acc[key]) {
                 acc[key] = {
@@ -1096,7 +1180,7 @@ export class EmployeeService {
                     cocd: revenue.cocd,
                     tradeDate: new Date(revenue.tradeDate),
                     netBrokerage: 0,
-                    tradeAmount: 0,
+                    tradeAmount: 0
                 };
             }
 

@@ -515,9 +515,9 @@ export class BranchService {
         if (!branch) {
             throw new Error(`Branch with id ${id} not found`);
         }
-        Logger.log('status', branch.active);
-        branch.active = !branch.active;
-        Logger.log('status 2', branch.active);
+        Logger.log('status', branch.isActive);
+        branch.isActive = !branch.isActive;
+        Logger.log('status 2', branch.isActive);
 
         return this.branchRepository.save(branch);
     }
@@ -2250,6 +2250,25 @@ export class BranchService {
                     designation: Designation.regionalManager
                 }
             })
+
+        } catch (error) {
+            this.logger.error(`Failed to fetch subbranch revenue: ${error.message}`);
+            throw error;
+        }
+    }
+
+     async getBranch(): Promise<any> {
+        try {
+
+            const query = 'CALL get_branch()'
+
+            const result = await this.branchRepository.query(query);
+            return {
+                status:'success',
+                message: 'success fully data fetch',
+                result:result[0]
+
+            }
 
         } catch (error) {
             this.logger.error(`Failed to fetch subbranch revenue: ${error.message}`);

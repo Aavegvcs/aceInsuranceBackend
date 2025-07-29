@@ -29,28 +29,59 @@ export class RoleService {
         return roleName;
     }
 
+    // async findAll(body: any, req: any): Promise<any> {
+    //     const items = await this.roleRepo
+    //         .createQueryBuilder('role')
+    //         .where(req?.QUERY_STRING?.where)
+    //         .skip(req?.QUERY_STRING?.skip)
+    //         .take(req?.QUERY_STRING?.limit)
+    //         .orderBy(
+    //             orderByKey({
+    //                 key: req?.QUERY_STRING?.orderBy?.key,
+    //                 repoAlias: 'role'
+    //             }),
+    //             orderByValue({ req })
+    //         )
+    //         .getMany();
+
+    //     const qb = this.roleRepo.createQueryBuilder('role').where(req?.QUERY_STRING?.where).select([]);
+
+    //     return {
+    //         items,
+    //         qb
+    //     };
+    // }
     async findAll(body: any, req: any): Promise<any> {
-        const items = await this.roleRepo
-            .createQueryBuilder('role')
-            .where(req?.QUERY_STRING?.where)
-            .skip(req?.QUERY_STRING?.skip)
-            .take(req?.QUERY_STRING?.limit)
-            .orderBy(
-                orderByKey({
-                    key: req?.QUERY_STRING?.orderBy?.key,
-                    repoAlias: 'role'
-                }),
-                orderByValue({ req })
-            )
-            .getMany();
+    const baseWhere = req?.QUERY_STRING?.where || {};
 
-        const qb = this.roleRepo.createQueryBuilder('role').where(req?.QUERY_STRING?.where).select([]);
+    // Ensure isActive = true is always applied
+    const items = await this.roleRepo
+        .createQueryBuilder('role')
+        .where('role.isActive = :isActive', { isActive: true })
+        .andWhere(baseWhere)
+        .skip(req?.QUERY_STRING?.skip)
+        .take(req?.QUERY_STRING?.limit)
+        .orderBy(
+            orderByKey({
+                key: req?.QUERY_STRING?.orderBy?.key,
+                repoAlias: 'role'
+            }),
+            orderByValue({ req })
+        )
+        .getMany();
 
-        return {
-            items,
-            qb
-        };
-    }
+    const qb = this.roleRepo
+        .createQueryBuilder('role')
+        .where('role.isActive = :isActive', { isActive: true })
+        .andWhere(baseWhere)
+        .select([]);
+
+    return {
+        items,
+        qb
+    };
+}
+
 
     async findOne(id: number) {
         return await this.roleRepo.findOneBy({ id });

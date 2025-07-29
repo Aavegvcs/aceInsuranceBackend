@@ -796,7 +796,7 @@ export class UserService {
             result = await this.userRepository.query(query, [reqBody.companyId]);
             // console.log(result[0]);
         } catch (error) {
-            // console.log('-api: backend/user/getUserByCompanyId', error.message);
+             console.log('-api: backend/user/getUserByCompanyId', error.message);
             throw new InternalServerErrorException(error.message);
         }
 

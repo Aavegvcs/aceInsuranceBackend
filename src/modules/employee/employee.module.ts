@@ -18,12 +18,14 @@ import { DealerRMRevenue } from './entities/dealer-rm-revenue.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Employee, User, Branch, Dealer, Company, UserRole, Department, DealerRMRevenue]),
+        TypeOrmModule.forFeature([Employee, User, Branch, Dealer, Company, UserRole, Department, DealerRMRevenue, Company]),
         forwardRef(() => UserModule),
         forwardRef(() => BranchModule),
         forwardRef(() => DepartmentModule),
         forwardRef(()=> CompanyModule),
-        forwardRef(() => DepartmentModule)
+        forwardRef(() => DepartmentModule),
+        forwardRef(() => CompanyModule),
+
     ],
     controllers: [EmployeeController],
     providers: [EmployeeService],

@@ -14,7 +14,7 @@ export class DecryptDataMiddleware implements NestMiddleware {
 
         const excludedRoutes = ['/backend/encrypt', '/backend/decrypt', '/backend/status', '/backend/apidata', '/backend/generate-token-via-app'];
 
-        Logger.log('req.originalUrl--  ', req?.originalUrl);
+        // Logger.log('req.originalUrl--  ', req?.originalUrl);
 
         if (excludedRoutes.includes(req.originalUrl)) {
             // Skip this middleware for excluded routes
@@ -27,7 +27,7 @@ export class DecryptDataMiddleware implements NestMiddleware {
             try {
                 const decryptedData = await decryptData(req?.body?.string);
 
-                Logger.log('decryptedData--  ', JSON.parse(decryptedData));
+                 Logger.log('decryptedData--  ', JSON.parse(decryptedData));
                 // Update the request body with and transformed data
 
                 const _obj = JSON.parse(decryptedData);

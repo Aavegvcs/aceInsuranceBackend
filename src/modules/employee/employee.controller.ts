@@ -55,4 +55,8 @@ export class EmployeeController {
         return this.employeeService.createInsuranceEmployee(createEmployeeDto);
     }
 
+    @Patch('updateInsuranceEmployee')
+    async updateInsuranceEmployee(@Body() reqBody:any) {
+        return this.employeeService.updateInsuranceEmployee(reqBody);
+    }
 }

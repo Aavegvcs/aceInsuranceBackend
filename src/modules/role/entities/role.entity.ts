@@ -16,6 +16,7 @@ export class Role {
     @Column()
     roleName: string;
 
+
     /*---------------------------------------RoleFeatureAction-Relation-------------------------------------------------*/
 
     @OneToMany(() => RoleFeatureAction, (roleFeatureAction) => roleFeatureAction.roleId)
@@ -23,6 +24,9 @@ export class Role {
 
     @Column()
     description: string;
+
+    @Column({ name: 'is_active', type: 'boolean', default: true })
+    isActive: boolean;
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt: Date;

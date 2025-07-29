@@ -41,6 +41,7 @@ export class BranchController {
     @ApiOperation({ summary: 'Get all branches' })
     @Post('list')
     async findAll(@Req() req: any) {
+        console.log("hamara kaam ho gya")
         return this.branchService.findAll(req);
     }
 
@@ -209,6 +210,16 @@ export class BranchController {
         }
     }
 
+    
+    @Post('getBranch')
+    async getBranch(@Body() body: any){
+        try {
+            return await this.branchService.getBranch()
+        } catch (error) {
+            Logger.error(`Error fetching control branch and regional managers: ${error.message}`);
+            throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 
 }

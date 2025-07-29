@@ -25,6 +25,8 @@ import { Employee } from '@modules/employee/entities/employee.entity';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { InsuranceAssignedTo } from '@modules/insurance-ticket/entities/insurance-ticket-assignedTo.entity';
 import { USER_STATUS } from 'src/utils/app.utils';
+import { Branch } from '@modules/branch/entities/branch.entity';
+import { Department } from '@modules/department/entities/department.entity';
 
 @Entity({ name: 'user' })
 export class User extends BaseEntity {
@@ -114,8 +116,24 @@ export class User extends BaseEntity {
     status: string;
 
     @ManyToOne(() => Company)
-    @JoinColumn({ name: 'company' })
+    @JoinColumn({ name: 'company_id' })
     company: Company;
+
+    @ManyToOne(() => Branch)
+    @JoinColumn({ name: 'branch_id' })
+    branch: Branch;
+
+    @ManyToOne(() => Department)
+    @JoinColumn({ name: 'department_id' })
+    department: Department;
+
+    @ManyToOne(() => User, (user) => user.subordinates, { nullable: true })
+    @JoinColumn({ name: 'reporting_officer' })
+    reportingOfficer: User;
+
+    // One RO can have many users reporting to them
+    @OneToMany(() => User, (user) => user.reportingOfficer)
+    subordinates: User[];
 
     @Exclude()
     @Column({ nullable: true })
@@ -148,6 +166,9 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     zip: string;
 
+   @Column({ name: 'is_active', type: 'boolean', default: true })
+    isActive: boolean;
+    
     @CreateDateColumn({ type: 'timestamp', default: null, nullable: true })
     createdAt: Date;
 

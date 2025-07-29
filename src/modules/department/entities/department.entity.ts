@@ -7,10 +7,14 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
-    BeforeInsert
+    BeforeInsert,
+    ManyToOne,
+    JoinColumn
 } from 'typeorm';
 import { Employee } from '@modules/employee/entities/employee.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from '@modules/user/user.entity';
+import { Branch } from '@modules/branch/entities/branch.entity';
 
 @Entity()
 export class Department extends BaseEntity {
@@ -30,6 +34,10 @@ export class Department extends BaseEntity {
     isActive: boolean;
     @Column({ nullable: true })
     description: string; // Optional department description
+
+    @ManyToOne(() => Branch)
+    @JoinColumn({ name: 'branch_id' })
+    branch: Branch;
 
     @CreateDateColumn({ type: 'timestamp', default: null, nullable: true })
     createdAt: Date;
@@ -56,6 +64,9 @@ export class Department extends BaseEntity {
 
     @OneToMany(() => Employee, (employee) => employee.department)
     employees: Employee[]; // A department can have multiple employees
+
+     @OneToMany(() => User, (user) => user.department)
+    user: User[]; //
 }
 
 

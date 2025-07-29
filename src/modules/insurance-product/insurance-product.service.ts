@@ -66,63 +66,6 @@ export class InsuranceProductService {
 
         return await this.insuranceCompanyRepo.save(newCompany);
     }
-
-    // async updateCompany(reqBody: any, req: any): Promise<any> {
-    //     let response = {
-    //     };
-    //     try {
-    //         const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.aaveg+agent@gmail.com' } });
-
-    //         if (!userEntity) {
-    //             response = {
-    //                 status: 'error',
-    //                 message: 'User not found',
-    //                 data: null
-    //             };
-    //         }
-    //         // const company = await this.insuranceCompanyRepo.findOne({ where: { id: reqBody.id } });
-    //         // // console.log('company', company);
-    //         // if (!company) {
-    //         //     response = {
-    //         //         status: 'error',
-    //         //         message: `Company with ID ${reqBody.id} not found`,
-    //         //         data: null
-    //         //     };
-
-    //         // }
-    //         console.log('reqeustParam', reqBody);
-    //         const result = await this.insuranceCompanyRepo.update(reqBody.id, {
-    //             companyName: reqBody.companyName,
-    //             companyLogo: reqBody.companyLogo,
-    //             companyAddress: reqBody.companyAddress,
-    //             email: reqBody.email,
-    //             contactPerson: reqBody.contactPerson,
-    //             contactNumber: reqBody.contactNumber,
-    //             isActive: reqBody.isActive,
-    //             updatedAt: reqBody.updatedAt,
-    //             updatedBy: userEntity
-    //         });
-
-    //           response = {
-    //                 status: 'error',
-    //                 message: `Failed to update company with ID ${reqBody.id}`,
-    //                 data: null
-    //             };
-
-    //         }
-    //     } catch (error) {
-    //         console.log('api- insurance-product/updateCompany', error.message);
-
-    //        response = {
-    //             status: 'error',
-    //             message: 'Error deleting company',
-    //             data: null
-    //         };
-
-    //     }
-
-    //         return response;
-    //     }
     async updateCompany(reqBody: any, req: any): Promise<any> {
         let response: any = {};
 

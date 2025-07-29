@@ -69,7 +69,7 @@ export class JwtInsAuthGuard implements CanActivate, OnModuleInit {
                 .createQueryBuilder('user')
                 .leftJoin('user.company', 'company') // join the relation
                 .where('user.email = :email', { email })
-                .andWhere('company.id = :companyId', { companyId: 2 })
+                .andWhere('company.id = :companyId', { companyId: 1 })
                 .getOne();
                 
             if (!dbUser) {
