@@ -65,77 +65,77 @@ export class AuthController {
         return { token: await this.authService.register(userRegister, req) };
     }
 
-    @UseGuards(LocalAuthGuard)
-    @Post('login')
-    @ApiOkResponse({
-        description: 'OTP and Token sent successfully',
-        type: LoginResponseDto
-    })
-    @ApiBadRequestResponse({
-        description: 'Login Not processable'
-    })
-    @HttpCode(HttpStatus.OK)
-    async login(@Body(SETTINGS.VALIDATION_PIPE) userRegister: UserLoginDto, @Request() req): Promise<any> {
-        return { token: await this.authService.login(req) };
-    }
+    // @UseGuards(LocalAuthGuard)
+    // @Post('login')
+    // @ApiOkResponse({
+    //     description: 'OTP and Token sent successfully',
+    //     type: LoginResponseDto
+    // })
+    // @ApiBadRequestResponse({
+    //     description: 'Login Not processable'
+    // })
+    // @HttpCode(HttpStatus.OK)
+    // async login(@Body(SETTINGS.VALIDATION_PIPE) userRegister: UserLoginDto, @Request() req): Promise<any> {
+    //     return { token: await this.authService.login(req) };
+    // }
 
-    @UseGuards(LocalAuthGuard)
-    @Post('login-via-id')
-    @ApiOkResponse({
-        description: 'OTP and Token sent successfully',
-        type: LoginResponseDto
-    })
-    @ApiBadRequestResponse({
-        description: 'Login Not processable'
-    })
-    @HttpCode(HttpStatus.OK)
-    async loginViaId(@Body(SETTINGS.VALIDATION_PIPE) userRegister: any, @Request() req): Promise<any> {
-        return { token: await this.authService.loginViaId(req) };
-    }
+    // @UseGuards(LocalAuthGuard)
+    // @Post('login-via-id')
+    // @ApiOkResponse({
+    //     description: 'OTP and Token sent successfully',
+    //     type: LoginResponseDto
+    // })
+    // @ApiBadRequestResponse({
+    //     description: 'Login Not processable'
+    // })
+    // @HttpCode(HttpStatus.OK)
+    // async loginViaId(@Body(SETTINGS.VALIDATION_PIPE) userRegister: any, @Request() req): Promise<any> {
+    //     return { token: await this.authService.loginViaId(req) };
+    // }
 
-    @UseGuards(LocalAuthGuard)
-    @Post('login-bypass-otp')
-    @HttpCode(HttpStatus.OK)
-    async loginBypassOTP(@Body(SETTINGS.VALIDATION_PIPE) userRegister: any, @Request() req): Promise<any> {
-        return { token: await this.authService.loginBypassOTP(req) };
-    }
+    // @UseGuards(LocalAuthGuard)
+    // @Post('login-bypass-otp')
+    // @HttpCode(HttpStatus.OK)
+    // async loginBypassOTP(@Body(SETTINGS.VALIDATION_PIPE) userRegister: any, @Request() req): Promise<any> {
+    //     return { token: await this.authService.loginBypassOTP(req) };
+    // }
 
-    @Post('resend-otp')
-    @ApiOkResponse({
-        description: 'OTP sent successfully',
-        type: ResendOTPResponseDto
-    })
-    @ApiBadRequestResponse({
-        description: 'ReSending OTP Not processable'
-    })
-    @HttpCode(HttpStatus.OK)
-    async resendOTP(
-        @Body(SETTINGS.VALIDATION_PIPE)
-        data: UserDeleteDto
-    ): Promise<any> {
-        return { token: await this.authService.resendOTP(data.email) };
-    }
+    // @Post('resend-otp')
+    // @ApiOkResponse({
+    //     description: 'OTP sent successfully',
+    //     type: ResendOTPResponseDto
+    // })
+    // @ApiBadRequestResponse({
+    //     description: 'ReSending OTP Not processable'
+    // })
+    // @HttpCode(HttpStatus.OK)
+    // async resendOTP(
+    //     @Body(SETTINGS.VALIDATION_PIPE)
+    //     data: UserDeleteDto
+    // ): Promise<any> {
+    //     return { token: await this.authService.resendOTP(data.email) };
+    // }
 
-    @UseGuards(JwtAuthGuard)
-    @Patch('verify-otp')
-    @ApiCreatedResponse({
-        description: 'user Logged-in successfully',
-        type: VerifyOTPResponseDto
-    })
-    @ApiBadRequestResponse({
-        description: 'Log-in Failed'
-    })
-    async verifyOTP(
-        @Headers('authorization') authorizationHeader: string,
-        @Body(SETTINGS.VALIDATION_PIPE) body: UserVerifyOTPDto,
-        @Req() req: any,
-        @Res({ passthrough: true }) res: any
-    ): Promise<any> {
-        if (!authorizationHeader) throw new UnauthorizedException(['Unauthorized']);
-        if (req.user.forRoutes !== 'otp') throw new MethodNotAllowedException(['not allowed']);
+    // @UseGuards(JwtAuthGuard)
+    // @Patch('verify-otp')
+    // @ApiCreatedResponse({
+    //     description: 'user Logged-in successfully',
+    //     type: VerifyOTPResponseDto
+    // })
+    // @ApiBadRequestResponse({
+    //     description: 'Log-in Failed'
+    // })
+    // async verifyOTP(
+    //     @Headers('authorization') authorizationHeader: string,
+    //     @Body(SETTINGS.VALIDATION_PIPE) body: UserVerifyOTPDto,
+    //     @Req() req: any,
+    //     @Res({ passthrough: true }) res: any
+    // ): Promise<any> {
+    //     if (!authorizationHeader) throw new UnauthorizedException(['Unauthorized']);
+    //     if (req.user.forRoutes !== 'otp') throw new MethodNotAllowedException(['not allowed']);
 
-        return await this.authService.verifyOTP(body.otp, req);
-    }
+    //     return await this.authService.verifyOTP(body.otp, req);
+    // }
 
     // @UseGuards(JwtAuthGuard)
     // @Patch('single-sign-on')
@@ -187,28 +187,28 @@ export class AuthController {
         return { token };
     }
 
-    @Post('validate-token')
-    @ApiOkResponse({
-        description: 'Token validated successfully',
-        type: VerifyOTPResponseDto
-    })
-    @ApiBadRequestResponse({
-        description: 'Token validation failed'
-    })
-    @HttpCode(HttpStatus.OK)
-    async validateToken(@Body('token') token: string): Promise<any> {
-        if (!token) throw new UnauthorizedException(['No token provided']);
+    // @Post('validate-token')
+    // @ApiOkResponse({
+    //     description: 'Token validated successfully',
+    //     type: VerifyOTPResponseDto
+    // })
+    // @ApiBadRequestResponse({
+    //     description: 'Token validation failed'
+    // })
+    // @HttpCode(HttpStatus.OK)
+    // async validateToken(@Body('token') token: string): Promise<any> {
+    //     if (!token) throw new UnauthorizedException(['No token provided']);
 
-        const result = await this.authService.validateAccessToken(token);
-        return result;
-    }
+    //     const result = await this.authService.validateAccessToken(token);
+    //     return result;
+    // }
 
-    @Post('captcha')
-    async captcha(@Request() req): Promise<any> {
-        if (req.user.forRoutes !== 'otp') throw new MethodNotAllowedException(['not allowed']);
+    // @Post('captcha')
+    // async captcha(@Request() req): Promise<any> {
+    //     if (req.user.forRoutes !== 'otp') throw new MethodNotAllowedException(['not allowed']);
 
-        return await this.authService.captcha(req.body.token);
-    }
+    //     return await this.authService.captcha(req.body.token);
+    // }
 
     @Post('forgot-password')
     @ApiCreatedResponse({

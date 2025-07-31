@@ -7,6 +7,7 @@ import { RoleFeatureActionService } from '../role-feature-action/role-feature-ac
 import { UserRoleService } from '../user-role/user-role.service';
 import { UserService } from '../user/user.service';
 import { orderByKey, orderByValue } from 'src/utils/app.utils';
+import { User } from '@modules/user/user.entity';
 
 @Injectable()
 export class RoleService {
@@ -52,36 +53,35 @@ export class RoleService {
     //     };
     // }
     async findAll(body: any, req: any): Promise<any> {
-    const baseWhere = req?.QUERY_STRING?.where || {};
+        const baseWhere = req?.QUERY_STRING?.where || {};
 
-    // Ensure isActive = true is always applied
-    const items = await this.roleRepo
-        .createQueryBuilder('role')
-        .where('role.isActive = :isActive', { isActive: true })
-        .andWhere(baseWhere)
-        .skip(req?.QUERY_STRING?.skip)
-        .take(req?.QUERY_STRING?.limit)
-        .orderBy(
-            orderByKey({
-                key: req?.QUERY_STRING?.orderBy?.key,
-                repoAlias: 'role'
-            }),
-            orderByValue({ req })
-        )
-        .getMany();
+        // Ensure isActive = true is always applied
+        const items = await this.roleRepo
+            .createQueryBuilder('role')
+            .where('role.isActive = :isActive', { isActive: true })
+            .andWhere(baseWhere)
+            .skip(req?.QUERY_STRING?.skip)
+            .take(req?.QUERY_STRING?.limit)
+            .orderBy(
+                orderByKey({
+                    key: req?.QUERY_STRING?.orderBy?.key,
+                    repoAlias: 'role'
+                }),
+                orderByValue({ req })
+            )
+            .getMany();
 
-    const qb = this.roleRepo
-        .createQueryBuilder('role')
-        .where('role.isActive = :isActive', { isActive: true })
-        .andWhere(baseWhere)
-        .select([]);
+        const qb = this.roleRepo
+            .createQueryBuilder('role')
+            .where('role.isActive = :isActive', { isActive: true })
+            .andWhere(baseWhere)
+            .select([]);
 
-    return {
-        items,
-        qb
-    };
-}
-
+        return {
+            items,
+            qb
+        };
+    }
 
     async findOne(id: number) {
         return await this.roleRepo.findOneBy({ id });
@@ -89,6 +89,10 @@ export class RoleService {
 
     async findOneByName(roleName: string): Promise<Role> {
         return await this.roleRepo.findOneBy({ roleName });
+    }
+
+        async findOneById(id: number): Promise<Role> {
+        return await this.roleRepo.findOneBy({ id });
     }
 
     async findAndUpdateRole(roleId: number, updates: any): Promise<any> {

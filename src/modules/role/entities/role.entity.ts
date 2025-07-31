@@ -1,3 +1,4 @@
+import { User } from '@modules/user/user.entity';
 import { RoleFeatureAction } from 'src/modules/role-feature-action/entities/role-feature-action.entity';
 import {
     Column,
@@ -5,6 +6,7 @@ import {
     DeleteDateColumn,
     Entity,
     OneToMany,
+    OneToOne,
     PrimaryGeneratedColumn,
     UpdateDateColumn
 } from 'typeorm';
@@ -16,11 +18,15 @@ export class Role {
     @Column()
     roleName: string;
 
-
     /*---------------------------------------RoleFeatureAction-Relation-------------------------------------------------*/
 
     @OneToMany(() => RoleFeatureAction, (roleFeatureAction) => roleFeatureAction.roleId)
     roleFeatureAction: RoleFeatureAction[];
+
+    // @OneToOne(() => User, (user) => user.userType)
+    // user: User;
+    @OneToMany(() => User, (user) => user.userType)
+    users: User[];
 
     @Column()
     description: string;

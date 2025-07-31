@@ -27,11 +27,15 @@ import { InsuranceAssignedTo } from '@modules/insurance-ticket/entities/insuranc
 import { USER_STATUS } from 'src/utils/app.utils';
 import { Branch } from '@modules/branch/entities/branch.entity';
 import { Department } from '@modules/department/entities/department.entity';
+import { Role } from '@modules/role/entities/role.entity';
 
 @Entity({ name: 'user' })
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
+
+    @Column({ name: 'emp_code', nullable: true })
+    employeeCode: string;
 
     @ApiProperty({
         description: 'firstName of user',
@@ -82,8 +86,16 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     newPassword: string;
 
-    @Column({ nullable: true })
-    userType: string;
+    // @Column({ nullable: true })
+    // userType: string;
+
+    // @OneToOne(() => Role)
+    // @JoinColumn({ name: 'userType' }) // or omit name to auto-generate
+    // userType: Role;
+
+    @ManyToOne(() => Role, (role) => role.users)
+    @JoinColumn({ name: 'userType' })
+    userType: Role;
 
     // Standalone clientId column for lookup during upserts
     @Column({ nullable: true, unique: true })
@@ -166,9 +178,9 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     zip: string;
 
-   @Column({ name: 'is_active', type: 'boolean', default: true })
+    @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;
-    
+
     @CreateDateColumn({ type: 'timestamp', default: null, nullable: true })
     createdAt: Date;
 
@@ -183,6 +195,14 @@ export class User extends BaseEntity {
         this.createdAt = new Date(Date.now());
     }
 
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'created_by' })
+    createdBy: User;
+
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'updated_by' })
+    updatedBy: User;
+
     @Column({ nullable: true })
     prefix: string;
 
@@ -191,7 +211,7 @@ export class User extends BaseEntity {
 
     @Column({ nullable: true })
     street: string;
-    @Column({ name: 'incentive_percentage', type: 'decimal', precision: 10, scale: 2, nullable: false })
+    @Column({ name: 'incentive_percentage', type: 'decimal', precision: 10, scale: 2, nullable: true })
     incentivePercentage: number;
 
     @OneToMany(() => InsuranceTicket, (data) => data.assignTo, { nullable: true })

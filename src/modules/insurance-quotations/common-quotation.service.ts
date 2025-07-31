@@ -34,7 +34,7 @@ export class CommonQuotationService {
                 .leftJoinAndSelect('ticket.vehicleDetails', 'vehicleDetails')
                 .leftJoinAndSelect('ticket.insuredPersons', 'insuredPersons')
                 .leftJoinAndSelect('ticket.insuredMedical', 'insuredMedical')
-                .leftJoinAndSelect('ticket.barnchId', 'barnchId')
+                .leftJoinAndSelect('ticket.branch', 'branch')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
 
@@ -114,8 +114,8 @@ const res = {
         othersRemarks: ticket.othersRemarks ?? null,
         updatedBy: ticket.updatedBy?.id ?? null,
         updatedAt: ticket.updatedAt ?? null,
-        branchContactPerson: ticket.barnchId.contactPerson ?? null,
-        branchPhone: ticket.barnchId.phone ?? null,
+        branchContactPerson: ticket.branch.contactPerson ?? null,
+        branchPhone: ticket.branch.phone ?? null,
         insuranceUser: {
             name: ticket.insuranceUserId.name,
             gender: ticket.insuranceUserId.gender,

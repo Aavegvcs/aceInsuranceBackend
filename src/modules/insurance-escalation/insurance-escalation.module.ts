@@ -11,7 +11,7 @@ import { BullModule } from '@nestjs/bull';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { InsuranceTicketNotification } from './entities/insurance-ticket-notification.entity';
 import { InsuranceTicketDeviation } from './entities/insurance-notification-deviation.entity';
-import { TicketNotificationProcessor } from './ticket.-notification-processor';
+import { TicketNotificationProcessor } from './ticket-notification-processor';
 import { InsuranceTicketService } from '@modules/insurance-ticket/insurance-ticket.service';
 import { InsuranceAssignedTo } from '@modules/insurance-ticket/entities/insurance-ticket-assignedTo.entity';
 import { EmailService } from '@modules/email/email.service';

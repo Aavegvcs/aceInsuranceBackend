@@ -32,7 +32,7 @@ import { ClientStatusDto } from './dto/request/client-status.dto';
 import { TestListDto } from './dto/request/testList.dto';
 
 @ApiTags('User')
-@Controller()
+@Controller('users')
 export class UserController {
     constructor(private userService: UserService) {}
 
@@ -152,7 +152,7 @@ export class UserController {
     @Patch('users/client/status')
     async toggleStatus(@Req() req: any, @Body(SETTINGS.VALIDATION_PIPE) body: ClientStatusDto) {
         const loggedInUser = await this.userService.findOneByEmailWithRelations(req?.user?.email);
-        if (!loggedInUser || loggedInUser?.userType !== Roles.staff) throw new NotFoundException('Staff not found');
+        // if (!loggedInUser || loggedInUser?.userType !== Roles.staff) throw new NotFoundException('Staff not found');
 
         return await this.userService.setClientStatus(body);
     }
@@ -177,5 +177,10 @@ export class UserController {
     @Post('getUserById')
     async getUserById(@Body() reqBody: any) {
         return await this.userService.getUserById(reqBody);
+    }
+    
+    @Get('getEmployeeRo')
+    async getEmployeeRo(@Body() reqBody: any) {
+        return await this.userService.getEmployeeRo(reqBody);
     }
 }

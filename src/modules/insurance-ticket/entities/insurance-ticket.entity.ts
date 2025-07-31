@@ -103,7 +103,7 @@ export class InsuranceTicket {
     //------ added column on 10-03-2025 ------
     @ManyToOne(() => Branch, (data) => data.tickets, { nullable: true })
     @JoinColumn({ name: 'branch_id' })
-    barnchId: Branch;
+    branch: Branch;
 
     @Column({ name: 'preferred_company', nullable: true })
     preferredCompany: string;

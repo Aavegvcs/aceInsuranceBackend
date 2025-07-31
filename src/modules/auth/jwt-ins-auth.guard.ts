@@ -65,13 +65,23 @@ export class JwtInsAuthGuard implements CanActivate, OnModuleInit {
 
             // Fetch user
             const { email } = payload;
-            const dbUser = await this.userRepo
-                .createQueryBuilder('user')
-                .leftJoin('user.company', 'company') // join the relation
-                .where('user.email = :email', { email })
-                .andWhere('company.id = :companyId', { companyId: 1 })
-                .getOne();
-                
+            // const dbUser = await this.userRepo
+            //     .createQueryBuilder('user')
+            //     .leftJoin('user.company', 'company') // join the relation
+            //     .leftJoin('user.userType', 'userType')
+            //     .where('user.email = :email', { email })
+            //     .andWhere('company.id = :companyId', { companyId: 1 })
+            //     .getOne();
+
+            const dbUser = await this.userRepo.findOne({
+                where: {
+                    email: email,
+                    company: { id: 1 }
+                },
+                relations: ['company', 'userType', 'branch', 'department']
+            });
+
+            // console.log('here is db user is-----', dbUser);
             if (!dbUser) {
                 this.logger.error(`User not found for : ${email}`);
                 throw new UnauthorizedException('User not found');
@@ -79,7 +89,7 @@ export class JwtInsAuthGuard implements CanActivate, OnModuleInit {
 
             // Set global user
             this.loggedInsUserService.setCurrentUser(dbUser);
-             this.logger.log(`Logged-in user set for email: ${dbUser.email}`);
+            this.logger.log(`Logged-in user set for email: ${dbUser.email}`);
 
             // Attach user to request for compatibility
             request.user = dbUser;

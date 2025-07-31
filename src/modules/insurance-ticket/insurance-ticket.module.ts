@@ -24,6 +24,9 @@ import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { UserModule } from '@modules/user/user.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { QuoteEntity } from '@modules/insurance-quotations/entities/quote.entity';
+import { RoleService } from '@modules/role/role.service';
+import { RoleModule } from '@modules/role/role.module';
+import { Role } from '@modules/role/entities/role.entity';
 
 @Module({
     imports: [
@@ -44,12 +47,14 @@ import { QuoteEntity } from '@modules/insurance-quotations/entities/quote.entity
             InsuredMedical,
             InsuranceVehicleDetails,
             InsuranceTicketDeviation,
-            QuoteEntity
+            QuoteEntity,
+            Role
         ]),
         InsuranceEscalationModule,
         ScheduleModule.forRoot(),
         forwardRef(() => UserModule),
-        forwardRef(() => AuthModule)
+        forwardRef(() => AuthModule),
+        forwardRef(() => RoleModule),
     ],
     controllers: [InsuranceTicketController],
     providers: [InsuranceTicketService, LoggedInsUserService],

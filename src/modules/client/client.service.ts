@@ -26,6 +26,7 @@ import {
     generateUUID,
     orderByKey,
     orderByValue,
+    RoleId,
     roleIds,
     Roles,
     TRADE_TYPE,
@@ -260,7 +261,7 @@ export class ClientService {
                         zip: dto.zip,
                         status: dto.status || USER_STATUS.ACTIVE,
                         company: dto.companyId || 1,
-                        userType: Roles.client,
+                        // userType.id: RoleId.client,
                         clientId: id,
                         password: dto.password
                     });

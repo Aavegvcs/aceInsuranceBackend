@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/create-employee.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
 
 @Controller('employee')
 export class EmployeeController {
@@ -50,13 +51,22 @@ export class EmployeeController {
         return this.employeeService.createBranchManagersForAllBranches();
     }
     
+        @UseGuards(JwtInsAuthGuard)
     @Post('createInsuranceEmployee')
     async createInsuranceEmployee(@Body() createEmployeeDto: CreateEmployeeDto) {
         return this.employeeService.createInsuranceEmployee(createEmployeeDto);
     }
 
+        @UseGuards(JwtInsAuthGuard)
     @Patch('updateInsuranceEmployee')
     async updateInsuranceEmployee(@Body() reqBody:any) {
         return this.employeeService.updateInsuranceEmployee(reqBody);
+    }
+
+        @UseGuards(JwtInsAuthGuard)
+     @Post('deleteEmployee')
+    @ApiOperation({ summary: 'delete employee' })
+    async deleteEmployee(@Body() reqBody: any) {
+        return this.employeeService.deleteEmployee(reqBody);
     }
 }

@@ -23,8 +23,10 @@ import {
     Client_Type,
     Current_Step,
     Insurance_Type,
+    isUserAuthorizedToAccessTicket,
     MedicalDetails,
     Pre_Existing_Diseases,
+    RoleId,
     Roles,
     TICKET_LOG_EVENTS,
     Ticket_Status,
@@ -45,6 +47,7 @@ import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { Role } from '@modules/role/entities/role.entity';
 import Redis from 'ioredis';
 import { QuoteEntity } from '@modules/insurance-quotations/entities/quote.entity';
+import { RoleService } from '@modules/role/role.service';
 // import { InjectQueue } from '@nestjs/bull';
 // import { Queue } from 'bull';
 @Injectable()
@@ -94,7 +97,8 @@ export class InsuranceTicketService {
 
         private readonly ticketNotiService: TicketNotificationService,
         private readonly loggedInsUserService: LoggedInsUserService,
-        @Inject('REDIS_CLIENT') private readonly redisClient: Redis
+        @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
+        private readonly roleService: RoleService
     ) {}
 
     async createTicket(requestParam: CreateInsuranceTicketDto, req: any): Promise<InsuranceTicket> {
@@ -231,9 +235,9 @@ export class InsuranceTicketService {
         }
 
         let agentId = null;
-        if (loggedInUser.userType == Roles.staff) {
+        if (loggedInUser.userType.id == RoleId.staff) {
             agentId = loggedInUser.id;
-        } else if (loggedInUser.userType == Roles.superadmin || loggedInUser.userType == Roles.admin) {
+        } else if (loggedInUser.userType.id == RoleId.superadmin || loggedInUser.userType.id == RoleId.admin) {
             agentId = null;
         } else {
             agentId = reqObj.agentId;
@@ -253,7 +257,7 @@ export class InsuranceTicketService {
             agentId,
             reqObj.fromDate,
             reqObj.toDate,
-            loggedInUser.userType
+            loggedInUser.userType.id
         ]);
         const tickets = result[0];
         // await this.redisClient.set(cacheKey, JSON.stringify(tickets), 'EX', 300);
@@ -272,7 +276,7 @@ export class InsuranceTicketService {
 
     async createInsuranceTicket(reqBody: any, req: any): Promise<any> {
         // let userEntity = req.user ? await this.userRepo.findOne({ where: { email: req.user.email } }) : null;
-        let userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
+        let userEntity = await this.loggedInsUserService.getCurrentUser();
 
         if (!userEntity) {
             return {
@@ -282,9 +286,7 @@ export class InsuranceTicketService {
             };
         }
         let { userDetails, ticketDetails } = reqBody;
-        // console.log('in api user details is ', userDetails);
         let assignPerson = await this.userRepo.findOne({ where: { id: ticketDetails.assignedTo } });
-
         // Initial response object
         const response = {
             status: 'success',
@@ -343,7 +345,7 @@ export class InsuranceTicketService {
         try {
             const existingUser = await this.insUserRepo.findOne({ where: { primaryContactNumber } });
 
-            // Step 1: Handle User Details
+            // Step 1: Handle User Details(check if user is new. in this if new client selected then check either user is exist or not. and if other selected then check again it should exists. then it update)
             if (ticketDetails.clientType === Client_Type.NEW_CLIENT) {
                 if (existingUser) {
                     return {
@@ -373,6 +375,7 @@ export class InsuranceTicketService {
                     permanentCity,
                     permanentState,
                     permanentPinCode,
+                    branch: userEntity.branch,
                     documents: userDocuments,
                     createdBy: userEntity
                 });
@@ -449,7 +452,7 @@ export class InsuranceTicketService {
                 nomineeMobileNumber: ticketDetails.nomineeMobileNumber || null,
                 nomineeEmailId: ticketDetails.nomineeEmailId || null,
                 assignTo: assignPerson, // hardcoded as per original
-                barnchId: branch,
+                branch: branch,
                 documents: ticketDetails.documents || null,
                 currentStepStart: Current_Step.INITIAL_REVIEW,
                 currentStepStartAt: new Date(),
@@ -520,11 +523,10 @@ export class InsuranceTicketService {
     async getTicketDetails(ticketId: number): Promise<TicketResponse> {
         try {
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
-
             if (!loggedInUser) {
                 throw new UnauthorizedException('User not logged in');
             }
-            const userRole = loggedInUser.userType;
+            const userRole = loggedInUser.userType.roleName;
             // Optimized query with specific relations
             const ticket = await this.ticketRepo
                 .createQueryBuilder('ticket')
@@ -537,8 +539,11 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('ticket.insuredPersons', 'insuredPersons')
                 .leftJoinAndSelect('ticket.insuredMedical', 'insuredMedical')
                 .leftJoinAndSelect('ticket.assignTo', 'assignTo') // ← add this line
+                .leftJoinAndSelect('ticket.createdBy', 'createdBy')
+                .leftJoinAndSelect('createdBy.branch', 'branch')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
+            // console.log("toicket detailslskjdkfjdk", ticket);
 
             if (!ticket) {
                 return {
@@ -556,14 +561,7 @@ export class InsuranceTicketService {
                 };
             }
 
-            const isAllowed =
-                userRole === 'admin' ||
-                userRole === 'superadmin' ||
-                (userRole === 'teleCaller' && ticket.isDocumentCollected === true) ||
-                (!['admin', 'superadmin', 'teleCaller'].includes(userRole) &&
-                    (ticket.assignTo?.id === loggedInUser.id || ticket.createdBy?.id === loggedInUser.id));
-
-            if (!isAllowed) {
+            if (!isUserAuthorizedToAccessTicket(loggedInUser, ticket)) {
                 return {
                     status: 'error',
                     message: 'You are not authorized to view this ticket',
@@ -810,16 +808,19 @@ export class InsuranceTicketService {
 
                 // Here if isDocumentCollected is true, then step will be changed to DOCUMENT_COLLECTED
                 if (reqBody.markDocumentCollected && !ticket.isDocumentCollected) {
-                    // console.log('if marks as document and is doc is false');
+                    // const  currenttime = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes
+
                     updatePayload.currentStepStart = Current_Step.DOCUMENT_COLLECTED;
                     updatePayload.currentStepStartAt = new Date();
                     updatePayload.nextStepStart = Current_Step.QUOTATION_GENERATED;
                     updatePayload.nextStepDeadline = addHours(1);
+                    // updatePayload.nextStepDeadline = currenttime;
                     updatePayload.isDocumentCollected = true;
                     await this.ticketNotiService.scheduleDeadlineNotification(
                         ticketId,
                         Current_Step.DOCUMENT_COLLECTED,
                         addHours(1)
+                        //  currenttime
                     );
 
                     await manager.query('CALL log_insuranceTicket(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
@@ -851,19 +852,6 @@ export class InsuranceTicketService {
                     const existingMedical = await manager.findOne(ProposersMedical, {
                         where: { ticketId: { id: ticketId } }
                     });
-
-                    // Prepare documents object
-                    // let documents: { [key: string]: string } = existingMedical?.documents
-                    //     ? JSON.parse(existingMedical.documents)
-                    //     : {};
-                    // if (typeof documents !== 'object' || documents === null) documents = {};
-
-                    // if (medicalDetails.dischargeSummary) {
-                    //     documents.dischargeSummary = medicalDetails.dischargeSummary; // Map to dischargeSummary
-                    // }
-                    // if (medicalDetails.diagnosticReport) {
-                    //     documents.diagnosticReport = medicalDetails.diagnosticReport; // Map to diagnosticReport
-                    // }
 
                     if (existingMedical) {
                         await manager.update(ProposersMedical, existingMedical.id, {
@@ -1216,10 +1204,10 @@ export class InsuranceTicketService {
             await this.ticketRepo.update(ticketId, updateData);
             // console.log('updateData', updateData);
             if (ticketStatus === Ticket_Status.CLOSED) {
-                console.log('in closed status');
+                // console.log('in closed status');
 
-                // currentStepTimeline = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes
-                currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2 days
+                 currentStepTimeline = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes
+                // currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2 days
                 await this.ticketNotiService.scheduleEscalationCase(
                     ticket.id,
                     Current_Step.CLOSED,
@@ -1285,10 +1273,7 @@ export class InsuranceTicketService {
                 },
                 relations: ['insuranceUserId', 'assignTo']
             });
-            // console.log('ticket detial', ticket);
 
-            //  console.log("log is 1", ticketId,  ticket?.insuranceUserId.id ,ticket?.assignTo.id, userEntity.id );
-            // console.log('log is 1', ticketId, ticket?.insuranceUserId.id, ticket?.assignTo?.id, userEntity.id);
             if (!ticket) {
                 return {
                     status: 'error',
@@ -1296,8 +1281,7 @@ export class InsuranceTicketService {
                     data: { ticketId }
                 };
             }
-            const now = new Date();
-            const twoMinutesLater = new Date(now.getTime() + 1 * 60 * 1000);
+
             switch (currentStep) {
                 case Current_Step.PAYMENT_LINK_GENERATED:
                     if (ticket.currentStepStart !== Current_Step.CUSTOMER_APPROVED) {
@@ -1310,8 +1294,8 @@ export class InsuranceTicketService {
                     ticket.currentStepStart = Current_Step.PAYMENT_LINK_GENERATED;
                     ticket.nextStepStart = Current_Step.PAYMENT_CONFIRMED;
                     ticket.paymentRemarks = paymentRemarks;
-                    // ticket.nextStepDeadline = addHours(4);
-                    ticket.nextStepDeadline = twoMinutesLater;
+                    ticket.nextStepDeadline = addHours(4);
+                    // ticket.nextStepDeadline = twoMinutesLater;
 
                     break;
 
@@ -1393,9 +1377,9 @@ export class InsuranceTicketService {
                 ticket?.assignTo?.id || null,
                 Ticket_Status.IN_PROGRESS,
                 TICKET_LOG_EVENTS.TICKET_STATUS_CHANGED,
-                ticket.currentStepStart, //Current_Step.DOCUMENT_COLLECTED,
-                ticket.currentStepStartAt, //ticket.nextStepDeadline,
-                ticket.nextStepStart, //Current_Step.DOCUMENT_COLLECTED,
+                ticket.currentStepStart,
+                ticket.currentStepStartAt,
+                ticket.nextStepStart,
                 ticket.nextStepDeadline,
                 ticket.insuranceType,
                 ticket.agentRemarks,

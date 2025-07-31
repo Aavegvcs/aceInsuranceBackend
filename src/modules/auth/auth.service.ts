@@ -139,21 +139,21 @@ export class AuthService {
         return await this.generateJWTViaId({ genericId: genericId, userType: user.userType }, 'otp', '1d');
     }
 
-    async login(req: any): Promise<any> {
-        const dbUser = await this.userService.findOneByEmail(req.user.email);
+    // async login(req: any): Promise<any> {
+    //     const dbUser = await this.userService.findOneByEmail(req.user.email);
 
-        if (!dbUser) throw new NotAcceptableException(['Invalid Token']);
+    //     if (!dbUser) throw new NotAcceptableException(['Invalid Token']);
 
-        if ([Roles.staff].includes(dbUser?.userType as Roles) && dbUser.status === USER_STATUS.IN_ACTIVE) {
-            throw new BadRequestException('In-Active User cannot be logged in.');
-        }
+    //     if ([Roles.staff].includes(dbUser?.userType.id as Roles) && dbUser.status === USER_STATUS.IN_ACTIVE) {
+    //         throw new BadRequestException('In-Active User cannot be logged in.');
+    //     }
 
-        const newOTP = generateOTP();
-        await this.userService.findAndUpdate(req.user.email, { otp: newOTP });
-        await this.notifyService.sendOTP(req.user.email, newOTP);
+    //     const newOTP = generateOTP();
+    //     await this.userService.findAndUpdate(req.user.email, { otp: newOTP });
+    //     await this.notifyService.sendOTP(req.user.email, newOTP);
 
-        return await this.generateJWT({ email: dbUser.email }, 'otp', '2d');
-    }
+    //     return await this.generateJWT({ email: dbUser.email }, 'otp', '2d');
+    // }
 
     async resendOTP(email: string): Promise<any> {
         const dbUser = await this.userService.findOneByEmail(email);
@@ -250,69 +250,69 @@ export class AuthService {
         });
     }
 
-    async verifyOTP(requestedOTP: string, req: any): Promise<any> {
-        const { user } = req;
-        const { genericId, userType } = user;
+    // async verifyOTP(requestedOTP: string, req: any): Promise<any> {
+    //     const { user } = req;
+    //     const { genericId, userType } = user;
 
-        // Fetch user from DB
-        const dbUser = await this.userService.findOneByGenericId(userType, genericId);
-        if (!dbUser) throw new NotAcceptableException('Invalid Token');
+    //     // Fetch user from DB
+    //     const dbUser = await this.userService.findOneByGenericId(userType, genericId);
+    //     if (!dbUser) throw new NotAcceptableException('Invalid Token');
 
-        // Validate OTP
-        if (requestedOTP !== dbUser.otp) throw new NotAcceptableException('Invalid OTP');
+    //     // Validate OTP
+    //     if (requestedOTP !== dbUser.otp) throw new NotAcceptableException('Invalid OTP');
 
-        // Generate new access token
-        const token = await this.generateJWTViaId({ genericId, userType }, 'all');
+    //     // Generate new access token
+    //     const token = await this.generateJWTViaId({ genericId, userType }, 'all');
 
-        // Update user status and last login
-        const updates: Partial<typeof dbUser> = {
-            lastLogin: new Date(),
-            accessToken: token,
-            ...(dbUser.status !== 'active' && { status: 'active' })
-        };
+    //     // Update user status and last login
+    //     const updates: Partial<typeof dbUser> = {
+    //         lastLogin: new Date(),
+    //         accessToken: token,
+    //         ...(dbUser.status !== 'active' && { status: 'active' })
+    //     };
 
-        await this.userService.findAndUpdateById(userType, genericId, updates);
+    //     await this.userService.findAndUpdateById(userType, genericId, updates);
 
-        // Build user query with dynamic joins
-        const query = this.userRepository
-            .createQueryBuilder('user')
-            .leftJoinAndSelect('user.company', 'company')
-            .leftJoinAndSelect('user.state', 'state')
-            .leftJoinAndSelect(
-                userType === Roles.client ? 'user.client' : 'user.employee',
-                userType === Roles.client ? 'client' : 'employee'
-            )
-            .leftJoinAndSelect(userType === Roles.client ? 'client.branch' : 'employee.branch', 'branch');
+    //     // Build user query with dynamic joins
+    //     const query = this.userRepository
+    //         .createQueryBuilder('user')
+    //         .leftJoinAndSelect('user.company', 'company')
+    //         .leftJoinAndSelect('user.state', 'state')
+    //         .leftJoinAndSelect(
+    //             userType === Roles.client ? 'user.client' : 'user.employee',
+    //             userType === Roles.client ? 'client' : 'employee'
+    //         )
+    //         .leftJoinAndSelect(userType === Roles.client ? 'client.branch' : 'employee.branch', 'branch');
 
-        // Apply where condition based on userType
-        const detailedUser = await query
-            .where(userType === Roles.client ? 'user.clientId = :genericId' : 'user.employeeId = :genericId', {
-                genericId
-            })
-            .getOne();
+    //     // Apply where condition based on userType
+    //     const detailedUser = await query
+    //         .where(userType === Roles.client ? 'user.clientId = :genericId' : 'user.employeeId = :genericId', {
+    //             genericId
+    //         })
+    //         .getOne();
 
-        if (!detailedUser) throw new NotFoundException('User details not found');
+    //     if (!detailedUser) throw new NotFoundException('User details not found');
 
-        // Fetch role info and permissions
-        const [dbRole, allPermissions] = await Promise.all([
-            this.roleService.findOneByName(detailedUser.userType),
-            this.userFeatureActionService.findOne(dbUser.id)
-        ]);
+    //     // Fetch role info and permissions
+    //     const [dbRole, allPermissions] = await Promise.all([
+    //         this.roleService.findOneByName(detailedUser.userType),
+    //         this.userFeatureActionService.findOne(dbUser.id)
+    //     ]);
 
-        const roleName = dbRole?.roleName ?? null;
-        const genericEntity = userType === Roles.client ? detailedUser.client : detailedUser.employee;
+    //     const roleName = dbRole?.roleName ?? null;
+    //     const genericEntity = userType === Roles.client ? detailedUser.client : detailedUser.employee;
 
-        return {
-            token,
-            user: {
-                ...detailedUser,
-                features: allPermissions ?? null,
-                role: dbRole ? { name: roleName, id: dbRole.id } : null
-            },
-            genericId: genericEntity?.id ?? null,
-            branchId: genericEntity?.branch?.id ?? null
-        };
-    }
+    //     return {
+    //         token,
+    //         user: {
+    //             ...detailedUser,
+    //             features: allPermissions ?? null,
+    //             role: dbRole ? { name: roleName, id: dbRole.id } : null
+    //         },
+    //         genericId: genericEntity?.id ?? null,
+    //         branchId: genericEntity?.branch?.id ?? null
+    //     };
+    // }
 
     async loginBypassOTP(req: any): Promise<any> {
         const user = req.user;
@@ -365,89 +365,89 @@ export class AuthService {
         return token;
     }
 
-    async validateAccessToken(token: string): Promise<any> {
-        // Logger.log('Validating token:', token);
-        let decoded: any = null;
-        try {
-            decoded = await this.jwtService.verify(token, {
-                secret: await this.secretService?.getSecret('JWT_ACCESS_SECRET')
-            });
-            // Logger.log('Decoded token:', decoded);
-        } catch (error) {
-            Logger.error('Token verification failed:', error.message);
-            throw new UnauthorizedException('Invalid token');
-        }
+    // async validateAccessToken(token: string): Promise<any> {
+    //     // Logger.log('Validating token:', token);
+    //     let decoded: any = null;
+    //     try {
+    //         decoded = await this.jwtService.verify(token, {
+    //             secret: await this.secretService?.getSecret('JWT_ACCESS_SECRET')
+    //         });
+    //         // Logger.log('Decoded token:', decoded);
+    //     } catch (error) {
+    //         Logger.error('Token verification failed:', error.message);
+    //         throw new UnauthorizedException('Invalid token');
+    //     }
 
-        const { genericId, userType } = decoded;
+    //     const { genericId, userType } = decoded;
 
-        // Fetch user from DB using genericId and userType
-        const dbUser = await this.userService.findOneByGenericId(userType, genericId);
-        if (!dbUser) {
-            Logger.error(`User not found for genericId: ${genericId}, userType: ${userType}`);
-            throw new NotAcceptableException('User not found');
-        }
+    //     // Fetch user from DB using genericId and userType
+    //     const dbUser = await this.userService.findOneByGenericId(userType, genericId);
+    //     if (!dbUser) {
+    //         Logger.error(`User not found for genericId: ${genericId}, userType: ${userType}`);
+    //         throw new NotAcceptableException('User not found');
+    //     }
 
-        // Build base query
-        let query = this.userRepository
-            .createQueryBuilder('user')
-            .leftJoinAndSelect('user.company', 'company')
-            .leftJoinAndSelect('user.state', 'state');
+    //     // Build base query
+    //     let query = this.userRepository
+    //         .createQueryBuilder('user')
+    //         .leftJoinAndSelect('user.company', 'company')
+    //         .leftJoinAndSelect('user.state', 'state');
 
-        // Conditionally join the relevant table
-        if (dbUser.userType === Roles.client) {
-            query = query.leftJoinAndSelect('user.client', 'client').leftJoinAndSelect('client.branch', 'branch');
-        } else {
-            query = query.leftJoinAndSelect('user.employee', 'employee').leftJoinAndSelect('employee.branch', 'branch');
-        }
+    //     // Conditionally join the relevant table
+    //     if (dbUser.userType === Roles.client) {
+    //         query = query.leftJoinAndSelect('user.client', 'client').leftJoinAndSelect('client.branch', 'branch');
+    //     } else {
+    //         query = query.leftJoinAndSelect('user.employee', 'employee').leftJoinAndSelect('employee.branch', 'branch');
+    //     }
 
-        // Execute query using genericId
-        const detailedUser = await query
-            .where(dbUser.userType === Roles.client ? 'user.clientId = :genericId' : 'user.employeeId = :genericId', {
-                genericId
-            })
-            .getOne();
+    //     // Execute query using genericId
+    //     const detailedUser = await query
+    //         .where(dbUser.userType === Roles.client ? 'user.clientId = :genericId' : 'user.employeeId = :genericId', {
+    //             genericId
+    //         })
+    //         .getOne();
 
-        if (!detailedUser) {
-            Logger.error(`Detailed user not found for genericId: ${genericId}`);
-            throw new NotFoundException('User details not found');
-        }
+    //     if (!detailedUser) {
+    //         Logger.error(`Detailed user not found for genericId: ${genericId}`);
+    //         throw new NotFoundException('User details not found');
+    //     }
 
-        // Get Role Information
-        const dbRole = await this.roleService.findOneByName(detailedUser.userType);
-        const roleName = dbRole?.roleName ?? null;
+    //     // Get Role Information
+    //     const dbRole = await this.roleService.findOneByName(detailedUser.userType);
+    //     const roleName = dbRole?.roleName ?? null;
 
-        // Fetch user permissions
-        const allPermissions = await this.userFeatureActionService.findOne(dbUser.id);
+    //     // Fetch user permissions
+    //     const allPermissions = await this.userFeatureActionService.findOne(dbUser.id);
 
-        // Assign correct entity (Client or Employee)
-        const genericEntity = dbUser.userType === Roles.client ? detailedUser.client : detailedUser.employee;
+    //     // Assign correct entity (Client or Employee)
+    //     const genericEntity = dbUser.userType === Roles.client ? detailedUser.client : detailedUser.employee;
 
-        // Generate JWT Token with clientId/employeeId and userType
-        const tokenPayload = {
-            userType: userType,
-            genericId: genericId
-        };
-        const accessToken = await this.generateJWTViaId(tokenPayload, 'all');
-        return {
-            token: accessToken,
-            user: {
-                ...detailedUser,
-                features: allPermissions ?? null,
-                role: dbRole ? { name: roleName, id: dbRole.id } : null
-            },
-            genericId: genericEntity?.id ?? null,
-            branchId: genericEntity?.branch?.id ?? null
-        };
-    }
+    //     // Generate JWT Token with clientId/employeeId and userType
+    //     const tokenPayload = {
+    //         userType: userType,
+    //         genericId: genericId
+    //     };
+    //     const accessToken = await this.generateJWTViaId(tokenPayload, 'all');
+    //     return {
+    //         token: accessToken,
+    //         user: {
+    //             ...detailedUser,
+    //             features: allPermissions ?? null,
+    //             role: dbRole ? { name: roleName, id: dbRole.id } : null
+    //         },
+    //         genericId: genericEntity?.id ?? null,
+    //         branchId: genericEntity?.branch?.id ?? null
+    //     };
+    // }
 
-    async captcha(token: any): Promise<any> {
-        const recaptchaResponse = await axios.post(
-            `https://www.google.com/recaptcha/api/siteverify?secret=${await this.secretService?.getSecret('RECAPTCHA_SECRET_KEY')}&response=${token}`
-        );
-        console.log('recaptchaResponse--  ', recaptchaResponse);
-        if (!!recaptchaResponse.data.success === false) throw new Error();
-        return { isValid: true };
-    }
+    // async captcha(token: any): Promise<any> {
+    //     const recaptchaResponse = await axios.post(
+    //         `https://www.google.com/recaptcha/api/siteverify?secret=${await this.secretService?.getSecret('RECAPTCHA_SECRET_KEY')}&response=${token}`
+    //     );
+    //     console.log('recaptchaResponse--  ', recaptchaResponse);
+    //     if (!!recaptchaResponse.data.success === false) throw new Error();
+    //     return { isValid: true };
+    // }
 
     async forgotPass({ id, forgot = true }: { id: string; forgot?: boolean }): Promise<any> {
         let htmlContent: string = null;
@@ -621,7 +621,6 @@ export class AuthService {
     }
 
     async loginInsuranceUser(reqBody: any, req: any): Promise<any> {
-        // let user = await this.userService.findOneByEmail(reqBody.email);
         let user = await this.userRepository.findOne({
             where: {
                 email: reqBody.email,
@@ -643,15 +642,29 @@ export class AuthService {
             throw new BadRequestException('wrong password');
         }
 
-        let query = this.userRepository
-            .createQueryBuilder('user')
-            .leftJoinAndSelect('user.company', 'company')
-            .leftJoinAndSelect('user.state', 'state')
-            .leftJoinAndSelect('user.employee', 'employee')
-            .leftJoinAndSelect('employee.branch', 'branch');
-        const detailedUser = await query.where('user.id = :id', { id: user.id }).getOne();
-        const dbRole = await this.roleService.findOneByName(detailedUser.userType);
-        const roleName = dbRole?.roleName ?? null;
+        // let query = this.userRepository
+        //     .createQueryBuilder('user')
+        //     .leftJoinAndSelect('user.company', 'company')
+        //     .leftJoinAndSelect('user.state', 'state')
+        //     .leftJoinAndSelect('user.employee', 'employee')
+        //     .leftJoinAndSelect('employee.branch', 'branch');
+        // const detailedUser = await query.where('user.id = :id', { id: user.id }).getOne();
+
+        const detailedUser = await this.userRepository.findOne({
+            where: {
+                id: user.id,
+                company: { id: 1 }
+            },
+            relations: ['userType', 'company', 'state', 'branch', 'department']
+        });
+
+        // console.log("this is db user---", detailedUser);
+
+        // const dbRole = await this.roleService.findOneById(Number(detailedUser.userType));
+        const roleId = detailedUser.userType.id;
+        const roleName = detailedUser.userType.roleName ?? null;
+
+        // const roleName = dbRole?.roleName ?? null;
 
         const permissionResult = await this.userRepository.query('CALL get_roleAccess(?)', [roleName]);
         const permissionsByType = permissionResult[0].reduce((acc, { type, name }) => {
@@ -668,7 +681,8 @@ export class AuthService {
             user: {
                 ...detailedUser,
                 //features: user.allPermissions ?? null,
-                role: dbRole ? { name: roleName, id: dbRole.id } : null,
+                // role: dbRole ? { name: roleName, id: dbRole.id } : null,
+                role: detailedUser.userType ? { name: roleName, id: roleId } : null,
                 permissions: permissionsByType
             }
         };
@@ -773,7 +787,7 @@ export class AuthService {
         try {
             const { email, oldPassword, newPassword } = reqBody;
 
-            const company = await this.companyService.findOneBy({ id: 2 });
+            const company = await this.companyService.findOneBy({ id: 1 });
             // console.log('in change password service company', company);
 
             let user = await this.userRepository.findOne({
@@ -844,7 +858,7 @@ export class AuthService {
             const { email } = reqBody;
             // console.log('email', email);
 
-            const company = await this.companyService.findOneBy({ id: 2 });
+            const company = await this.companyService.findOneBy({ id: 1 });
 
             const user = await this.userRepository.findOne({
                 where: {

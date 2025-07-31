@@ -262,7 +262,7 @@ export class InsuranceQuotationService {
                         'Vehicle No.',
                         'Vehicle Model & Make'
                     ];
-    
+
                     const vehicleRows = [
                         [
                             data.vehicleDetails.rcOwnerName || 'N/A',
@@ -519,13 +519,13 @@ export class InsuranceQuotationService {
             const ticketData = await this.ticketRepo
                 .createQueryBuilder('ticket')
                 .leftJoinAndSelect('ticket.insuranceUserId', 'insuranceUserId')
-                .leftJoinAndSelect('ticket.barnchId', 'barnchId')
+                .leftJoinAndSelect('ticket.branch', 'branch')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
             const customerEmail = ticketData.insuranceUserId.emailId;
             const customerName = ticketData.insuranceUserId.name;
-            const branchManager = ticketData.barnchId.contactPerson;
-            const branchPhone = ticketData.barnchId.phone;
+            const branchManager = ticketData?.branch?.contactPerson;
+            const branchPhone = ticketData?.branch?.phone;
 
             await this.emailService.sendEmailWithAttachments(
                 customerEmail,
@@ -699,7 +699,7 @@ export class InsuranceQuotationService {
                 ticket.othersRemarks,
                 userEntity.id
             ]);
-        const result=    await this.ticketNotiService.scheduleDeadlineNotification(
+            const result = await this.ticketNotiService.scheduleDeadlineNotification(
                 ticketId,
                 Current_Step.QUOTATION_GENERATED,
                 addDays(3)
@@ -951,11 +951,26 @@ export class InsuranceQuotationService {
                     nextStep = Current_Step.REVISED_AND_UPDATE;
                     break;
                 case Current_Step.REVISED_AND_UPDATE:
+                    if (ticket.currentStepStart === Current_Step.REVISED_AND_UPDATE) {
+                        return {
+                            status: 'error',
+                            message: 'Status Already changed to Revised and update'
+                        };
+                    }
                     nextStep = Current_Step.CUSTOMER_APPROVED;
                     break;
                 case Current_Step.CUSTOMER_APPROVED:
+                    if (ticket.currentStepStart === Current_Step.CUSTOMER_APPROVED) {
+                        return {
+                            status: 'error',
+                            message: 'Already aproved by customer'
+                        };
+                    }
+            //         const now = new Date();
+            // const twoMinutesLater = new Date(now.getTime() + 1 * 60 * 1000);
                     nextStep = Current_Step.PAYMENT_LINK_GENERATED;
                     nextStepDeadline = addHours(24);
+                    // nextStepDeadline = twoMinutesLater;
                     // write code for update isProductSelected and selectedProduct
                     await this.ticketRepo.update(ticket.id, {
                         isProductSelected: true,
@@ -1010,10 +1025,13 @@ export class InsuranceQuotationService {
                 ]);
 
                 if (status === Current_Step.CUSTOMER_APPROVED) {
+            //          const now = new Date();
+            // const twoMinutesLater = new Date(now.getTime() + 1 * 60 * 1000);
                     await this.ticketNotiService.scheduleDeadlineNotification(
                         ticketId,
                         Current_Step.CUSTOMER_APPROVED,
                         addHours(24)
+                        // twoMinutesLater
                     );
                 }
 

@@ -217,7 +217,7 @@ export enum ReportType {
     MONTHLY_SETTLEMENT = 'monthly-settlement',
     QUARTERLY_SETTLEMENT = 'quarterly-settlement',
     BRANCH_TARGET = 'branch-target',
-    ANNUAL_BRANCH_REPORT = 'annual-branch-report',
+    ANNUAL_BRANCH_REPORT = 'annual-branch-report'
 }
 export const reportTypeArr = [
     ReportType.SEGMENT_REVENUE,
@@ -298,6 +298,21 @@ export enum Roles {
     'insuranceManager' = 'insuranceManager',
     'teleCaller' = 'teleCaller',
     'insuranceAgent' = 'insuranceAgent'
+}
+
+// this will be same as Role table values
+export enum RoleId {
+    'superadmin' = 1,
+    'admin' = 2,
+    'client' = 3,
+    'insuranceAgent' = 4,
+    'dealer' = 5,
+    'staff' = 6,
+    'teleCaller' = 7,
+    'stateHead' = 8,
+    'branchManager' = 9,
+    'insuranceManager' = 10,
+    'productHead' = 11
 }
 export type RoleType = keyof typeof Roles;
 export const rolesArr = [Roles.admin, Roles.client, Roles.staff];
@@ -880,7 +895,6 @@ export enum InsuranceModuleType {
     admin = 'admin'
 }
 
-
 // export enum InsurancePermissionType {
 //     Route = 'route',
 //     Button = 'button',
@@ -891,7 +905,6 @@ export enum InsuranceModuleType {
 //     admin = 'admin'
 // }
 
-
 export enum InsurancePermissionType {
     Route = 'route',
     Button = 'button',
@@ -900,4 +913,19 @@ export enum InsurancePermissionType {
     Menu = 'menu',
     Field = 'field',
     All = 'all'
+}
+
+// this function check to which person can access this ticket details
+export function isUserAuthorizedToAccessTicket(user: User, ticket: any): boolean {
+    const role = user.userType.roleName;
+    const branchRoles = ['teleCaller', 'insuranceManager', 'productHead'];
+    console.log("here role is in auhto---", role, user.branch.id, ticket.createdBy.branch.id );
+    
+    if (['admin', 'superadmin'].includes(role)) return true;
+    // Check if the role is one of branch-level roles
+    if (branchRoles.includes(role)) {
+        return user.branch?.id === ticket.createdBy?.branch?.id;
+    }
+    // Default: only assigned or created by
+    return ticket.assignTo?.id === user.id || ticket.createdBy?.id === user.id;
 }

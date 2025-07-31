@@ -78,8 +78,6 @@ export class TicketNotificationService {
         if (existingJob) {
             await existingJob.remove(); // reschedule if needed
         }
-
-        console.log('in scheduleEscalationNotification', delay);
         if (delay > 0) {
             await this.queue.add(
                 'sendEscalationNotification',

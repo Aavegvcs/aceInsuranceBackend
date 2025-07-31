@@ -6,7 +6,7 @@ import { EscalationCase } from './entities/escalation-case.entity';
 import { promises } from 'dns';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { User } from '@modules/user/user.entity';
-import { Current_Step, Roles } from 'src/utils/app.utils';
+import { Current_Step, RoleId, Roles } from 'src/utils/app.utils';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { TicketNotificationService } from './ticket-notification-service';
 
@@ -48,90 +48,6 @@ export class InsuranceEscalationService {
         }
     }
 
-    // async createEscalationDetails(body: any, req: any): Promise<any> {
-    //     try {
-    //         const {
-    //             caseId,
-    //             isProductSuggested,
-    //             suggestedProduct,
-    //             whyNotSuggestedReason,
-    //             gotResponseFromCustomer,
-    //             responseFromCustomer,
-    //             responseReceivedOn
-    //         } = body;
-    //         // console.log('case id is ---------------', caseId);
-    //         const loggedInUser = this.loggedInsUserService.getCurrentUser();
-    //         console.log('loggedInUser in proposer', loggedInUser.id);
-    //         const caseEntity = await this.caseRepo.findOne({
-    //             where: { id: caseId },
-    //             relations: ['ticket']
-    //         });
-    //         if (!caseEntity) {
-    //             throw new Error('Case not found');
-    //         }
-    //         const ticket = await this.ticketRepo.findOne({ where: { id: caseEntity.ticket.id } });
-
-    //         if (!ticket) {
-    //             throw new Error('Ticket not found');
-    //         }
-    //        const existeingCase =  await this.caseRepo.findOne({where: {id: caseEntity.id}});
-
-    //         const escalation = await this.escalationRepo.create({
-    //             case: caseEntity,
-    //             isProductSuggested,
-    //             suggestedProduct,
-    //             whyNotSuggestedReason,
-    //             gotResponseFromCustomer,
-    //             responseReceivedOn,
-    //             responseFromCustomer,
-    //             createdBy: loggedInUser,
-    //             createdAt: new Date()
-    //         });
-
-    //         // Conditional notification logic
-    //         existeingCase.caseStatus = 'inprogress';
-    //         if (!isProductSuggested) {
-    //             escalation.notifiedToHigherStaff = true;
-    //             escalation.reasonNotified = 'Agent failed to suggest product or inform client';
-    //             escalation.escalatedOn = new Date();
-    //             existeingCase.caseStatus ='closed'
-    //             // sendNotificationToManager(caseEntity); // optional external logic
-    //         }
-    //         if (isProductSuggested && gotResponseFromCustomer === false) {
-    //             escalation.needTeleCall = true;
-    //         }
-    //         const result = await this.escalationRepo.save(escalation);
-    //         if(result){
-    //             await this.caseRepo.save(existeingCase);
-    //         }
-    //         if (!isProductSuggested) {
-    //             const productHeads = await this.userRepo.find({
-    //                 where: { userType: Roles.productHead, status: 'active', company: { id: 2 } }
-    //             });
-    //             //   console.log("in sclation service product head", productHeads)
-    //             for (const head of productHeads) {
-    //                 const message = `Ticket ${ticket.ticketNumber} Agent failed to suggest product or inform customer.`;
-    //                 await this.notificationService.createAndSendEscalationNotification(
-    //                     ticket,
-    //                     'escalation',
-    //                     head,
-    //                     message,
-    //                     ticket.currentStepStart,
-    //                     ticket.nextStepStart,
-    //                     loggedInUser,
-    //                     ticket.nextStepDeadline
-    //                 );
-    //             }
-    //         }
-    //         return {
-    //             status: 'success',
-    //             message: 'Escalation details created successfully',
-    //             data: null
-    //         };
-    //     } catch (error) {
-    //         throw new Error(error.message);
-    //     }
-    // }
     async createEscalationDetails(body: any, req: any): Promise<any> {
         try {
             const {
@@ -196,10 +112,15 @@ export class InsuranceEscalationService {
             if (!isProductSuggested) {
                 const productHeads = await this.userRepo.find({
                     where: {
-                        userType: Roles.productHead,
-                        status: 'active',
-                        company: { id: 2 }
-                    }
+                        isActive: true,
+                        userType: {
+                            id: RoleId.productHead
+                        },
+                        branch: {
+                            id: ticket.branch.id
+                        }
+                    },
+                    relations: ['userType', 'branch']
                 });
 
                 const message = `Ticket ${ticket.ticketNumber} Agent failed to suggest product or inform customer.`;
@@ -242,7 +163,7 @@ export class InsuranceEscalationService {
 
             const query = 'call get_escalationCase(?, ?, ?, ?, ?, ?, ?)';
             const result = await this.caseRepo.query(query, [
-                loggedInUser.userType,
+                loggedInUser.userType.roleName,
                 loggedInUser.id,
                 caseStatus,
                 fromDate,
@@ -262,6 +183,7 @@ export class InsuranceEscalationService {
         }
     }
 
+    // this api get all cases for tellcaller to communicate customer
     async checkneedTeleCall(body: any, req): Promise<any> {
         try {
             const { caseId } = body;
@@ -316,7 +238,7 @@ export class InsuranceEscalationService {
             // console.log('loggedInUser in proposer', loggedInUser.id);
             // console.log('ticket id in update telli', caseEntity.ticket);
 
-            const ticket = await this.ticketRepo.findOne({ where: { id: caseEntity.ticket.id } });
+            const ticket = await this.ticketRepo.findOne({ where: { id: caseEntity.ticket.id }, relations: ['branch'] });
 
             if (!ticket) {
                 throw new Error('Ticket not found');
@@ -324,14 +246,21 @@ export class InsuranceEscalationService {
             const query = 'call update_telliCommEscalation(?, ?, ?)';
 
             const result = await this.caseRepo.query(query, [caseId, toldOtherProducts, reasonNotified]);
-            // console.log('result-------------------', result[0][0].status);
-            // Conditional notification logic
             if (result[0][0].status === 1) {
                 if (!toldOtherProducts) {
                     // sendNotificationToManager(caseEntity); // optional external logic
 
                     const productHeads = await this.userRepo.find({
-                        where: { userType: Roles.productHead, status: 'active', company: { id: 2 } }
+                        where: {
+                            isActive: true,
+                            userType: {
+                                id: RoleId.productHead
+                            },
+                            branch: {
+                                id: ticket.branch.id
+                            }
+                        },
+                        relations: ['userType', 'branch']
                     });
                     //   console.log("in sclation service product head", productHeads)
                     for (const head of productHeads) {

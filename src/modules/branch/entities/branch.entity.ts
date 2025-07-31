@@ -132,7 +132,7 @@ export class Branch extends BaseEntity {
     @OneToMany(() => Employee, (employee) => employee.branch)
     employees: Employee[];
 
-    @OneToMany(() => InsuranceTicket, (data) => data.barnchId)
+    @OneToMany(() => InsuranceTicket, (data) => data.branch)
     tickets: InsuranceTicket[];
 
     @OneToMany(() => User, (user) => user.branch)

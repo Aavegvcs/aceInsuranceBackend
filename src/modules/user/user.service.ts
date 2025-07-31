@@ -345,7 +345,7 @@ export class UserService {
         user.firstName = firstName;
         user.lastName = lastName;
         user.company = await this.companyService.findCompanyById(company); // companyId;
-        user.userType = (await this.roleService.findOne(roleId)).roleName;
+        // user.userType = (await this.roleService.findOne(roleId)).roleName;
         user.status = 'invitation sent';
         user.password = hashedPassword;
 
@@ -379,48 +379,48 @@ export class UserService {
             .getMany();
     }
 
-    async getUsersOfSameRoleForDashboard({
-        role,
-        userId,
-        companyId,
-        limit,
-        count,
-        users
-    }: {
-        role: Role;
-        userId?: number;
-        companyId?: number;
-        limit?: number;
-        count?: boolean;
-        users: User[];
-    }): Promise<any> {
-        if (count) {
-            return users.filter((user) => user?.userType === role.roleName).length;
-        }
+    // async getUsersOfSameRoleForDashboard({
+    //     role,
+    //     userId,
+    //     companyId,
+    //     limit,
+    //     count,
+    //     users
+    // }: {
+    //     role: Role;
+    //     userId?: number;
+    //     companyId?: number;
+    //     limit?: number;
+    //     count?: boolean;
+    //     users: User[];
+    // }): Promise<any> {
+    //     if (count) {
+    //         return users.filter((user) => user?.userType === role.roleName).length;
+    //     }
 
-        let usersWithCompanyInfo: any = null;
+    //     let usersWithCompanyInfo: any = null;
 
-        if (!limit) {
-            usersWithCompanyInfo = users
-                .filter((user) => user?.userType === role.roleName)
-                .sort((a, b) => {
-                    if (a.id < b.id) return 1;
-                    else if (a.id > b.id) return -1;
-                    return 0;
-                });
-        } else {
-            usersWithCompanyInfo = users
-                .filter((user) => user?.userType === role.roleName)
-                .sort((a, b) => {
-                    if (a.id < b.id) return 1;
-                    else if (a.id > b.id) return -1;
-                    return 0;
-                })
-                .slice(0, limit);
-        }
+    //     if (!limit) {
+    //         usersWithCompanyInfo = users
+    //             .filter((user) => user?.userType === role.roleName)
+    //             .sort((a, b) => {
+    //                 if (a.id < b.id) return 1;
+    //                 else if (a.id > b.id) return -1;
+    //                 return 0;
+    //             });
+    //     } else {
+    //         usersWithCompanyInfo = users
+    //             .filter((user) => user?.userType === role.roleName)
+    //             .sort((a, b) => {
+    //                 if (a.id < b.id) return 1;
+    //                 else if (a.id > b.id) return -1;
+    //                 return 0;
+    //             })
+    //             .slice(0, limit);
+    //     }
 
-        return usersWithCompanyInfo;
-    }
+    //     return usersWithCompanyInfo;
+    // }
 
     async getUserOfSameRole({
         dashboardRoute,
@@ -589,7 +589,7 @@ export class UserService {
             if (dbRole) {
                 const dbUserRole = await this.userRoleService.findByUserId(dbUser.id);
                 await this.userRoleService.updateUserRole(dbUserRole, { roleId });
-                dbUser.userType = dbRole.roleName;
+                // dbUser.userType = dbRole.roleName;
                 await this.userRepository.save(dbUser);
             }
         }
@@ -702,7 +702,7 @@ export class UserService {
 
     async setClientStatus(body: ClientStatusDto) {
         const dbUser = await this.findOneById(body?.clientId);
-        if (!dbUser || dbUser?.userType !== Roles.client) throw new NotFoundException('Client not found');
+        // if (!dbUser || dbUser?.userType !== Roles.client) throw new NotFoundException('Client not found');
 
         dbUser.status = body?.status;
 
@@ -796,7 +796,7 @@ export class UserService {
             result = await this.userRepository.query(query, [reqBody.companyId]);
             // console.log(result[0]);
         } catch (error) {
-             console.log('-api: backend/user/getUserByCompanyId', error.message);
+            console.log('-api: backend/user/getUserByCompanyId', error.message);
             throw new InternalServerErrorException(error.message);
         }
 
@@ -816,7 +816,21 @@ export class UserService {
     }
 
     async createInsuranceUser(data: any): Promise<any> {
-        const { email, firstName, lastName, roleId, company, phone, dateOfBirth, gender } = data;
+        // const { email, firstName, lastName, roleId, company, phone, dateOfBirth, gender } = data;
+        const {
+            email,
+            firstName,
+            lastName,
+            phone,
+            dateOfBirth,
+            gender,
+            roleId,
+            company,
+            branch,
+            department,
+            userType,
+            reportingOfficer
+        } = data;
 
         // let user: User = await this.findOneByEmail(email);
         const existsComany = await this.companyService.findCompanyById(company);
@@ -839,7 +853,11 @@ export class UserService {
         user.dateOfBirth = dateOfBirth;
         user.gender = gender;
         user.company = existsComany;
-        user.userType = (await this.roleService.findOne(roleId)).roleName;
+        user.branch = branch,
+        user.department = department;
+        user.userType = userType;
+        // user.userType = (await this.roleService.findOne(roleId)).roleName;
+        user.reportingOfficer = reportingOfficer;
         user.status = 'active';
         user.password = hashedPassword;
 
@@ -864,6 +882,20 @@ export class UserService {
             // console.log(result[0]);
         } catch (error) {
             // console.log('-api: backend/user/getUserById', error.message);
+            throw new InternalServerErrorException(error.message);
+        }
+
+        return result[0];
+    }
+
+    async getEmployeeRo(reqBody: any): Promise<any> {
+        let result = null;
+        try {
+            const query = 'CALL get_employeeRo()';
+            result = await this.userRepository.query(query);
+            console.log(result[0]);
+        } catch (error) {
+            console.log('-api: backend/user/getEmployeeRo', error.message);
             throw new InternalServerErrorException(error.message);
         }
 

@@ -6,7 +6,7 @@ import { LessThan, Repository } from 'typeorm';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceTicketNotification } from './entities/insurance-ticket-notification.entity';
-import { addDays, addHours, Current_Step, formatToCamelCase, Roles } from 'src/utils/app.utils';
+import { addDays, addHours, Current_Step, formatToCamelCase, RoleId, Roles } from 'src/utils/app.utils';
 import { InsuranceTicketDeviation } from './entities/insurance-notification-deviation.entity';
 import { insuranceTicketNotification } from 'src/utils/email-templates/insurance-notification/insurance-ticket-notification';
 import { InternalServerErrorException } from '@nestjs/common';
@@ -36,29 +36,41 @@ export class TicketNotificationProcessor {
     @Process('sendDeadlineNotification')
     async handleSendDeadlineNotification(job: Job) {
         try {
-            console.log('in notification processor??????????????????????????');
+            console.log('in notification processor👍');
             const { ticketId } = job.data;
             const now = new Date();
-            const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+            const ticket = await this.ticketRepo.findOne({
+                where: { id: ticketId },
+                relations: ['branch']
+            });
+            if (!ticket) throw new Error('Ticket not found');
+
             if (ticket && ticket.currentStepStart !== Current_Step.CLOSED && ticket.nextStepDeadline <= now) {
                 const managers = await this.userRepo.find({
-                    where: { userType: Roles.insuranceManager, status: 'active', company: { id: 2 } }
+                    where: {
+                        isActive: true,
+                        userType: {
+                            id: RoleId.insuranceManager
+                        },
+                        branch: {
+                            id: ticket.branch.id
+                        }
+                    },
+                    relations: ['userType', 'branch']
                 });
-                // console.log('in notification processor', managers);
-
                 const existingDeviation = await this._deviationRepo.findOne({
                     where: { ticket: { id: ticketId } }
                 });
                 if (existingDeviation) {
                     existingDeviation.deviationLevel = 'first';
-                    existingDeviation.deviationDeadline = new Date(now.getTime() + 60000);
+                    existingDeviation.deviationDeadline = new Date(now.getTime() + 3600000);
                     existingDeviation.step = ticket.currentStepStart;
                     await this._deviationRepo.save(existingDeviation);
                 } else {
                     const deviation = new InsuranceTicketDeviation();
                     deviation.ticket = ticket;
                     deviation.deviationLevel = 'first';
-                    deviation.deviationDeadline = new Date(now.getTime() + 60000);
+                    deviation.deviationDeadline = new Date(now.getTime() + 3600000);
                     deviation.step = ticket.currentStepStart;
                     await this._deviationRepo.save(deviation);
                 }
@@ -77,7 +89,9 @@ export class TicketNotificationProcessor {
                 }
                 // const escalationTime = new Date(now.getTime() + 3600000); // 1 hour later 3600000
                 // const escalationTime = new Date(now.getTime() + 120000); // 1 hour later 3600000
-                 const escalationTime = addHours(1); // 1 hour later 3600000               
+                // const escalationTime = addHours(1); // 1 hour later 3600000
+                const escalationTime = new Date(now.getTime() + 62 * 60 * 1000); // 62 min
+
                 await this.notificationService.scheduleEscalationNotification(
                     ticketId,
                     ticket.currentStepStart,
@@ -91,9 +105,9 @@ export class TicketNotificationProcessor {
 
     @Process('sendEscalationNotification')
     async handleSendEscalationNotification(job: Job) {
+        console.log("in handleSendEscalationNotification")
         const { ticketId } = job.data;
-        console.log('in escalations system', ticketId);
-        const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
+        const ticket = await this.ticketRepo.findOne({ where: { id: ticketId }, relations: ['branch'] });
         const now = new Date();
         if (ticket && ticket.currentStepStart !== Current_Step.CLOSED) {
             const deviation = await this._deviationRepo.findOne({
@@ -104,12 +118,20 @@ export class TicketNotificationProcessor {
                     deviationDeadline: LessThan(new Date())
                 }
             });
-            console.log('in esc deviation->', deviation);
             if (deviation) {
                 const productHeads = await this.userRepo.find({
-                    where: { userType: Roles.productHead, status: 'active', company: { id: 2 } }
+                    where: {
+                        isActive: true,
+                        userType: {
+                            id: RoleId.productHead
+                        },
+                        branch: {
+                            id: ticket.branch.id
+                        }
+                    },
+                    relations: ['userType', 'branch']
                 });
-                //   console.log("in sclation service product head", productHeads)
+
                 for (const head of productHeads) {
                     const message = `Ticket ${ticket.ticketNumber} has not been resolved after initial notification. Escalating to product head.`;
                     await this.createAndSendNotification(
@@ -122,10 +144,6 @@ export class TicketNotificationProcessor {
                         ticket.nextStepDeadline
                     );
                 }
-                // const updatedDeviation = await this._deviationRepo.update(deviation.id, {
-                //     deviationLevel: 'second',
-                //     updatedAt: new Date(),
-                // });
                 await this._deviationRepo.update(deviation.id, {
                     deviationLevel: 'second',
                     updatedAt: new Date()
@@ -176,16 +194,15 @@ export class TicketNotificationProcessor {
     async handleScheduleEscalationCase(job: Job) {
         const { ticketId, userEntity } = job.data;
         console.log('in createEscalationCase proposer', ticketId);
-          const loggedInUser = this.loggedInsUserService.getCurrentUser();
+        const loggedInUser = this.loggedInsUserService.getCurrentUser();
         // console.log('loggedInUser in proposer', userEntity.id);
-          
+
         const ticket = await this.ticketRepo.findOne({ where: { id: ticketId } });
         const now = new Date();
         // console.log('in escalations system', ticket.currentStepStart);
         if (ticket && ticket.currentStepStart === Current_Step.CLOSED) {
             // console.log('in escalations system ticket closed', ticket.currentStepStart);
-            await this.escalationService.createEscalationCase(ticket,userEntity);
+            await this.escalationService.createEscalationCase(ticket, userEntity);
         }
     }
-
 }

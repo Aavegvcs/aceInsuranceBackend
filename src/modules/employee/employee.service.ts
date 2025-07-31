@@ -6,7 +6,8 @@ import {
     Injectable,
     InternalServerErrorException,
     Logger,
-    NotFoundException
+    NotFoundException,
+    UnauthorizedException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, DeepPartial, EntityManager, In, Repository } from 'typeorm';
@@ -30,6 +31,7 @@ import { throws } from 'assert';
 import { exceptions } from 'winston';
 import { Company } from '@modules/company/entities/company.entity';
 import { Console } from 'console';
+import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 
 export interface DealerRMListDataType {
     fullName: string;
@@ -67,7 +69,9 @@ export class EmployeeService {
         private readonly departmentService: DepartmentService,
         private readonly dataSource: DataSource,
         @InjectRepository(Company)
-        private readonly companyRepo: Repository<Company>
+        private readonly companyRepo: Repository<Company>,
+        private readonly loggedInsUserService: LoggedInsUserService,
+        
     ) {}
 
     async create(body: CreateEmployeeDto): Promise<Employee> {
@@ -283,7 +287,7 @@ export class EmployeeService {
                         phoneNumber: dto.phone || null,
                         status: dto.status || 'active',
                         company: dto.companyId ? { id: dto.companyId } : { id: 1 },
-                        userType: dto.roleId === roleIds.admin ? Roles.admin : isDealer ? Roles.dealer : Roles.staff,
+                        // userType: dto.roleId === roleIds.admin ? Roles.admin : isDealer ? Roles.dealer : Roles.staff,
                         employeeId: id,
                         password: dto.password || null
                     });
@@ -938,48 +942,135 @@ export class EmployeeService {
         return await this.bulkCreate(branchManagers);
     }
 
-    async createInsuranceEmployee(body: any): Promise<Employee> {
-        if (!body.branchId) {
-            throw new BadRequestException('Branch ID is required');
+    // async createInsuranceEmployee(body: any): Promise<any> {
+    //     try {
+    //         if (!body.branchId) {
+    //             throw new BadRequestException('Branch ID is required');
+    //         }
+    //         const branch = await this.branchService.findById(body.branchId);
+
+    //         const userData = {
+    //             email: body.email,
+    //             firstName: body.firstName,
+    //             lastName: body.lastName,
+    //             phone: body.phone,
+    //             dateOfBirth: body.dateOfBirth,
+    //             gender: body.gender,
+    //             dateOfJoining: body.dateOfJoining,
+    //             company: 1,
+    //             branch: branch,
+    //             roleId: body.roleId ?? roleIds.staff
+    //         };
+
+    //         const newUser = await this.userService.createInsuranceUser(userData);
+    //         console.log('new user created details--------->', newUser);
+    //         if (!newUser) {
+    //             throw new InternalServerErrorException('Failed to create user');
+    //         }
+    //         const query = 'CALL update_empCode(?, ?)';
+    //         const empCode = await this.userRepo.query(query, [newUser.id, branch.name]);
+
+    //         const department = await this.departmentService.findById(body.departmentId);
+    //         if (!department) {
+    //             throw new BadRequestException('Invalid Department ID');
+    //         }
+    //     } catch (error) {
+    //         console.log('error: api-employee/createInsuranceEmployee', error.message);
+    //         throw new InternalServerErrorException('error in creating user');
+    //     }
+    // }
+    async createInsuranceEmployee(body: any): Promise<any> {
+        try {
+            const {
+                email,
+                firstName,
+                lastName,
+                middleName,
+                phone,
+                dateOfBirth,
+                gender,
+                dateOfJoining,
+                branchId,
+                departmentId,
+                roleId,
+                roId,
+                company,
+                probation,
+                leaveDays,
+                salary,
+                status
+            } = body;
+            console.log("body---------->", body);
+            // Validation: Check required fields
+            if (!branchId) {
+                throw new BadRequestException('Branch ID is required');
+            }
+            if (!body.departmentId) {
+                throw new BadRequestException('Department ID is required');
+            }
+
+            // Fetch branch
+            const branch = await this.branchService.findById(body.branchId);
+            if (!branch) {
+                throw new BadRequestException('Invalid Branch ID');
+            }
+
+            const department = await this.departmentService.findById(departmentId);
+            if (!department) {
+                throw new BadRequestException('Invalid Department ID');
+            }
+
+
+
+            // Construct user data
+            const userData = {
+                email: email,
+                firstName: firstName,
+                lastName: lastName,
+                phone: phone,
+                dateOfBirth: dateOfBirth,
+                gender: gender,
+                dateOfJoining: dateOfJoining,
+                company: 1,
+                branch: branch,
+                department: department,
+                roleId: roleId ?? roleIds.staff,
+                userType: roleId ?? roleIds.staff,
+                reportingOfficer: roId === '' ? null : roId
+            };
+
+            // Create user
+            const newUser = await this.userService.createInsuranceUser(userData);
+            if (!newUser) {
+                throw new InternalServerErrorException('Failed to create user');
+            }
+
+            // Validate empCode result
+            const empCodeResult: any = await this.userRepo.query('CALL update_empCode(?, ?)', [
+                newUser.id,
+                branch.name
+            ]);
+
+            const empCodeStatus = empCodeResult?.[0]?.[0]?.status;
+
+            if (empCodeStatus !== 'success') {
+                throw new InternalServerErrorException('Failed to generate employee code');
+            }
+
+            // Return structured response
+            return {
+                success: true,
+                message: 'Employee created successfully',
+                data: {
+                    userId: newUser.id,
+                    empCode: `AI${branch.name.slice(0, 3).toUpperCase()}${newUser.id}`,
+                    fullName: `${newUser.firstName} ${newUser.lastName}`
+                }
+            };
+        } catch (error) {
+            console.error('error: api-employee/createInsuranceEmployee', error.message);
+            throw new InternalServerErrorException(error.message || 'Error in creating insurance employee');
         }
-
-        const userData = {
-            email: body.email,
-            firstName: body.firstName,
-            lastName: body.lastName,
-            phone: body.phone,
-            dateOfBirth: body.dateOfBirth,
-            gender: body.gender,
-            dateOfJoining: body.dateOfJoining,
-            company: 1,
-            roleId: body.roleId ?? roleIds.staff
-        };
-
-        const newUser = await this.userService.createInsuranceUser(userData);
-        if (!newUser) {
-            throw new InternalServerErrorException('Failed to create user');
-        }
-
-        const branch = await this.branchService.findById(body.branchId);
-
-        const department = await this.departmentService.findById(body.departmentId);
-        if (!department) {
-            throw new BadRequestException('Invalid Department ID');
-        }
-        const empId = generateUUID('EMP', branch.id);
-        const newEmployee = this.employeeRepo.create({
-            user: newUser,
-            id: empId,
-            dateOfJoining: body.dateOfJoining,
-            designation: body.designation,
-            salary: body.salary || 0,
-            branch,
-            probation: body.probation || false,
-            status: EmployeeStatus.ACTIVE,
-            leaveDays: body.leaveDays || 0,
-            department
-        });
-        return await this.employeeRepo.save(newEmployee);
     }
 
     async updateInsuranceEmployee(body: any): Promise<any> {
@@ -1000,8 +1091,9 @@ export class EmployeeService {
             branchId,
             departmentId,
             roleId,
+            roId,
+            isActive,
             company,
-            designation,
             probation,
             leaveDays,
             salary,
@@ -1018,16 +1110,16 @@ export class EmployeeService {
             relations: ['company'] // this is essential to load the company
         });
 
-        console.log("COMPANY id", branch.company.id);
-        
+        console.log('COMPANY id', branch.company.id);
+
         if (!branch) {
             throw new BadRequestException('Invalid Branch ID');
         }
         const existcompany = await this.companyRepo.findOne({
             where: { id: branch.company.id }
         });
-        console.log("existeing company", existcompany.id);
-        const existDepartment = await this.departmentRepo.findOne({where:{id:departmentId}})
+        console.log('existeing company', existcompany.id);
+        const existDepartment = await this.departmentRepo.findOne({ where: { id: departmentId } });
         // Set new values to existing user
         user.email = email;
         user.firstName = firstName;
@@ -1040,11 +1132,12 @@ export class EmployeeService {
         user.branch = branch;
         user.company = existcompany;
         user.department = existDepartment || null;
+        user.reportingOfficer = roId || null;
+        user.isActive = isActive;
 
         // Save updated user
         const updatedUser = await this.userRepo.save(user);
         if (!updatedUser) {
-            
             throw new InternalServerErrorException('Failed to update user');
         }
         return {
@@ -1052,6 +1145,36 @@ export class EmployeeService {
             message: 'User update successfully',
             data: null
         };
+    }
+
+     async deleteEmployee(reqBody: any): Promise<any> {
+        let result = {};
+        try {
+               const loggedInUser = this.loggedInsUserService.getCurrentUser();
+                    if (!loggedInUser) {
+                        throw new UnauthorizedException('User not logged in');
+                    }
+    
+            const { user_id } = reqBody;
+            if (!user_id) {
+                throw new BadRequestException('User ID is required.');
+            }
+
+            result = await this.userRepo.update(user_id, {
+                isActive: false,
+                deletedAt: new Date(),
+                updatedAt: new Date(),
+                updatedBy: loggedInUser
+            });
+        } catch (error) {
+            console.log('api- employee/deleteEmployee', error.message);
+
+            result = {
+                status: 'error',
+                message: 'Error deleting employee',
+                data: null
+            };
+        }
     }
 
     async calculateDealerRevenue(employeeId?: string, terminalId?: string, cocd?: string): Promise<void> {

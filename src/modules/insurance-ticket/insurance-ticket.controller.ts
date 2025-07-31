@@ -14,6 +14,7 @@ export class InsuranceTicketController {
     constructor(private readonly _ticketService: InsuranceTicketService) {}
 
     @ApiOperation({ summary: 'Create new insurance ticket' })
+    @UseGuards(JwtInsAuthGuard)
     @Post('create')
     async createTicket(@Body() requestObj: CreateInsuranceTicketDto, @Req() req: any) {
         return this._ticketService.createInsuranceTicket(requestObj, req);
@@ -59,6 +60,7 @@ export class InsuranceTicketController {
         return this._ticketService.getTicket(reqObj);
     }
 
+    @UseGuards(JwtInsAuthGuard)
     @Post('createInsuranceTicket')
     @ApiOperation({ summary: 'Create new insurance ticket' })
     async createInsuranceTicket(@Body() reqObj: any, @Req() req: any) {
