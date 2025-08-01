@@ -2,11 +2,8 @@ import { Body, Controller, Get, Headers, Logger, Param, Patch, Post, Put, Req, U
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { InsuranceTicketService } from './insurance-ticket.service';
 import { CreateInsuranceTicketDto, UpdateInsuranceTicketDto } from './dto/insurance-ticket.dto';
-import { InsuranceReassignedDto } from './dto/insurance-reassigned.dto';
-import { Ticket_Status } from 'src/utils/app.utils';
-import { AuthGuard } from '@nestjs/passport';
-import { JwtAuthGuard } from '@modules/auth/jwt-auth.guard';
 import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
+import { Ticket_Status } from 'src/utils/app.utils';
 
 @ApiTags('insurance-ticket')
 @Controller('insurance-ticket')
@@ -66,19 +63,6 @@ export class InsuranceTicketController {
     async createInsuranceTicket(@Body() reqObj: any, @Req() req: any) {
         return this._ticketService.createInsuranceTicket(reqObj, req);
     }
-
-    // @Post('getInsuranceTicket')
-    // @ApiOperation({ summary: 'Get all tickets for a given agent' })
-    // async getAllTicketsByAgent(@Req() reqObj: any) {
-    //   Logger.log('reqObj', reqObj);
-    //   return this._ticketService.getTicket(reqObj);
-    // }
-
-    // @Get('getAllByTikcetNumber/:id')
-    // @ApiOperation({ summary: 'Get all tickets for a given agent' })
-    // async getAllTicketsByAgent(@Param('id') id: number) {
-    //   return this._ticketService.getAllTicketsByTicketNumber(id);
-    // }
 
     @Get('getAllAgent')
     @ApiOperation({ summary: 'Get all insurance tickets' })

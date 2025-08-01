@@ -1,15 +1,10 @@
 import { HttpStatus, Logger, ValidationPipe } from '@nestjs/common';
 import { hash, genSalt } from 'bcryptjs';
-import { Company } from 'src/modules/company/entities/company.entity';
-import { Media } from 'src/modules/media/entities/media.entity';
-import { Organization } from 'src/modules/organization/entities/organization.entity';
-import { Role } from 'src/modules/role/entities/role.entity';
 import { User } from 'src/modules/user/user.entity';
 import * as moment from 'moment-timezone';
 import { randomInt } from 'crypto';
 import { Brackets, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { FilterRequest } from 'src/modules/user/dto/request/usersListOfSingleType-dto';
-import { Client } from '@modules/client/entities/client.entity';
 
 const VALIDATION_PIPE = new ValidationPipe({
     transform: true,
@@ -351,14 +346,6 @@ export enum Features {
     'client' = 'Client'
 }
 
-export const Entities = {
-    Role: () => Role,
-    User: () => User,
-    Organization: () => Organization,
-    Media: () => Media,
-    Company: () => Company,
-    Client: () => Client
-};
 
 export const featuresArr = [
     Features.user,

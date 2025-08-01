@@ -17,8 +17,8 @@ import { Department } from '@modules/department/entities/department.entity';
 import { InsuranceAgent } from '@modules/insurance-ticket/entities/insurance-agent.entity';
 import { User } from '@modules/user/user.entity';
 import { Dealer } from '@modules/employee/entities/dealer.entity';
-import { Client } from '@modules/client/entities/client.entity';
-import { DealerRMRevenue } from './dealer-rm-revenue.entity';
+// import { Client } from '@modules/client/entities/client.entity';
+// import { DealerRMRevenue } from './dealer-rm-revenue.entity';
 
 export enum EmployeeStatus {
     ACTIVE = 'ACTIVE',
@@ -81,11 +81,11 @@ export class Employee extends BaseEntity {
     @OneToMany(() => Branch, (branch) => branch.rm, { nullable: true })
     rmBranches: Branch[];
 
-    @OneToMany(() => Client, (client) => client.rm)
-    rmClients: Client[];
+    // @OneToMany(() => Client, (client) => client.rm)
+    // rmClients: Client[];
 
-    @OneToMany(() => DealerRMRevenue, (revenue) => revenue.employee)
-    revenues: DealerRMRevenue[];
+    // @OneToMany(() => DealerRMRevenue, (revenue) => revenue.employee)
+    // revenues: DealerRMRevenue[];
 
     @CreateDateColumn({ type: 'timestamp', default: null, nullable: true })
     createdAt: Date;

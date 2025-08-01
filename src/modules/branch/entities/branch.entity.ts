@@ -13,7 +13,7 @@ import {
     ManyToMany,
     JoinTable
 } from 'typeorm';
-import { Client } from '@modules/client/entities/client.entity';
+// import { Client } from '@modules/client/entities/client.entity';
 import { Employee } from '@modules/employee/entities/employee.entity';
 import { State } from '@modules/states/entities/state.entity';
 import { branchModelsArr } from 'src/utils/app.utils';
@@ -113,12 +113,12 @@ export class Branch extends BaseEntity {
     deletedAt: Date;
 
     // One-to-Many with Clients
-    @OneToMany(() => Client, (client) => client.branch)
-    clients: Client[];
+    // @OneToMany(() => Client, (client) => client.branch)
+    // clients: Client[];
 
-    // One-to-Many with Clients
-    @OneToMany(() => Client, (client) => client.regionBranch)
-    onlineClients: Client[];
+    // // One-to-Many with Clients
+    // @OneToMany(() => Client, (client) => client.regionBranch)
+    // onlineClients: Client[];
 
     // Self-referencing Many-to-One (Each branch can have one control branch)
     @ManyToOne(() => Branch, (branch) => branch.subBranches, { nullable: true })

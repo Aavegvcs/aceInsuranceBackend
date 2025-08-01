@@ -14,7 +14,7 @@ import {
     ManyToMany,
     JoinTable
 } from 'typeorm';
-import { Client } from '@modules/client/entities/client.entity';
+// import { Client } from '@modules/client/entities/client.entity';
 import { Employee } from '@modules/employee/entities/employee.entity';
 import { Branch } from '@modules/branch/entities/branch.entity';
 
@@ -50,14 +50,14 @@ export class Dealer extends BaseEntity {
     @JoinColumn({ name: 'employeeId' })
     employee: Employee;
 
-    @OneToMany(() => Client, (client) => client.equityDealer)
-    equityClients: Client[];
+    // @OneToMany(() => Client, (client) => client.equityDealer)
+    // equityClients: Client[];
 
-    @OneToMany(() => Client, (client) => client.commodityDealer1)
-    commodity1Clients: Client[];
+    // @OneToMany(() => Client, (client) => client.commodityDealer1)
+    // commodity1Clients: Client[];
 
-    @OneToMany(() => Client, (client) => client.commodityDealer2)
-    commodity2Clients: Client[];
+    // @OneToMany(() => Client, (client) => client.commodityDealer2)
+    // commodity2Clients: Client[];
 
     @ManyToMany(() => Branch, (branch) => branch.dealers)
     branches: Branch[];

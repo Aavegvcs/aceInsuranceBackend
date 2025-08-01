@@ -1,6 +1,4 @@
 import {
-    BadRequestException,
-    ConflictException,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -11,10 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InsuranceTicket } from './entities/insurance-ticket.entity';
 import { Repository } from 'typeorm';
 import { CreateInsuranceTicketDto, UpdateInsuranceTicketDto } from './dto/insurance-ticket.dto';
-import { InsuranceReassignedDto } from './dto/insurance-reassigned.dto';
 import { InsuranceAssignedTo } from './entities/insurance-ticket-assignedTo.entity';
 import { InsuranceAgent } from '@modules/insurance-ticket/entities/insurance-agent.entity';
-import { Client } from '@modules/client/entities/client.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceUser } from '@modules/insurance-ticket/entities/insurance-user.entity';
 import {
@@ -48,8 +44,6 @@ import { Role } from '@modules/role/entities/role.entity';
 import Redis from 'ioredis';
 import { QuoteEntity } from '@modules/insurance-quotations/entities/quote.entity';
 import { RoleService } from '@modules/role/role.service';
-// import { InjectQueue } from '@nestjs/bull';
-// import { Queue } from 'bull';
 @Injectable()
 export class InsuranceTicketService {
     constructor(

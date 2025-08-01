@@ -1,6 +1,4 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { CreateEmailDto } from './dto/create-email.dto';
-import { UpdateEmailDto } from './dto/update-email.dto';
 import { SecretService } from '../aws/aws-secrets.service';
 import { Attachment } from 'nodemailer/lib/mailer';
 import { HttpService } from '@nestjs/axios';
@@ -15,8 +13,8 @@ export class EmailService implements OnModuleInit {
 
     constructor(
         private readonly httpService: HttpService,
-        private readonly secretService: SecretService,
-    ) { }
+        private readonly secretService: SecretService
+    ) {}
 
     async onModuleInit() {
         try {
@@ -31,8 +29,8 @@ export class EmailService implements OnModuleInit {
                 secure: false, // use TLS for port 587
                 auth: {
                     user: this.secrets['NODEMAILER_EMAIL'] || process.env.NODEMAILER_EMAIL,
-                    pass: this.secrets['NODEMAILER_PASS'] || process.env.NODEMAILER_PASS,
-                },
+                    pass: this.secrets['NODEMAILER_PASS'] || process.env.NODEMAILER_PASS
+                }
             });
         } catch (error) {
             Logger.error('Failed to initialize secrets or Nodemailer transporter', error);
@@ -43,12 +41,10 @@ export class EmailService implements OnModuleInit {
     // Send basic email via Pepipost API
     async sendEmail(to: string, subject: string, body: string) {
         const payload = {
-            from: { email: "care@acumengroup.in", name: 'Acumen Operations' },
+            from: { email: 'care@acumengroup.in', name: 'Acumen Operations' },
             subject,
-            content: [
-                { type: 'html', value: body },
-            ],
-            personalizations: [{ to: [{ email: to }] }],
+            content: [{ type: 'html', value: body }],
+            personalizations: [{ to: [{ email: to }] }]
         };
 
         return this.sendPepipostEmail(payload);
@@ -57,17 +53,15 @@ export class EmailService implements OnModuleInit {
     // Send email with attachments
     async sendEmailWithAttachments(to: string, subject: string, body: string, attachments?: Attachment[]) {
         const payload = {
-            from: { email: "care@acumengroup.in", name: 'Acumen Operations' },
+            from: { email: 'care@acumengroup.in', name: 'Acumen Operations' },
             subject,
-            content: [
-                { type: 'html', value: body },
-            ],
+            content: [{ type: 'html', value: body }],
             personalizations: [{ to: [{ email: to }] }],
             attachments: attachments?.map((attachment) => ({
                 content: attachment.content?.toString('base64'),
-                name: attachment.filename,
+                name: attachment.filename
                 // type: attachment.contentType,
-            })),
+            }))
         };
 
         return this.sendPepipostEmail(payload);
@@ -76,10 +70,10 @@ export class EmailService implements OnModuleInit {
     // Send markdown email
     async sendMarkDownEmail(to: string, subject: string, markdown: string) {
         const payload = {
-            from: { email: "care@acumengroup.in", name: 'Acumen Operations' },
+            from: { email: 'care@acumengroup.in', name: 'Acumen Operations' },
             subject,
             content: [{ type: 'html', value: markdown }],
-            personalizations: [{ to: [{ email: to }] }],
+            personalizations: [{ to: [{ email: to }] }]
         };
 
         return this.sendPepipostEmail(payload);
@@ -92,9 +86,9 @@ export class EmailService implements OnModuleInit {
                 this.httpService.post(this.pepipostApiUrl, payload, {
                     headers: {
                         api_key: this.secrets['PEPIPOST_API_KEY'],
-                        'Content-Type': 'application/json',
-                    },
-                }),
+                        'Content-Type': 'application/json'
+                    }
+                })
             );
             return response.data;
         } catch (error) {
@@ -105,7 +99,6 @@ export class EmailService implements OnModuleInit {
 
     // Send email with attachments via Nodemailer (for testing)
     async sendEmailWithNodemailer(to: string, subject: string, body: string, attachments?: Attachment[]) {
-
         const mailOptions: nodemailer.SendMailOptions = {
             from: this.secrets['NODEMAILER_EMAIL'],
             to,
@@ -116,15 +109,14 @@ export class EmailService implements OnModuleInit {
                     typeof attachment.content === 'string' && attachment.content.startsWith('data:')
                         ? Buffer.from(attachment.content.split(',')[1], 'base64')
                         : attachment.content;
-                return ({
+                return {
                     filename: attachment.filename,
                     content,
                     contentType: attachment.contentType,
                     cid: attachment.cid, // For inline images
-                    contentDisposition: attachment.disposition || 'attachment',
-                })
-            },
-            )
+                    contentDisposition: attachment.disposition || 'attachment'
+                };
+            })
         };
 
         try {
@@ -137,17 +129,15 @@ export class EmailService implements OnModuleInit {
                 mailOptions: {
                     to,
                     subject,
-                    attachments: attachments?.map(a => ({
+                    attachments: attachments?.map((a) => ({
                         filename: a.filename,
                         contentType: a.contentType,
                         cid: a.cid,
-                        disposition: a.disposition,
-                    })),
-                },
+                        disposition: a.disposition
+                    }))
+                }
             });
             throw new Error(`Failed to send email via Nodemailer: ${error.message}`);
         }
     }
-
 }
-

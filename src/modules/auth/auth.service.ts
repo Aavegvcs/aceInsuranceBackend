@@ -34,15 +34,12 @@ import { ConfigService } from '@nestjs/config';
 import { TokenService } from './tokens.service';
 import { MediaService } from '../media/media.service';
 import { AddressService } from '../address/address.service';
-import { RoleFeatureActionService } from '../role-feature-action/role-feature-action.service';
 import { RoleService } from '../role/role.service';
-import { Action } from '../ability/ability.factory';
 import { getLogger } from 'src/utils/winstonLogger';
 import { OnEvent } from '@nestjs/event-emitter';
 import { SecretService } from '../aws/aws-secrets.service';
 import { invitationLinkForClient } from 'src/utils/email-templates/invitation-link/client';
 import { resetLink } from 'src/utils/email-templates/reset-password';
-import { UserFeatureActionService } from '@modules/user-feature-action/user-feature-action.service';
 import axios from 'axios';
 import { compare } from 'bcryptjs';
 import { Company } from '@modules/company/entities/company.entity';
@@ -64,13 +61,13 @@ export class AuthService {
         @Inject(forwardRef(() => NotificationService))
         private notifyService: NotificationService,
         private tokenService: TokenService,
-        @Inject(forwardRef(() => RoleFeatureActionService))
-        private roleFeatureActionService: RoleFeatureActionService,
+        // @Inject(forwardRef(() => RoleFeatureActionService))
+        // private roleFeatureActionService: RoleFeatureActionService,
         @InjectRepository(User)
         private userRepository: Repository<User>,
         private roleService: RoleService,
         private secretService: SecretService,
-        private userFeatureActionService: UserFeatureActionService,
+        // private userFeatureActionService: UserFeatureActionService,
         @InjectRepository(Company)
         private companyService: Repository<Company>,
         private emailService: EmailService,
@@ -78,66 +75,66 @@ export class AuthService {
         private insRolePermissionRepo: Repository<InsuranceRolePermission>
     ) {}
 
-    async register(userRegister: UserRegisterDto, req: any): Promise<any> {
-        const user = new User();
-        user.firstName = req.body.firstName;
-        user.lastName = req.body.lastName;
-        user.phoneNumber = req.body.phoneNumber;
-        user.email = req.body.email;
-        user.password = req.body.password;
-        user.accessToken = null;
-        user.refreshToken = null;
-        user.otp = generateOTP();
-        user.status = 'pending';
+    // async register(userRegister: UserRegisterDto, req: any): Promise<any> {
+    //     const user = new User();
+    //     user.firstName = req.body.firstName;
+    //     user.lastName = req.body.lastName;
+    //     user.phoneNumber = req.body.phoneNumber;
+    //     user.email = req.body.email;
+    //     user.password = req.body.password;
+    //     user.accessToken = null;
+    //     user.refreshToken = null;
+    //     user.otp = generateOTP();
+    //     user.status = 'pending';
 
-        try {
-            const userData = await user.save();
+    //     try {
+    //         const userData = await user.save();
 
-            if (!userData) throw new HttpException('could not save User..', HttpStatus.INTERNAL_SERVER_ERROR);
+    //         if (!userData) throw new HttpException('could not save User..', HttpStatus.INTERNAL_SERVER_ERROR);
 
-            // Send OTP to user's email
-            await this.notifyService.sendOTP(userData.email, userData.otp);
+    //         // Send OTP to user's email
+    //         await this.notifyService.sendOTP(userData.email, userData.otp);
 
-            const logsData = await this.logService.saveLogByRef(userData, Features.user, Action.create, req);
+    //         const logsData = await this.logService.saveLogByRef(userData, Features.user, Action.create, req);
 
-            if (!logsData) throw new HttpException('could not save logs..', HttpStatus.INTERNAL_SERVER_ERROR);
+    //         if (!logsData) throw new HttpException('could not save logs..', HttpStatus.INTERNAL_SERVER_ERROR);
 
-            return await this.generateJWT(
-                {
-                    email: userData.email
-                },
-                'otp',
-                '1d'
-            );
-        } catch (error) {
-            // PostgreSQL error code 23505 indicates a unique constraint violation
-            if (error.code === '23505') {
-                throw new ConflictException(['email already exists']);
-            }
-            throw error;
-        }
-    }
+    //         return await this.generateJWT(
+    //             {
+    //                 email: userData.email
+    //             },
+    //             'otp',
+    //             '1d'
+    //         );
+    //     } catch (error) {
+    //         // PostgreSQL error code 23505 indicates a unique constraint violation
+    //         if (error.code === '23505') {
+    //             throw new ConflictException(['email already exists']);
+    //         }
+    //         throw error;
+    //     }
+    // }
 
-    async loginViaId(req: any): Promise<any> {
-        const user = req.user;
-        Logger.log(user);
+    // async loginViaId(req: any): Promise<any> {
+    //     const user = req.user;
+    //     Logger.log(user);
 
-        if (!user) {
-            throw new NotAcceptableException(['Invalid Token']);
-        }
+    //     if (!user) {
+    //         throw new NotAcceptableException(['Invalid Token']);
+    //     }
 
-        // Reject inactive staff
-        if ([Roles.staff].includes(user.userType as Roles) && user.status === USER_STATUS.IN_ACTIVE) {
-            throw new BadRequestException('In-Active User cannot be logged in.');
-        }
+    //     // Reject inactive staff
+    //     if ([Roles.staff].includes(user.userType as Roles) && user.status === USER_STATUS.IN_ACTIVE) {
+    //         throw new BadRequestException('In-Active User cannot be logged in.');
+    //     }
 
-        const newOTP = generateOTP();
-        const genericId = user.userType === Roles.client ? user.client.id : user.employee.id;
-        await this.userService.findAndUpdateById(user.userType, genericId, { otp: newOTP });
+    //     const newOTP = generateOTP();
+    //     const genericId = user.userType === Roles.client ? user.client.id : user.employee.id;
+    //     await this.userService.findAndUpdateById(user.userType, genericId, { otp: newOTP });
 
-        await this.notifyService.sendOTP(user.email, newOTP);
-        return await this.generateJWTViaId({ genericId: genericId, userType: user.userType }, 'otp', '1d');
-    }
+    //     await this.notifyService.sendOTP(user.email, newOTP);
+    //     return await this.generateJWTViaId({ genericId: genericId, userType: user.userType }, 'otp', '1d');
+    // }
 
     // async login(req: any): Promise<any> {
     //     const dbUser = await this.userService.findOneByEmail(req.user.email);
@@ -250,69 +247,7 @@ export class AuthService {
         });
     }
 
-    // async verifyOTP(requestedOTP: string, req: any): Promise<any> {
-    //     const { user } = req;
-    //     const { genericId, userType } = user;
 
-    //     // Fetch user from DB
-    //     const dbUser = await this.userService.findOneByGenericId(userType, genericId);
-    //     if (!dbUser) throw new NotAcceptableException('Invalid Token');
-
-    //     // Validate OTP
-    //     if (requestedOTP !== dbUser.otp) throw new NotAcceptableException('Invalid OTP');
-
-    //     // Generate new access token
-    //     const token = await this.generateJWTViaId({ genericId, userType }, 'all');
-
-    //     // Update user status and last login
-    //     const updates: Partial<typeof dbUser> = {
-    //         lastLogin: new Date(),
-    //         accessToken: token,
-    //         ...(dbUser.status !== 'active' && { status: 'active' })
-    //     };
-
-    //     await this.userService.findAndUpdateById(userType, genericId, updates);
-
-    //     // Build user query with dynamic joins
-    //     const query = this.userRepository
-    //         .createQueryBuilder('user')
-    //         .leftJoinAndSelect('user.company', 'company')
-    //         .leftJoinAndSelect('user.state', 'state')
-    //         .leftJoinAndSelect(
-    //             userType === Roles.client ? 'user.client' : 'user.employee',
-    //             userType === Roles.client ? 'client' : 'employee'
-    //         )
-    //         .leftJoinAndSelect(userType === Roles.client ? 'client.branch' : 'employee.branch', 'branch');
-
-    //     // Apply where condition based on userType
-    //     const detailedUser = await query
-    //         .where(userType === Roles.client ? 'user.clientId = :genericId' : 'user.employeeId = :genericId', {
-    //             genericId
-    //         })
-    //         .getOne();
-
-    //     if (!detailedUser) throw new NotFoundException('User details not found');
-
-    //     // Fetch role info and permissions
-    //     const [dbRole, allPermissions] = await Promise.all([
-    //         this.roleService.findOneByName(detailedUser.userType),
-    //         this.userFeatureActionService.findOne(dbUser.id)
-    //     ]);
-
-    //     const roleName = dbRole?.roleName ?? null;
-    //     const genericEntity = userType === Roles.client ? detailedUser.client : detailedUser.employee;
-
-    //     return {
-    //         token,
-    //         user: {
-    //             ...detailedUser,
-    //             features: allPermissions ?? null,
-    //             role: dbRole ? { name: roleName, id: dbRole.id } : null
-    //         },
-    //         genericId: genericEntity?.id ?? null,
-    //         branchId: genericEntity?.branch?.id ?? null
-    //     };
-    // }
 
     async loginBypassOTP(req: any): Promise<any> {
         const user = req.user;
@@ -342,144 +277,7 @@ export class AuthService {
         });
     }
 
-    async generateAccessToken(genericId: string, userType: Roles): Promise<string> {
-        // Logger.log(`Generating token for genericId: ${genericId}`);
-        const user = await this.userService.findOneByGenericId(userType, genericId);
-        if (!user) {
-            Logger.error(`User not found for genericId: ${genericId}`);
-            throw new BadRequestException('User not found');
-        }
-        const payload = {
-            genericId: user.clientId || user.employeeId || user.id.toString(),
-            userType: user.userType || 'client',
-            forRoutes: 'all'
 
-            // Add other fields if needed
-        };
-        // Logger.log('Token payload:', payload);
-        const token = await this.jwtService.sign(payload, {
-            secret: await this.secretService.getSecret('JWT_ACCESS_SECRET'),
-            expiresIn: '1d' // Set the token expiration time
-        });
-        // Logger.log('Generated token:', token);
-        return token;
-    }
-
-    // async validateAccessToken(token: string): Promise<any> {
-    //     // Logger.log('Validating token:', token);
-    //     let decoded: any = null;
-    //     try {
-    //         decoded = await this.jwtService.verify(token, {
-    //             secret: await this.secretService?.getSecret('JWT_ACCESS_SECRET')
-    //         });
-    //         // Logger.log('Decoded token:', decoded);
-    //     } catch (error) {
-    //         Logger.error('Token verification failed:', error.message);
-    //         throw new UnauthorizedException('Invalid token');
-    //     }
-
-    //     const { genericId, userType } = decoded;
-
-    //     // Fetch user from DB using genericId and userType
-    //     const dbUser = await this.userService.findOneByGenericId(userType, genericId);
-    //     if (!dbUser) {
-    //         Logger.error(`User not found for genericId: ${genericId}, userType: ${userType}`);
-    //         throw new NotAcceptableException('User not found');
-    //     }
-
-    //     // Build base query
-    //     let query = this.userRepository
-    //         .createQueryBuilder('user')
-    //         .leftJoinAndSelect('user.company', 'company')
-    //         .leftJoinAndSelect('user.state', 'state');
-
-    //     // Conditionally join the relevant table
-    //     if (dbUser.userType === Roles.client) {
-    //         query = query.leftJoinAndSelect('user.client', 'client').leftJoinAndSelect('client.branch', 'branch');
-    //     } else {
-    //         query = query.leftJoinAndSelect('user.employee', 'employee').leftJoinAndSelect('employee.branch', 'branch');
-    //     }
-
-    //     // Execute query using genericId
-    //     const detailedUser = await query
-    //         .where(dbUser.userType === Roles.client ? 'user.clientId = :genericId' : 'user.employeeId = :genericId', {
-    //             genericId
-    //         })
-    //         .getOne();
-
-    //     if (!detailedUser) {
-    //         Logger.error(`Detailed user not found for genericId: ${genericId}`);
-    //         throw new NotFoundException('User details not found');
-    //     }
-
-    //     // Get Role Information
-    //     const dbRole = await this.roleService.findOneByName(detailedUser.userType);
-    //     const roleName = dbRole?.roleName ?? null;
-
-    //     // Fetch user permissions
-    //     const allPermissions = await this.userFeatureActionService.findOne(dbUser.id);
-
-    //     // Assign correct entity (Client or Employee)
-    //     const genericEntity = dbUser.userType === Roles.client ? detailedUser.client : detailedUser.employee;
-
-    //     // Generate JWT Token with clientId/employeeId and userType
-    //     const tokenPayload = {
-    //         userType: userType,
-    //         genericId: genericId
-    //     };
-    //     const accessToken = await this.generateJWTViaId(tokenPayload, 'all');
-    //     return {
-    //         token: accessToken,
-    //         user: {
-    //             ...detailedUser,
-    //             features: allPermissions ?? null,
-    //             role: dbRole ? { name: roleName, id: dbRole.id } : null
-    //         },
-    //         genericId: genericEntity?.id ?? null,
-    //         branchId: genericEntity?.branch?.id ?? null
-    //     };
-    // }
-
-    // async captcha(token: any): Promise<any> {
-    //     const recaptchaResponse = await axios.post(
-    //         `https://www.google.com/recaptcha/api/siteverify?secret=${await this.secretService?.getSecret('RECAPTCHA_SECRET_KEY')}&response=${token}`
-    //     );
-    //     console.log('recaptchaResponse--  ', recaptchaResponse);
-    //     if (!!recaptchaResponse.data.success === false) throw new Error();
-    //     return { isValid: true };
-    // }
-
-    async forgotPass({ id, forgot = true }: { id: string; forgot?: boolean }): Promise<any> {
-        let htmlContent: string = null;
-        let subject: string = 'Reset Link';
-        let user = null;
-        user = await this.userService.findOneByGenericId(Roles.client, id);
-        // user = await this.userService.findOneByGenericId(Roles.staff, id);
-        Logger.log('user', user);
-        if (!user) throw new NotFoundException(['User does not exist']);
-
-        const secret = (await this.secretService?.getSecret('JWT_ACCESS_SECRET')) + user.password;
-        const customJwtService = new JwtService({ secret });
-        const payload = {
-            email: user.email
-        };
-        const token = customJwtService.sign(payload, { expiresIn: '1d' });
-
-        const link = `${await this.secretService?.getSecret('API_URL')}backend/verify-forgot-password/${user.id}/${token}`;
-
-        htmlContent = resetLink(user, link);
-
-        if (user?.userType === Roles?.client && !forgot) {
-            htmlContent = invitationLinkForClient(user, link);
-            subject = 'Portal Invitation';
-        }
-
-        return await this.notifyService.sendOneTimeResetLink({
-            userEmail: user.email,
-            subject,
-            body: htmlContent ?? link
-        });
-    }
 
     async verifyForgotPass(params: any, res: any): Promise<any> {
         const user = await this.userService.findOneById(parseInt(params.id));
@@ -517,20 +315,7 @@ export class AuthService {
         return rest;
     }
 
-    async logout(body: any): Promise<any> {
-        const { user, cookies, res } = body;
-        // Logger.log('logging out user', user);
 
-        const dbUser = await this.userService.findOneByGenericId(user.userType as Roles, user.genericId);
-        if (!dbUser) throw new NotFoundException(['Already Deleted..']);
-
-        dbUser.accessToken = null;
-        dbUser.refreshToken = null;
-
-        await this.userRepository.save(dbUser);
-
-        if (cookies?.jwt) res.status(204).clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true });
-    }
 
     async delete(email: string): Promise<any> {
         if (email === 'tahir@insighttherapy.us') {
@@ -720,69 +505,7 @@ export class AuthService {
         }
     }
 
-    // async singleSignOn(userId: number): Promise<any> {
-    //     // Fetch user from DB using userId
-    //     const dbUser = await this.userService.findOneById(userId);
-    //     if (!dbUser) throw new NotAcceptableException('User not found');
-    //     const allPermissions = await this.userFeatureActionService.findOne(dbUser.id);
-    //     const { userType, clientId, employeeId } = dbUser;
-    //     const genericId = userType === Roles.client ? clientId : employeeId;
-
-    //     if (!genericId) throw new NotAcceptableException('Invalid user data: genericId not found');
-
-    //     // Generate JWT Token with clientId/employeeId and userType
-    //     const tokenPayload = {
-    //         userType: userType,
-    //         genericId: genericId
-    //     };
-    //     const token = await this.generateJWTViaId(tokenPayload, 'all');
-
-    //     // Update User Info
-    //     const updates: Partial<typeof dbUser> = {
-    //         lastLogin: new Date(),
-    //         accessToken: token,
-    //         ...(dbUser.status !== 'active' && { status: 'active' })
-    //     };
-
-    //     await this.userService.findAndUpdateById(userType as Roles, genericId, updates);
-
-    //     // Build base query
-    //     let query = this.userRepository
-    //         .createQueryBuilder('user')
-    //         .leftJoinAndSelect('user.company', 'company')
-    //         .leftJoinAndSelect('user.state', 'state');
-
-    //     // Conditionally join the relevant table
-    //     if (userType === Roles.client) {
-    //         query = query.leftJoinAndSelect('user.client', 'client').leftJoinAndSelect('client.branch', 'branch');
-    //     } else {
-    //         query = query.leftJoinAndSelect('user.employee', 'employee').leftJoinAndSelect('employee.branch', 'branch');
-    //     }
-
-    //     // Execute query using userId
-    //     const detailedUser = await query.where('user.id = :userId', { userId }).getOne();
-
-    //     if (!detailedUser) throw new NotFoundException('User details not found');
-
-    //     // Get Role Information
-    //     const dbRole = await this.roleService.findOneByName(detailedUser.userType);
-    //     const roleName = dbRole?.roleName ?? null;
-
-    //     // Assign correct entity (Client or Employee)
-    //     const genericEntity = userType === Roles.client ? detailedUser.client : detailedUser.employee;
-
-    //     return {
-    //         token,
-    //         user: {
-    //             ...detailedUser,
-    //             features: allPermissions ?? null,
-    //             role: dbRole ? { name: roleName, id: dbRole.id } : null
-    //         },
-    //         genericId: genericEntity?.id ?? null,
-    //         branchId: genericEntity?.branch?.id ?? null
-    //     };
-    // }
-
+   
     async changeInsuranceUserPassword(reqBody: any, req: any): Promise<any> {
         try {
             const { email, oldPassword, newPassword } = reqBody;

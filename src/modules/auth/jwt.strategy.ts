@@ -1,7 +1,6 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { UserFeatureActionService } from '../user-feature-action/user-feature-action.service';
 import { UserService } from '../user/user.service';
 import { SecretService } from '../aws/aws-secrets.service';
 
@@ -9,7 +8,7 @@ import { SecretService } from '../aws/aws-secrets.service';
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         private userService: UserService,
-        private userFeatureActionService: UserFeatureActionService,
+        // private userFeatureActionService: UserFeatureActionService,
         private secretService: SecretService
     ) {
         super({
@@ -27,22 +26,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: any) {
-        let allPermissions: any = null;
-        if (payload.forRoutes === 'otp') {
-            const dbUser = await this.userService.findOneByGenericId(payload.userType, payload.genericId);
-            if (!dbUser) throw new NotFoundException('User not found');
+    // async validate(payload: any) {
+    //     let allPermissions: any = null;
+    //     if (payload.forRoutes === 'otp') {
+    //         const dbUser = await this.userService.findOneByGenericId(payload.userType, payload.genericId);
+    //         if (!dbUser) throw new NotFoundException('User not found');
 
-            allPermissions = await this.userFeatureActionService.findOne(dbUser.id);
-        }
+    //         allPermissions = await this.userFeatureActionService.findOne(dbUser.id);
+    //     }
 
-        return {
-            genericId: payload.genericId,
-            userType: payload.userType,
-            forRoutes: payload.forRoutes ?? null,
-            allPermissions
-        };
-    }
+    //     return {
+    //         genericId: payload.genericId,
+    //         userType: payload.userType,
+    //         forRoutes: payload.forRoutes ?? null,
+    //         allPermissions
+    //     };
+    // }
 
     // async validate(payload: any) {
     //     let allPermissions: any = null;

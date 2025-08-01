@@ -14,11 +14,11 @@ import { CompanyModule } from '@modules/company/company.module';
 import { Company } from '@modules/company/entities/company.entity';
 import { UserRole } from '@modules/user-role/entities/user-role.entity';
 import { Department } from '@modules/department/entities/department.entity';
-import { DealerRMRevenue } from './entities/dealer-rm-revenue.entity';
+// import { DealerRMRevenue } from './entities/dealer-rm-revenue.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Employee, User, Branch, Dealer, Company, UserRole, Department, DealerRMRevenue, Company]),
+        TypeOrmModule.forFeature([Employee, User, Branch, Dealer, Company, UserRole, Department, Company]),
         forwardRef(() => UserModule),
         forwardRef(() => BranchModule),
         forwardRef(() => DepartmentModule),

@@ -1,9 +1,5 @@
 import {
     Injectable,
-    HttpException,
-    HttpStatus,
-    ConflictException,
-    NotFoundException,
     Inject,
     forwardRef
 } from '@nestjs/common';
@@ -14,11 +10,9 @@ import { Company } from './entities/company.entity';
 import { LogService } from '../log/log.service';
 import { AddressService } from '../address/address.service';
 import { MediaService } from '../media/media.service';
-import { CompanyCreateDto } from './dto/company-create.dto';
-import { CompanyUpdateDto } from './dto/update-company.dto';
 import { User } from '../user/user.entity';
-import { Features, fillOrReplaceObject, orderByKey, orderByValue } from 'src/utils/app.utils';
-import { Action } from '../ability/ability.factory';
+import {orderByKey, orderByValue } from 'src/utils/app.utils';
+// import { Action } from '../ability/ability.factory';
 import { UserService } from '../user/user.service';
 
 @Injectable()
@@ -36,28 +30,28 @@ export class CompanyService {
         private userService: UserService
     ) {}
 
-    async create(companyCreateDto: CompanyCreateDto, req: any) {
-        const loggedInUser = req?.user?.email ? await this.userRepo.findOneBy({ email: req?.user?.email }) : null;
+    // async create(companyCreateDto: CompanyCreateDto, req: any) {
+    //     const loggedInUser = req?.user?.email ? await this.userRepo.findOneBy({ email: req?.user?.email }) : null;
 
-        let company: Company = new Company();
-        fillOrReplaceObject(company, companyCreateDto);
+    //     let company: Company = new Company();
+    //     fillOrReplaceObject(company, companyCreateDto);
 
-        if (loggedInUser) {
-            company.createdBy = loggedInUser.id;
-        }
+    //     if (loggedInUser) {
+    //         company.createdBy = loggedInUser.id;
+    //     }
 
-        try {
-            const companyData = await this.companyRepo.save(company);
-            const logsData = await this.logService.saveLogByRef(companyData, Features.company, Action.create, req);
+    //     try {
+    //         const companyData = await this.companyRepo.save(company);
+    //         const logsData = await this.logService.saveLogByRef(companyData, Features.company, Action.create, req);
 
-            if (!logsData) throw new HttpException('could not save logs..', HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (error) {
-            if (error.code === '23505') {
-                throw new ConflictException(['Company Name already exists']);
-            }
-            throw error;
-        }
-    }
+    //         if (!logsData) throw new HttpException('could not save logs..', HttpStatus.INTERNAL_SERVER_ERROR);
+    //     } catch (error) {
+    //         if (error.code === '23505') {
+    //             throw new ConflictException(['Company Name already exists']);
+    //         }
+    //         throw error;
+    //     }
+    // }
 
     async companyList(req: any): Promise<any> {
         const companies = await this.companyRepo
@@ -130,31 +124,31 @@ export class CompanyService {
         return await this.companyRepo.findOneBy({ id });
     }
 
-    async updateCompany(updateCompanyDto: CompanyUpdateDto, req: any) {
-        const loggedInUser = req?.user?.email ? await this.userRepo.findOneBy({ email: req?.user?.email }) : null;
+    // async updateCompany(updateCompanyDto: CompanyUpdateDto, req: any) {
+    //     const loggedInUser = req?.user?.email ? await this.userRepo.findOneBy({ email: req?.user?.email }) : null;
 
-        let company: Company = await this.findOne(+updateCompanyDto.id);
-        if (!company) throw new NotFoundException(['Company not found']);
+    //     let company: Company = await this.findOne(+updateCompanyDto.id);
+    //     if (!company) throw new NotFoundException(['Company not found']);
 
-        fillOrReplaceObject(company, updateCompanyDto);
+    //     fillOrReplaceObject(company, updateCompanyDto);
 
-        if (loggedInUser) {
-            company.updatedBy = loggedInUser.id;
-        }
+    //     if (loggedInUser) {
+    //         company.updatedBy = loggedInUser.id;
+    //     }
 
-        try {
-            const companyData = await this.companyRepo.save(company);
+    //     try {
+    //         const companyData = await this.companyRepo.save(company);
 
-            const logsData = await this.logService.saveLogByRef(companyData, Features.company, Action.update, req);
+    //         const logsData = await this.logService.saveLogByRef(companyData, Features.company, Action.update, req);
 
-            if (!logsData) throw new HttpException('could not save logs..', HttpStatus.INTERNAL_SERVER_ERROR);
-        } catch (error) {
-            if (error.code === '23505') {
-                throw new ConflictException(['Company Name already exists']);
-            }
-            throw error;
-        }
-    }
+    //         if (!logsData) throw new HttpException('could not save logs..', HttpStatus.INTERNAL_SERVER_ERROR);
+    //     } catch (error) {
+    //         if (error.code === '23505') {
+    //             throw new ConflictException(['Company Name already exists']);
+    //         }
+    //         throw error;
+    //     }
+    // }
 
     async deleteCompany(req: any) {
         const loggedInUser = req?.user?.email ? await this.userRepo.findOneBy({ email: req?.user?.email }) : null;

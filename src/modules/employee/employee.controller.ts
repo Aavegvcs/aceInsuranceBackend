@@ -39,17 +39,17 @@ export class EmployeeController {
         return this.employeeService.getDealersPerBranch(body.branchId);
     }
 
-    @UseGuards(JwtAuthGuard)
-    @ApiOperation({ summary: 'Get branch dealers brokerage' })
-    @Post('getDealersBrokerage')
-    async getDealersBrokerage(@Req() req: any) {
-        return this.employeeService.getDealersBrokerage(req);
-    }
+    // @UseGuards(JwtAuthGuard)
+    // @ApiOperation({ summary: 'Get branch dealers brokerage' })
+    // @Post('getDealersBrokerage')
+    // async getDealersBrokerage(@Req() req: any) {
+    //     return this.employeeService.getDealersBrokerage(req);
+    // }
 
-    @Get('createBranchManagersForAllBranches')
-    async createBranchManagersForAllBranches(@Req() req: any) {
-        return this.employeeService.createBranchManagersForAllBranches();
-    }
+    // @Get('createBranchManagersForAllBranches')
+    // async createBranchManagersForAllBranches(@Req() req: any) {
+    //     return this.employeeService.createBranchManagersForAllBranches();
+    // }
     
         @UseGuards(JwtInsAuthGuard)
     @Post('createInsuranceEmployee')

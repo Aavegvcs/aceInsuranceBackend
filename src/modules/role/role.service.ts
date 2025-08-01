@@ -3,7 +3,6 @@ import { CreateRoleDto } from './dto/request/create-role.dto';
 import { Role } from './entities/role.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RoleFeatureActionService } from '../role-feature-action/role-feature-action.service';
 import { UserRoleService } from '../user-role/user-role.service';
 import { UserService } from '../user/user.service';
 import { orderByKey, orderByValue } from 'src/utils/app.utils';
@@ -14,8 +13,6 @@ export class RoleService {
     constructor(
         @InjectRepository(Role)
         private roleRepo: Repository<Role>,
-        @Inject(forwardRef(() => RoleFeatureActionService))
-        private roleFeatureActionService: RoleFeatureActionService,
         private userRoleService: UserRoleService,
         @Inject(forwardRef(() => UserService))
         private userService: UserService
@@ -30,28 +27,6 @@ export class RoleService {
         return roleName;
     }
 
-    // async findAll(body: any, req: any): Promise<any> {
-    //     const items = await this.roleRepo
-    //         .createQueryBuilder('role')
-    //         .where(req?.QUERY_STRING?.where)
-    //         .skip(req?.QUERY_STRING?.skip)
-    //         .take(req?.QUERY_STRING?.limit)
-    //         .orderBy(
-    //             orderByKey({
-    //                 key: req?.QUERY_STRING?.orderBy?.key,
-    //                 repoAlias: 'role'
-    //             }),
-    //             orderByValue({ req })
-    //         )
-    //         .getMany();
-
-    //     const qb = this.roleRepo.createQueryBuilder('role').where(req?.QUERY_STRING?.where).select([]);
-
-    //     return {
-    //         items,
-    //         qb
-    //     };
-    // }
     async findAll(body: any, req: any): Promise<any> {
         const baseWhere = req?.QUERY_STRING?.where || {};
 
@@ -113,21 +88,6 @@ export class RoleService {
         return await this.roleRepo.delete({ roleName });
     }
 
-    async removeById(roleId: number): Promise<any> {
-        const dbRole = await this.roleRepo.findOneBy({ id: roleId });
-        if (!dbRole) throw new NotFoundException(['Role Not found']);
-
-        // Hard-Delete Records for this Role in Junction Tables
-        await this.roleFeatureActionService.deleteRecordsForRole(dbRole.id);
-        await this.userRoleService.deleteRecordsForRole(dbRole.id);
-
-        // Set 'userType' to null of all users with value of this Role's name
-        await this.userService.bulkUpdate('userType', null, { userType: dbRole.roleName });
-
-        // Soft-Delete from its own Table and Save
-        dbRole.deletedAt = new Date(Date.now());
-        await this.roleRepo.save(dbRole);
-    }
 
     async getRolesForRoleNames(roleNames: string[]): Promise<Role[]> {
         return await this.roleRepo

@@ -15,18 +15,10 @@ import { GlobalExceptionFilter } from './filters/exception.filter';
 import { EmailModule } from './modules/email/email.module';
 import { MediaModule } from './modules/media/media.module';
 import { AddressModule } from './modules/address/address.module';
-import { OrganizationModule } from './modules/organization/organization.module';
 import { CompanyModule } from './modules/company/company.module';
-import { AbilityModule } from './modules/ability/ability.module';
 import { RoleModule } from './modules/role/role.module';
-import { ActionModule } from './modules/action/action.module';
-import { FeatureModule } from './modules/feature/feature.module';
-import { RoleFeatureActionModule } from './modules/role-feature-action/role-feature-action.module';
 import { UserRoleModule } from './modules/user-role/user-role.module';
-import { FeatureActionModule } from './modules/feature-action/feature-action.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { typeOrmAsyncConfig } from './config/typeorm.config';
-import { UserFeatureActionModule } from './modules/user-feature-action/user-feature-action.module';
 import { CheckDtTableMiddleware } from './middlewares/dtTables.middleware';
 import * as bodyParser from 'body-parser';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -35,19 +27,12 @@ import { StatesModule } from './modules/states/states.module';
 import { CitiesModule } from './modules/cities/cities.module';
 import { AwsModule } from './modules/aws/aws.module';
 import { DepartmentModule } from '@modules/department/department.module';
-import { ClientModule } from '@modules/client/client.module';
 import { BranchModule } from '@modules/branch/branch.module';
 import { InsuranceProductModule } from '@modules/insurance-product/insurance-product-module';
 import { InsuranceTicketModule } from '@modules/insurance-ticket/insurance-ticket.module';
 import { TechexcelModule } from '@modules/techexcel/techexcel.module';
 import { EmployeeModule } from '@modules/employee/employee.module';
 const cookieParser = require('cookie-parser')();
-import { redisStore } from 'cache-manager-ioredis';
-import { CacheModule } from '@nestjs/cache-manager';
-import { createKeyv } from '@keyv/redis';
-import Keyv from 'keyv';
-import KeyvRedis from '@keyv/redis';
-import { ReportModule } from '@modules/report/report.module';
 import { InsuranceQuotationModule } from '@modules/insurance-quotations/insurance-quotation.module';
 import { InsuranceRolePermissionModule } from '@modules/insurance-role-permission/insurance-role-permission.module';
 import { BullModule } from '@nestjs/bull';
@@ -71,18 +56,9 @@ const redisClient = new Redis({ host: 'localhost', port: 6379 });
         MediaModule,
         BranchModule,
         AddressModule,
-        OrganizationModule,
         CompanyModule,
-        AbilityModule,
-        ClientModule,
         RoleModule,
-        ActionModule,
-        FeatureModule,
-        RoleFeatureActionModule,
         UserRoleModule,
-        FeatureActionModule,
-        DashboardModule,
-        UserFeatureActionModule,
         EventEmitterModule.forRoot(),
         CountriesModule,
         StatesModule,
@@ -91,7 +67,6 @@ const redisClient = new Redis({ host: 'localhost', port: 6379 });
         InsuranceTicketModule,
         TechexcelModule,
         EmployeeModule,
-        ReportModule,
         InsuranceQuotationModule,
         InsuranceRolePermissionModule,
 

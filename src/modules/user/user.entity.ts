@@ -7,8 +7,6 @@ import {
     DeleteDateColumn,
     Entity,
     JoinColumn,
-    JoinTable,
-    ManyToMany,
     ManyToOne,
     OneToMany,
     OneToOne,
@@ -20,7 +18,6 @@ import { Country } from '../countries/entities/country.entity';
 import { State } from '../states/entities/state.entity';
 import { City } from '../cities/entities/city.entity';
 import { Exclude } from 'class-transformer';
-import { Client } from '@modules/client/entities/client.entity';
 import { Employee } from '@modules/employee/entities/employee.entity';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { InsuranceAssignedTo } from '@modules/insurance-ticket/entities/insurance-ticket-assignedTo.entity';
@@ -86,12 +83,6 @@ export class User extends BaseEntity {
     @Column({ nullable: true })
     newPassword: string;
 
-    // @Column({ nullable: true })
-    // userType: string;
-
-    // @OneToOne(() => Role)
-    // @JoinColumn({ name: 'userType' }) // or omit name to auto-generate
-    // userType: Role;
 
     @ManyToOne(() => Role, (role) => role.users)
     @JoinColumn({ name: 'userType' })
@@ -105,9 +96,6 @@ export class User extends BaseEntity {
     @Column({ nullable: true, unique: true })
     employeeId: string;
 
-    // One-to-One relationship with Client
-    @OneToOne(() => Client, (client) => client.user)
-    client: Client;
 
     @OneToOne(() => Employee, (data) => data.user)
     employee: Employee;

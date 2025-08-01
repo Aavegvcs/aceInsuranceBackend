@@ -4,7 +4,6 @@ import {
     Inject,
     Injectable,
     InternalServerErrorException,
-    Logger,
     NotFoundException,
     forwardRef
 } from '@nestjs/common';
@@ -13,15 +12,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 import {
-    CLIENT_STATUS,
     RoleType,
     Roles,
     fillOrReplaceObject,
     generateOTP,
-    STRATEGIES,
     orderByKey,
     orderByValue,
-    refineCustomLogs,
     USER_STATUS,
     addFilters,
     generateRandomPassword,
@@ -34,21 +30,15 @@ import { MediaService } from '../media/media.service';
 import { ReferenceService } from '../reference/reference.service';
 import { UserCreateDto } from './dto/request/user-create-dto';
 import { UserRoleService } from '../user-role/user-role.service';
-import { RoleFeatureActionService } from '../role-feature-action/role-feature-action.service';
-import { FeatureActionService } from '../feature-action/feature-action.service';
-import { ActionService } from '../action/action.service';
-import { FeatureService } from '../feature/feature.service';
 import { RoleService } from '../role/role.service';
 import { UserEditDto } from './dto/request/user-edit-dto';
 import { CompanyService } from '../company/company.service';
 import { TokenService } from '../auth/tokens.service';
 import { FilterRequest, UsersListOfTypeDto } from './dto/request/usersListOfSingleType-dto';
-import { UserFeatureAction } from '../user-feature-action/entities/user-feature-action.entity';
 import { ClientStatusDto } from './dto/request/client-status.dto';
 import { Role } from '../role/entities/role.entity';
 import { TestListDto } from './dto/request/testList.dto';
 import { getLogger } from 'src/utils/winstonLogger';
-import { UserFeatureActionService } from '../user-feature-action/user-feature-action.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Branch } from '@modules/branch/entities/branch.entity';
 import { EmailService } from '@modules/email/email.service';
@@ -59,74 +49,58 @@ import { Company } from '@modules/company/entities/company.entity';
 export class UserService {
     constructor(
         private authService: AuthService,
-        private tokenService: TokenService,
         private notifyService: NotificationService,
-        private addrService: AddressService,
-        private referenceService: ReferenceService,
         @Inject(forwardRef(() => MediaService))
         private mediaService: MediaService,
         @InjectRepository(User)
         private userRepository: Repository<User>,
         private userRoleService: UserRoleService,
-        @Inject(forwardRef(() => RoleFeatureActionService))
-        private roleFeatureActionService: RoleFeatureActionService,
-        private featureActionService: FeatureActionService,
-        private userFeatureActionService: UserFeatureActionService,
-        private actionService: ActionService,
-        private featureService: FeatureService,
-        private eventEmitter: EventEmitter2,
         private roleService: RoleService,
         private companyService: CompanyService,
-        @InjectRepository(UserFeatureAction)
-        private userFeatureActionRepo: Repository<UserFeatureAction>,
-        @InjectRepository(Branch)
-        private BranchRepo: Repository<Branch>,
-        @InjectRepository(Role)
-        private roleRepo: Repository<Role>,
         private emailService: EmailService
     ) {}
 
-    async getUserListOfSingleType(data: UsersListOfTypeDto, req: any) {
-        let superadmin: boolean = false;
+    // async getUserListOfSingleType(data: UsersListOfTypeDto, req: any) {
+    //     let superadmin: boolean = false;
 
-        const roles = await this.roleRepo
-            .createQueryBuilder('role')
-            .select('role.roleName')
-            .where('role.id IN (:...roleIds)', { roleIds: data?.filterRoleIds })
-            .getMany();
+    //     const roles = await this.roleRepo
+    //         .createQueryBuilder('role')
+    //         .select('role.roleName')
+    //         .where('role.id IN (:...roleIds)', { roleIds: data?.filterRoleIds })
+    //         .getMany();
 
-        const rolesNames = roles.map((role) => role.roleName);
+    //     const rolesNames = roles.map((role) => role.roleName);
 
-        const dbRole = await this.roleService.findOne(data?.userRoleId);
-        if (!dbRole) throw new NotFoundException(['User-Role not found..']);
+    //     const dbRole = await this.roleService.findOne(data?.userRoleId);
+    //     if (!dbRole) throw new NotFoundException(['User-Role not found..']);
 
-        if (dbRole.roleName === Roles.superadmin) superadmin = true;
+    //     if (dbRole.roleName === Roles.superadmin) superadmin = true;
 
-        const { items: users, qb } = await this.getUserOfRoles({
-            req,
-            status: data?.status,
-            rolesNames,
-            companyId: data?.companyId,
-            superadmin,
-            filters: data?.filters
-        });
+    //     const { items: users, qb } = await this.getUserOfRoles({
+    //         req,
+    //         status: data?.status,
+    //         rolesNames,
+    //         companyId: data?.companyId,
+    //         superadmin,
+    //         filters: data?.filters
+    //     });
 
-        // Calculate specialFeature property for each user
-        for (let user of users) {
-            const hasSpecialFeature =
-                (await this.userFeatureActionRepo
-                    .createQueryBuilder('user_feature_action')
-                    .where('"user" = :userId', { userId: user.id })
-                    .getCount()) > 0;
+    //     // Calculate specialFeature property for each user
+    //     for (let user of users) {
+    //         const hasSpecialFeature =
+    //             (await this.userFeatureActionRepo
+    //                 .createQueryBuilder('user_feature_action')
+    //                 .where('"user" = :userId', { userId: user.id })
+    //                 .getCount()) > 0;
 
-            user['specialFeature'] = hasSpecialFeature;
-        }
+    //         user['specialFeature'] = hasSpecialFeature;
+    //     }
 
-        return {
-            items: users,
-            qb
-        };
-    }
+    //     return {
+    //         items: users,
+    //         qb
+    //     };
+    // }
 
     async getActiveUsersByCompany(companyId: number): Promise<any> {
         return await this.userRepository
@@ -151,35 +125,35 @@ export class UserService {
             .getOne();
     }
 
-    async findOneByGenericId(userType: Roles, genericId: string): Promise<User | undefined> {
-        const whereClause: FindOptionsWhere<User> = {};
+    // async findOneByGenericId(userType: Roles, genericId: string): Promise<User | undefined> {
+    //     const whereClause: FindOptionsWhere<User> = {};
 
-        if (userType === Roles.client) {
-            whereClause.client = { id: genericId };
-        } else {
-            whereClause.employee = { id: genericId };
-        }
-        Logger.debug('where', whereClause);
-        return this.userRepository.findOne({ where: whereClause });
-    }
+    //     if (userType === Roles.client) {
+    //         whereClause.client = { id: genericId };
+    //     } else {
+    //         whereClause.employee = { id: genericId };
+    //     }
+    //     Logger.debug('where', whereClause);
+    //     return this.userRepository.findOne({ where: whereClause });
+    // }
 
-    async findAndUpdateById(userType: Roles, genericId: string, updates: Partial<User>): Promise<User> {
-        const whereClause: FindOptionsWhere<User> = {};
+    // async findAndUpdateById(userType: Roles, genericId: string, updates: Partial<User>): Promise<User> {
+    //     const whereClause: FindOptionsWhere<User> = {};
 
-        if (userType === Roles.client) {
-            whereClause.client = { id: genericId };
-        } else {
-            whereClause.employee = { id: genericId };
-        }
+    //     if (userType === Roles.client) {
+    //         whereClause.client = { id: genericId };
+    //     } else {
+    //         whereClause.employee = { id: genericId };
+    //     }
 
-        const user = await this.userRepository.findOne({ where: whereClause });
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+    //     const user = await this.userRepository.findOne({ where: whereClause });
+    //     if (!user) {
+    //         throw new NotFoundException('User not found');
+    //     }
 
-        Object.assign(user, updates);
-        return this.userRepository.save(user);
-    }
+    //     Object.assign(user, updates);
+    //     return this.userRepository.save(user);
+    // }
 
     async findOneById(id: number): Promise<User> {
         return await this.userRepository
@@ -293,32 +267,32 @@ export class UserService {
         return await this.userRepository.save(user);
     }
 
-    async getUserRolesFeaturesPermissions(userEmail: string): Promise<any> {
-        let allPermissions: any[];
-        const dbUser = await this.findOneByEmail(userEmail);
-        if (!dbUser) throw new NotFoundException('User not found');
+    // async getUserRolesFeaturesPermissions(userEmail: string): Promise<any> {
+    //     let allPermissions: any[];
+    //     const dbUser = await this.findOneByEmail(userEmail);
+    //     if (!dbUser) throw new NotFoundException('User not found');
 
-        const userRoles = await this.userRoleService.findByUserId(dbUser.id);
-        const userPermissions = await this.roleFeatureActionService.findByRoleId(userRoles.roleId);
+    //     const userRoles = await this.userRoleService.findByUserId(dbUser.id);
+    //     const userPermissions = await this.roleFeatureActionService.findByRoleId(userRoles.roleId);
 
-        await Promise.all(
-            userPermissions.map(async (element) => {
-                // const featureAction = await this.featureActionService.findOneById(element.featureActionId);
-                const featureAction = element.featureActionId;
-                // const action = await this.actionService.findOne(featureAction.permissionId);
-                const action = featureAction.permissionId;
-                // const feature = await this.featureService.findOne(featureAction.featureId);
-                const feature = featureAction.featureId;
+    //     await Promise.all(
+    //         userPermissions.map(async (element) => {
+    //             // const featureAction = await this.featureActionService.findOneById(element.featureActionId);
+    //             const featureAction = element.featureActionId;
+    //             // const action = await this.actionService.findOne(featureAction.permissionId);
+    //             const action = featureAction.permissionId;
+    //             // const feature = await this.featureService.findOne(featureAction.featureId);
+    //             const feature = featureAction.featureId;
 
-                allPermissions.push({
-                    can: `${action.actionName}`,
-                    feature: `${feature.featureName}`
-                });
-            })
-        );
+    //             allPermissions.push({
+    //                 can: `${action.actionName}`,
+    //                 feature: `${feature.featureName}`
+    //             });
+    //         })
+    //     );
 
-        return allPermissions;
-    }
+    //     return allPermissions;
+    // }
 
     async findUser(email: string) {
         try {

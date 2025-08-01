@@ -65,13 +65,6 @@ export class JwtInsAuthGuard implements CanActivate, OnModuleInit {
 
             // Fetch user
             const { email } = payload;
-            // const dbUser = await this.userRepo
-            //     .createQueryBuilder('user')
-            //     .leftJoin('user.company', 'company') // join the relation
-            //     .leftJoin('user.userType', 'userType')
-            //     .where('user.email = :email', { email })
-            //     .andWhere('company.id = :companyId', { companyId: 1 })
-            //     .getOne();
 
             const dbUser = await this.userRepo.findOne({
                 where: {

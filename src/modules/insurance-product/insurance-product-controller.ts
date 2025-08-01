@@ -6,9 +6,6 @@ import { CreateInsuranceCompanyDto, UpdateInsuranceCompanyDto } from './dto/insu
 import { CreateInsuranceSubTypeDto, UpdateInsuranceSubTypeDto } from './dto/insurance-subtype.dto';
 import { CreateInsurancePurchasedDto } from './dto/insurance-purchased.dto';
 import { Insurance_Type } from 'src/utils/app.utils';
-import { JwtAuthGuard } from '@modules/auth/jwt-auth.guard';
-import { UserService } from '@modules/user/user.service';
-import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
 
 @ApiTags('insurance-product')

@@ -3,10 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EscalationDetails } from './entities/escalation-details.entity';
 import { Repository } from 'typeorm';
 import { EscalationCase } from './entities/escalation-case.entity';
-import { promises } from 'dns';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { User } from '@modules/user/user.entity';
-import { Current_Step, RoleId, Roles } from 'src/utils/app.utils';
+import {  RoleId } from 'src/utils/app.utils';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { TicketNotificationService } from './ticket-notification-service';
 

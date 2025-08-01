@@ -10,7 +10,7 @@ import {
     OneToOne
 } from 'typeorm';
 import { InsuranceTicket } from '../../insurance-ticket/entities/insurance-ticket.entity';
-import { Client } from '@modules/client/entities/client.entity';
+// import { Client } from '@modules/client/entities/client.entity';
 import { Insurance_Product_Status } from 'src/utils/app.utils';
 import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
 import { InsuranceIncentives } from '@modules/insurance-product/entities/insurance-incentives.entity';

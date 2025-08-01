@@ -5,7 +5,7 @@ import { InsuranceTicketController } from './insurance-ticket.controller';
 import { InsuranceTicketService } from './insurance-ticket.service';
 import { InsuranceAssignedTo } from './entities/insurance-ticket-assignedTo.entity';
 import { InsuranceAgent } from '@modules/insurance-ticket/entities/insurance-agent.entity';
-import { Client } from '@modules/client/entities/client.entity';
+// import { Client } from '@modules/client/entities/client.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceUser } from '@modules/insurance-ticket/entities/insurance-user.entity';
 import { InsuranceTicketDocuments } from './entities/insurance-ticket-documents.entity';
@@ -33,7 +33,7 @@ import { Role } from '@modules/role/entities/role.entity';
         TypeOrmModule.forFeature([
             InsuranceTicket,
             InsuranceAssignedTo,
-            Client,
+            // Client,
             InsuranceAgent,
             Branch,
             User,

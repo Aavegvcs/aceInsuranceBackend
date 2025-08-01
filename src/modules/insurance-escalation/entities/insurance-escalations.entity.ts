@@ -11,7 +11,6 @@ import {
 } from 'typeorm';
 import { InsuranceTicket } from '../../insurance-ticket/entities/insurance-ticket.entity';
 import { InsuranceAgent } from '../../insurance-ticket/entities/insurance-agent.entity';
-import { Client } from '@modules/client/entities/client.entity';
 import { InsuranceProductSuggestions } from './insurance-product-suggestions.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceClientResponses } from './insurance-client-response.entity';
@@ -32,10 +31,6 @@ export class InsuranceEscalations {
     })
     @JoinColumn({ name: 'esclated_to' })
     esclated_to: InsuranceAgent;
-
-    @ManyToOne(() => Client)
-    @JoinColumn({ name: 'client_id' })
-    client: Client;
 
     @Column({
         type: 'enum',
