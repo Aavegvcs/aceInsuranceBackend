@@ -39,8 +39,8 @@ async function bootstrap() {
 
     // Get the SecretService from the application context
     await app.init();
-    http.createServer(server).listen(3004);
-    https.createServer(httpsOptions, server).listen(3002);
+    http.createServer(server).listen(3010);
+    https.createServer(httpsOptions, server).listen(3012);
 }
 
 bootstrap();

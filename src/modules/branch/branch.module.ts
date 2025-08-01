@@ -3,12 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BranchService } from './branch.service';
 import { BranchController } from './branch.controller';
 import { Branch } from './entities/branch.entity';
-import { BranchRevenue } from './entities/branch-revenue.entity';
 import { EmployeeModule } from '@modules/employee/employee.module';
 import { Employee } from '@modules/employee/entities/employee.entity';
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Branch, BranchRevenue, Employee]),
+        TypeOrmModule.forFeature([Branch, Employee]),
         forwardRef(() => EmployeeModule),
     ],
     controllers: [BranchController],

@@ -30,7 +30,6 @@ import { DepartmentModule } from '@modules/department/department.module';
 import { BranchModule } from '@modules/branch/branch.module';
 import { InsuranceProductModule } from '@modules/insurance-product/insurance-product-module';
 import { InsuranceTicketModule } from '@modules/insurance-ticket/insurance-ticket.module';
-import { TechexcelModule } from '@modules/techexcel/techexcel.module';
 import { EmployeeModule } from '@modules/employee/employee.module';
 const cookieParser = require('cookie-parser')();
 import { InsuranceQuotationModule } from '@modules/insurance-quotations/insurance-quotation.module';
@@ -65,7 +64,6 @@ const redisClient = new Redis({ host: 'localhost', port: 6379 });
         CitiesModule,
         InsuranceProductModule,
         InsuranceTicketModule,
-        TechexcelModule,
         EmployeeModule,
         InsuranceQuotationModule,
         InsuranceRolePermissionModule,

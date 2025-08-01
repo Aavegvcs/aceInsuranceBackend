@@ -24,7 +24,7 @@ export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
             database: dbName,
             entities: [__dirname + '/../**/*.entity.{js,ts}'],
             migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
-            synchronize: false,
+            synchronize: true,
             logging: false,
             extra: {
                 timezone: 'UTC',

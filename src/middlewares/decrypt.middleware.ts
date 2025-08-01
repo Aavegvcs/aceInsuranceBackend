@@ -27,7 +27,7 @@ export class DecryptDataMiddleware implements NestMiddleware {
             try {
                 const decryptedData = await decryptData(req?.body?.string);
 
-                 Logger.log('decryptedData--  ', JSON.parse(decryptedData));
+                //  Logger.log('decryptedData--  ', JSON.parse(decryptedData));
                 // Update the request body with and transformed data
 
                 const _obj = JSON.parse(decryptedData);

@@ -7,7 +7,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Branch } from './entities/branch.entity';
-import { BranchRevenue } from './entities/branch-revenue.entity';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { BranchModels, Designation } from 'src/utils/app.utils';
@@ -34,8 +33,6 @@ export class BranchService {
     constructor(
         @InjectRepository(Branch)
         private readonly branchRepository: Repository<Branch>,
-        @InjectRepository(BranchRevenue)
-        private readonly branchRevenueRepository: Repository<BranchRevenue>,
         @InjectRepository(Employee)
         private readonly employeeRepository: Repository<Employee>,
         @Inject(forwardRef(() => EmployeeService))
