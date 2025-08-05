@@ -281,6 +281,7 @@ export class InsuranceTicketService {
         }
         let { userDetails, ticketDetails } = reqBody;
         let assignPerson = await this.userRepo.findOne({ where: { id: ticketDetails.assignedTo } });
+        // console.log("in ticket createion assigen person is-",ticketDetails.assigned, assignPerson)
         // Initial response object
         const response = {
             status: 'success',
