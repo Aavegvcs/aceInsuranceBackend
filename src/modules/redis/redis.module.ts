@@ -3,7 +3,7 @@ import Redis from 'ioredis';
 
 const redisClient = new Redis({
   host: process.env.REDIS_HOST,
-  port: parseInt(process.env.REDIS_PORT, 10),
+  port: 6379,
 });
 
 @Global()

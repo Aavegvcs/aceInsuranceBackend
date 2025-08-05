@@ -39,7 +39,6 @@ import { InsuranceEscalationModule } from '@modules/insurance-escalation/insuran
 import { InsuranceDashboardModule } from '@modules/insurance-dashboard/insurance-dashboard.module';
 import Redis from 'ioredis';
 import { RedisModule } from '@modules/redis/redis.module';
-const redisClient = new Redis({ host: 'localhost', port: 6379 });
 @Module({
     imports: [
         AwsModule,
