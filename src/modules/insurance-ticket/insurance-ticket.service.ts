@@ -223,7 +223,7 @@ export class InsuranceTicketService {
     //this api is for getting all ticket card on dashboard
     async getTicket(reqObj: any): Promise<InsuranceTicket[]> {
         const loggedInUser = this.loggedInsUserService.getCurrentUser();
-
+// console.log(reqObj.agentId, reqObj.userId)
         if (!loggedInUser) {
             throw new UnauthorizedException('User not logged in');
         }
@@ -231,11 +231,12 @@ export class InsuranceTicketService {
         let agentId = null;
         if (loggedInUser.userType.id == RoleId.staff) {
             agentId = loggedInUser.id;
-        } else if (loggedInUser.userType.id == RoleId.superadmin || loggedInUser.userType.id == RoleId.admin) {
-            agentId = null;
         } else {
             agentId = reqObj.agentId;
         }
+
+        // else if (loggedInUser.userType.id == RoleId.superadmin || loggedInUser.userType.id == RoleId.admin) {
+        //     agentId = null;
         // const cacheKey = `getInsuranceTicket:${reqObj.userId}:${agentId}:${reqObj.fromDate}:${reqObj.toDate}`;
 
         // Try fetching from Redis
@@ -244,14 +245,15 @@ export class InsuranceTicketService {
         // if (cached) {
         //     return JSON.parse(cached);
         // }
-        const query = 'CALL get_InsuranceTicket(?, ?, ?, ?, ?)';
-        console.log('here looks', reqObj.userId, agentId, reqObj.fromDate, reqObj.toDate);
+        const query = 'CALL get_InsuranceTicket(?, ?, ?, ?, ?, ?)';
+        console.log('getTicket reqBody', reqObj.userId, agentId, reqObj.fromDate, reqObj.toDate, reqObj.ticketStatus);
         const result = await this.ticketRepo.query(query, [
             reqObj.userId,
             agentId,
             reqObj.fromDate,
             reqObj.toDate,
-            loggedInUser.userType.id
+            loggedInUser.userType.id,
+            reqObj.ticketStatus
         ]);
         const tickets = result[0];
         // await this.redisClient.set(cacheKey, JSON.stringify(tickets), 'EX', 300);
@@ -510,7 +512,9 @@ export class InsuranceTicketService {
 
     async getAllAgent(): Promise<any> {
         const query = 'CALL get_allAgent()';
+       
         const result = await this.agentRepo.query(query);
+         console.log(result[0])
         return result[0];
     }
     // ============================ api for get ticket details ============================
@@ -1417,7 +1421,7 @@ export class InsuranceTicketService {
     })
     async croncheckfun() {
         const today = new Date();
-        console.log('this is cronjob checking**********************');
+        console.log('this is cronjob checking********************** on : ', today);
     }
 
     async getStepStatusByRole(reqObj: any, req: any): Promise<any> {

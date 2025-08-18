@@ -50,9 +50,6 @@ export class InsuranceTicketController {
     @Post('getInsuranceTicket')
     @ApiOperation({ summary: 'Get all tickets for a given agent' })
     async getInsuranceTicket(@Body() reqObj: any, @Req() req: any, @Headers() headers: any) {
-        // const authHeader = req.headers['authorization'];
-    // const token = authHeader?.split(' ')[1]; // extracts token after "Bearer"
-        // console.log('JWT Token:',headers);
         
         return this._ticketService.getTicket(reqObj);
     }

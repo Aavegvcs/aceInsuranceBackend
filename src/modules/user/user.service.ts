@@ -780,6 +780,8 @@ export class UserService {
     async getUserForFilter(): Promise<any> {
         const query = 'CALL get_userForFilter()';
         const result = await this.userRepository.query(query);
+        // console.log(result[0]);
+        
         return result[0];
     }
 

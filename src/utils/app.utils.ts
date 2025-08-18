@@ -906,7 +906,7 @@ export enum InsurancePermissionType {
 export function isUserAuthorizedToAccessTicket(user: User, ticket: any): boolean {
     const role = user.userType.roleName;
     const branchRoles = ['teleCaller', 'insuranceManager', 'productHead'];
-    console.log("here role is in auhto---", role, user.branch.id, ticket.createdBy.branch.id );
+    // console.log("here role is in auhto---", role, user.branch.id, ticket.createdBy.branch.id );
     
     if (['admin', 'superadmin'].includes(role)) return true;
     // Check if the role is one of branch-level roles
