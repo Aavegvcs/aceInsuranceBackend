@@ -68,7 +68,7 @@ export class InsuranceProductService {
     }
     async updateCompany(reqBody: any, req: any): Promise<any> {
         let response: any = {};
-
+console.log("in company reqBody", reqBody);
         try {
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
             // console.log('loggedInUser', loggedInUser);
@@ -98,6 +98,9 @@ export class InsuranceProductService {
                 email: reqBody.email,
                 contactPerson: reqBody.contactPerson,
                 contactNumber: reqBody.contactNumber,
+                secondaryContactPerson:reqBody.secondaryContactPerson,
+                secondaryContactNumber: reqBody.secondaryContactNumber,
+                secondaryEmail: reqBody.secondaryEmail,
                 isActive: reqBody.isActive,
                 updatedAt: reqBody.updatedAt,
                 updatedBy: loggedInUser

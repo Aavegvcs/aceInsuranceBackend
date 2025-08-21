@@ -246,7 +246,7 @@ export class InsuranceTicketService {
         //     return JSON.parse(cached);
         // }
         const query = 'CALL get_InsuranceTicket(?, ?, ?, ?, ?, ?)';
-        console.log('getTicket reqBody', reqObj.userId, agentId, reqObj.fromDate, reqObj.toDate, reqObj.ticketStatus);
+        // console.log('getTicket reqBody', reqObj.userId, agentId, reqObj.fromDate, reqObj.toDate, reqObj.ticketStatus);
         const result = await this.ticketRepo.query(query, [
             reqObj.userId,
             agentId,

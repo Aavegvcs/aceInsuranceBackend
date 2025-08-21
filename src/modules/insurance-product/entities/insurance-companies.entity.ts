@@ -26,11 +26,20 @@ export class InsuranceCompanies {
     @Column({ name: 'contact_person', nullable: true })
     contactPerson: string;
 
-    @Column({ name: 'contact_number', unique: true, nullable: false })
+    @Column({ name: 'contact_number', nullable: false })
     contactNumber: string;
 
     @Column({ name: 'email', unique: true, nullable: false })
     email: string;
+
+    @Column({ name: 'secondary_contact_person', nullable: true })
+    secondaryContactPerson: string;
+
+    @Column({ name: 'secondary_contact_number', nullable: true })
+    secondaryContactNumber: string;
+
+    @Column({ name: 'secondary_email', nullable: true })
+    secondaryEmail: string;
 
     @Column({ name: 'company_logo', nullable: true })
     companyLogo: string;

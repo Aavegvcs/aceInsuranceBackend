@@ -27,6 +27,22 @@ export class CreateInsuranceCompanyDto {
     @IsEmail()
     email: string;
 
+
+    @ApiProperty({ example: 'John Doe', description: "Contact person's name", required: false })
+    @IsOptional()
+    @IsString()
+    secondaryContactPerson?: string;
+
+    @ApiProperty({ example: '9876543210', description: 'Secondary Contact number of escalation' })
+    @IsNotEmpty()
+    @IsString()
+    secondaryContactNumber: string;
+
+    @ApiProperty({ example: 'abc@example.com', description: 'Secondary Email for escalation' })
+    @IsNotEmpty()
+    @IsEmail()
+    secondaryEmail: string;
+
     @ApiProperty({ example: true, description: 'Whether the company is active or not', default: true })
     @IsOptional()
     @IsBoolean()
