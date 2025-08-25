@@ -84,6 +84,42 @@ export class InsuranceProduct {
 
     @Column({ name: 'payout_percentage', type: 'decimal', precision: 10, scale: 2, nullable: false })
     payoutPercentage: number;
+    // added filed on 22-08-2025 @Aftab
+
+    @Column({ name: 'coverage_amount_min', type: 'decimal', precision: 12, scale: 2, nullable: true })
+    coverageAmountMin: number;
+
+    @Column({ name: 'coverage_amount_max', type: 'decimal', precision: 12, scale: 2, nullable: true })
+    coverageAmountMax: number;
+
+    @Column({
+        type: 'enum',
+        enum: ['INDIVIDUAL', 'FAMILY', 'GROUP', 'VEHICLE'],
+        name: 'coverage_type',
+        nullable: true
+    })
+    coverageType: string;
+
+    @Column({ name: 'is_renewable', type: 'boolean', default: true })
+    isRenewable: boolean;
+
+    @Column({ name: 'renewal_grace_period', type: 'int', default: 30 })
+    renewalGracePeriod: number; //Extra days after policy expiry during which the policyholder can pay renewal premium without losing continuity benefits
+
+    @Column({ name: 'waiting_period', type: 'int', nullable: true })
+    waitingPeriods: number; //The minimum period (in days) after policy purchase before certain benefits/claims can be availed.
+
+    @Column({ name: 'free_look_period_days', type: 'int', nullable: true })
+    freeLookPeriodDays: number; //The number of days a policyholder has after buying the policy to cancel it and get a refund (usually 15–30 days).
+
+    @Column({ name: 'eligibility_criteria', type: 'text', nullable: true })
+    eligibilityCriteria: string; //Rules that define who can purchase the product (age, profession, location, etc.).
+
+    @Column({ name: 'documents_required', type: 'text', nullable: true })
+    documentsRequired: string; // Meaning: List of documents customer must provide for policy purchase or claim.
+
+    @Column({ name: 'claim_process', type: 'text', nullable: true })
+    claimProcess: string;
 
     @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;
@@ -102,7 +138,7 @@ export class InsuranceProduct {
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
 
-    @DeleteDateColumn({ name:'deleted_at', type: 'timestamp', nullable: true })
+    @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
     deletedAt: Date;
 
     @OneToMany(() => InsurancePurchasedProduct, (purchasedProduct) => purchasedProduct.productId)

@@ -44,6 +44,9 @@ import { Role } from '@modules/role/entities/role.entity';
 import Redis from 'ioredis';
 import { QuoteEntity } from '@modules/insurance-quotations/entities/quote.entity';
 import { RoleService } from '@modules/role/role.service';
+import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
+import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
+import { InsurancePolicyService } from '@modules/insurance-policy/insurance-policy.service';
 @Injectable()
 export class InsuranceTicketService {
     constructor(
@@ -89,8 +92,12 @@ export class InsuranceTicketService {
         @InjectRepository(QuoteEntity)
         private readonly quoteRepo: Repository<QuoteEntity>,
 
+        @InjectRepository(InsuranceProduct)
+        private readonly productRepo: Repository<InsuranceProduct>,
         private readonly ticketNotiService: TicketNotificationService,
         private readonly loggedInsUserService: LoggedInsUserService,
+        private readonly policyService: InsurancePolicyService,
+
         @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
         private readonly roleService: RoleService
     ) {}
@@ -223,7 +230,7 @@ export class InsuranceTicketService {
     //this api is for getting all ticket card on dashboard
     async getTicket(reqObj: any): Promise<InsuranceTicket[]> {
         const loggedInUser = this.loggedInsUserService.getCurrentUser();
-// console.log(reqObj.agentId, reqObj.userId)
+        // console.log(reqObj.agentId, reqObj.userId)
         if (!loggedInUser) {
             throw new UnauthorizedException('User not logged in');
         }
@@ -512,9 +519,9 @@ export class InsuranceTicketService {
 
     async getAllAgent(): Promise<any> {
         const query = 'CALL get_allAgent()';
-       
+
         const result = await this.agentRepo.query(query);
-         console.log(result[0])
+        console.log(result[0]);
         return result[0];
     }
     // ============================ api for get ticket details ============================
@@ -1205,7 +1212,7 @@ export class InsuranceTicketService {
             if (ticketStatus === Ticket_Status.CLOSED) {
                 // console.log('in closed status');
 
-                 currentStepTimeline = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes
+                currentStepTimeline = new Date(Date.now() + 1 * 60 * 1000); // 1 minutes
                 // currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2 days
                 await this.ticketNotiService.scheduleEscalationCase(
                     ticket.id,
@@ -1255,8 +1262,8 @@ export class InsuranceTicketService {
 
     async changeSteps(reqBody: any, req: any): Promise<any> {
         try {
-            const { ticketId, currentStep, paymentRemarks, policyProvisionRemarks, documents } = reqBody;
-            const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
+            const { ticketId, currentStep, paymentRemarks, policyProvisionRemarks, documents, policyNumber } = reqBody;
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
 
             if (!userEntity) {
                 return {
@@ -1270,7 +1277,7 @@ export class InsuranceTicketService {
                 where: {
                     id: ticketId
                 },
-                relations: ['insuranceUserId', 'assignTo']
+                relations: ['insuranceUserId', 'assignTo', 'selectedProduct']
             });
 
             if (!ticket) {
@@ -1280,6 +1287,9 @@ export class InsuranceTicketService {
                     data: { ticketId }
                 };
             }
+            const product = await this.productRepo.findOne({
+                where: { id: ticket.selectedProduct.id }
+            });
 
             switch (currentStep) {
                 case Current_Step.PAYMENT_LINK_GENERATED:
@@ -1334,11 +1344,29 @@ export class InsuranceTicketService {
                             data: null
                         };
                     }
+                    const start = new Date(); // policy start date
+                    const end = new Date(start); // clone the date
+                    end.setMonth(end.getMonth() + product.durationMonths); // add months
+
+                    const policyResult = await this.policyService.createPolicy(ticketId, policyNumber, userEntity, start, end);
+                    console.log("in current step change policy_issued-", policyResult?.message);
+                    
+                    if (!policyResult || policyResult.status !== true) {
+                        return {
+                            status: 'error',
+                            message: policyResult?.message || 'Failed to create policy',
+                            data: null
+                        };
+                    }
+
                     ticket.currentStepStart = Current_Step.POLICY_ISSUED;
                     ticket.nextStepStart = Current_Step.POLICY_RECEIVED;
                     ticket.documents = documents;
                     ticket.policyProvisionRemarks = policyProvisionRemarks;
                     ticket.nextStepDeadline = addHours(24); // add existing
+                    ticket.policyStartDate = start;
+                    ticket.policyEndDate = end;
+
                     break;
                 case Current_Step.POLICY_RECEIVED:
                     if (ticket.currentStepStart !== Current_Step.POLICY_ISSUED) {

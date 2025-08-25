@@ -41,6 +41,7 @@ import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-
 import { InsuranceTicketNotification } from '@modules/insurance-escalation/entities/insurance-ticket-notification.entity';
 import { InsuranceTicketDeviation } from '@modules/insurance-escalation/entities/insurance-notification-deviation.entity';
 import { EscalationCase } from '@modules/insurance-escalation/entities/escalation-case.entity';
+import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
 
 @Entity({ name: 'insurance_ticket' })
 export class InsuranceTicket {
@@ -135,6 +136,7 @@ export class InsuranceTicket {
     // @Column({type:'int', name: 'Primium_term', nullable: true })
     // PrimiumTerm: number;
 
+
     @Column({ name: 'is_pre_year_claim', type: 'boolean', default: true })
     isPreYearClaim: boolean;
 
@@ -180,6 +182,28 @@ export class InsuranceTicket {
     @ManyToOne(() => InsuranceProduct,{ nullable: true })
     @JoinColumn({ name: 'selected_product' })
     selectedProduct: InsuranceProduct;
+
+        // 👇 The policy this ticket belongs to (only set for renewals)
+    @ManyToOne(() => InsurancePolicy, (policy) => policy.tickets, { nullable: true })
+    @JoinColumn({ name: 'policy_id' })
+    policy: InsurancePolicy;
+    
+    // selected means after customer approved this and now proceed to pay payments
+    @ManyToOne(() => InsuranceQuotation, (data) => data.quotes)
+    @JoinColumn({ name: 'quotation_id' })
+    selectedQuotation: InsuranceQuotation;
+
+    @Column({ type: 'decimal', name: 'selected_coveraged', precision: 10, scale: 2, nullable: true })
+    selectedCoveraged: number;
+
+    @Column({ type: 'decimal', name: 'selected_premium', precision: 10, scale: 2, nullable: true })
+    SelectedPremium: number;
+
+    @Column({ type: 'date', name: 'policy_start_date', nullable: true })
+    policyStartDate: Date;
+
+    @Column({ type: 'date', name: 'policy_end_date', nullable: true })
+    policyEndDate: Date;
 
     //------ end added column on 10-03-2025 ------
 
@@ -239,13 +263,12 @@ export class InsuranceTicket {
     @OneToMany(() => InsuranceQuotation, (data) => data.ticketId, { nullable: true })
     quotations: InsuranceQuotation[];
 
-      @OneToMany(() => InsuranceTicketNotification, (data) => data.ticket, { nullable: true })
+    @OneToMany(() => InsuranceTicketNotification, (data) => data.ticket, { nullable: true })
     notifications: InsuranceTicketNotification[];
 
     @OneToMany(() => InsuranceTicketDeviation, (data) => data.ticket, { nullable: true })
     deviations: InsuranceTicketDeviation[];
 
-    
     @OneToMany(() => EscalationCase, (data) => data.ticket, { nullable: true })
     escalationCases: EscalationCase[];
 }

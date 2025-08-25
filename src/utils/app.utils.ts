@@ -610,6 +610,12 @@ export enum Insurance_Type {
     Motor = 'MOTOR',
     Other = 'OTHER'
 }
+export enum Policy_Status {
+    Active = 'ACTIVE',
+    Lapsed = 'LAPSED',
+    Expired = 'EXPIRED',
+    cancelled = 'CANCELLED'
+}
 
 export const PAYMENT_TYPES = {
     CASH: 'cash',

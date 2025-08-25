@@ -27,6 +27,10 @@ import { QuoteEntity } from '@modules/insurance-quotations/entities/quote.entity
 import { RoleService } from '@modules/role/role.service';
 import { RoleModule } from '@modules/role/role.module';
 import { Role } from '@modules/role/entities/role.entity';
+import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
+import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
+import { InsurancePolicyService } from '@modules/insurance-policy/insurance-policy.service';
+import { InsurancePolicyRenewalHistory } from '@modules/insurance-policy/entities/insurance-policy-renewal-history.entity';
 
 @Module({
     imports: [
@@ -48,7 +52,10 @@ import { Role } from '@modules/role/entities/role.entity';
             InsuranceVehicleDetails,
             InsuranceTicketDeviation,
             QuoteEntity,
-            Role
+            Role,
+            InsuranceProduct,
+            InsurancePolicy,
+            InsurancePolicyRenewalHistory
         ]),
         InsuranceEscalationModule,
         ScheduleModule.forRoot(),
@@ -57,7 +64,7 @@ import { Role } from '@modules/role/entities/role.entity';
         forwardRef(() => RoleModule),
     ],
     controllers: [InsuranceTicketController],
-    providers: [InsuranceTicketService, LoggedInsUserService],
+    providers: [InsuranceTicketService, LoggedInsUserService, InsurancePolicyService],
     exports: [InsuranceTicketService]
 })
 export class InsuranceTicketModule {}

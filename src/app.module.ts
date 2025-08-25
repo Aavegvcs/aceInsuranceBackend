@@ -39,6 +39,7 @@ import { InsuranceEscalationModule } from '@modules/insurance-escalation/insuran
 import { InsuranceDashboardModule } from '@modules/insurance-dashboard/insurance-dashboard.module';
 import Redis from 'ioredis';
 import { RedisModule } from '@modules/redis/redis.module';
+import { InsurancePolicyModule } from '@modules/insurance-policy/insurance-policy.module';
 @Module({
     imports: [
         AwsModule,
@@ -66,6 +67,7 @@ import { RedisModule } from '@modules/redis/redis.module';
         EmployeeModule,
         InsuranceQuotationModule,
         InsuranceRolePermissionModule,
+        InsurancePolicyModule,
 
         BullModule.forRoot({
             redis: {

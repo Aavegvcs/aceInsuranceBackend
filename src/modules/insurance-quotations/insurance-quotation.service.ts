@@ -943,6 +943,14 @@ export class InsuranceQuotationService {
                 };
             }
 
+            const quote = await this.quotesRepo.findOne({
+                where: {
+                    quotationId: { id: quotationId },
+                    product: { id: selectedProduct }
+                },
+                relations: ['quotationId', 'product', 'company']
+            });
+            console.log('in insurance quotation service quote is here', quote);
             let nextStep = Current_Step[status as keyof typeof Current_Step] || Current_Step.SUBMITTED_FOR_REVISION;
             let nextStepDeadline = ticket.nextStepDeadline;
 
@@ -966,15 +974,18 @@ export class InsuranceQuotationService {
                             message: 'Already aproved by customer'
                         };
                     }
-            //         const now = new Date();
-            // const twoMinutesLater = new Date(now.getTime() + 1 * 60 * 1000);
+                    //         const now = new Date();
+                    // const twoMinutesLater = new Date(now.getTime() + 1 * 60 * 1000);
                     nextStep = Current_Step.PAYMENT_LINK_GENERATED;
                     nextStepDeadline = addHours(24);
                     // nextStepDeadline = twoMinutesLater;
                     // write code for update isProductSelected and selectedProduct
                     await this.ticketRepo.update(ticket.id, {
                         isProductSelected: true,
-                        selectedProduct: product
+                        selectedProduct: product,
+                        selectedQuotation: quotation,
+                        selectedCoveraged: quote.coveragedRequired,
+                        SelectedPremium: quote.Premium
                     });
                     break;
             }
@@ -1025,8 +1036,8 @@ export class InsuranceQuotationService {
                 ]);
 
                 if (status === Current_Step.CUSTOMER_APPROVED) {
-            //          const now = new Date();
-            // const twoMinutesLater = new Date(now.getTime() + 1 * 60 * 1000);
+                    //          const now = new Date();
+                    // const twoMinutesLater = new Date(now.getTime() + 1 * 60 * 1000);
                     await this.ticketNotiService.scheduleDeadlineNotification(
                         ticketId,
                         Current_Step.CUSTOMER_APPROVED,
