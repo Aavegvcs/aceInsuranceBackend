@@ -27,7 +27,7 @@ export class InsuranceRolePermissionService {
             throw new UnauthorizedException('User not logged in');
         }
         const roleId = reqBody.roleId;
-        console.log('roleId--------', roleId);
+        // console.log('roleId--------', roleId);
         const permissionResult = await this.roleAccessRepo.query('CALL get_roleMappingForUpdate(?)', [roleId]);
         const res_message = permissionResult[1][0].responseMessage;
 
@@ -44,14 +44,14 @@ export class InsuranceRolePermissionService {
             throw new UnauthorizedException('User not logged in');
         }
         const { roleId, permissions } = reqBody;
-        console.log('req body--------', roleId, permissions, loggedInUser.id);
+        // console.log('req body--------', roleId, permissions, loggedInUser.id);
 
         const result = await this.roleAccessRepo.query('CALL ins_roleMapping(?, ?, ?)', [
             roleId,
             permissions,
             loggedInUser.id
         ]);
-        console.log('result--------', result[0][0]);
+        // console.log('result--------', result[0][0]);
         const res_message = result[0][0].responseMessage;
         if (res_message == 'success') {
             return {
@@ -101,7 +101,7 @@ export class InsuranceRolePermissionService {
     async updatePermission(reqBody: any, req: any): Promise<any> {
         try {
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
-            console.log('loggedInUser--------', loggedInUser);
+            // console.log('loggedInUser--------', loggedInUser);
             if (!loggedInUser) {
                 throw new UnauthorizedException('User not logged in');
             }

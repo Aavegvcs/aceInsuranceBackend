@@ -42,8 +42,6 @@ export class InsurancePolicyService {
             const prevPolicy = await this._policyRepo.findOne({
                 where: { policyNumber: policyNumber }
             });
-            console.log('in create policy -----', prevPolicy, policyNumber, createdBy, startPolicyDate, endPolicyDate);
-            console.log('in create policy ticket details---', ticket);
 
             if (ticket.ticketType === Ticket_Type.NEW) {
                 // Prepare policy object
@@ -245,7 +243,6 @@ export class InsurancePolicyService {
                 pageNo,
                 pageSize
             ]);
-            console.log(result[0]);
             // return result[0];
             res = standardResponse(
                 true,
@@ -256,7 +253,7 @@ export class InsurancePolicyService {
                 'insurance-policy/getInsurancePolicyCard'
             );
         } catch (error) {
-             res = standardResponse(
+            res = standardResponse(
                 false,
                 'data fetch successfully',
                 500,
@@ -265,8 +262,7 @@ export class InsurancePolicyService {
                 'insurance-policy/getInsurancePolicyCard'
             );
         }
-        console.log("after every things happend😂😂😂😂😂😂");
-        
+
         return res;
     }
 }

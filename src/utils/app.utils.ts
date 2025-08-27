@@ -614,7 +614,7 @@ export enum Policy_Status {
     Active = 'ACTIVE',
     Lapsed = 'LAPSED',
     Expired = 'EXPIRED',
-    cancelled = 'CANCELLED'
+    Cancelled = 'CANCELLED'
 }
 
 export const PAYMENT_TYPES = {
@@ -882,6 +882,7 @@ export enum InsuranceModuleType {
     company = 'company',
     product = 'product',
     ticket = 'ticket',
+    policy = 'policy',
     escalation = 'escalation',
     quotation = 'quotation',
     roleMapping = 'roleMapping',

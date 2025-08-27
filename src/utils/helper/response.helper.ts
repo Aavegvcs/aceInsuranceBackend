@@ -24,7 +24,7 @@ export function standardResponse<T = any>(
     message,
     statusCode
   };
-  logger.log(`API: ${apiName}, Message: ${message}`);
+  // logger.log(`API: ${apiName}, Message: ${message}`);
 
   if (result) {
     response.result = result;
