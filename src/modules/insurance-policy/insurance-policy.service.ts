@@ -6,6 +6,7 @@ import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ti
 import { InsurancePolicyRenewalHistory } from './entities/insurance-policy-renewal-history.entity';
 import { Policy_Status, Ticket_Type } from 'src/utils/app.utils';
 import { standardResponse } from 'src/utils/helper/response.helper';
+import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 
 @Injectable()
 export class InsurancePolicyService {
@@ -17,7 +18,9 @@ export class InsurancePolicyService {
         private readonly _ticketRepo: Repository<InsuranceTicket>,
 
         @InjectRepository(InsurancePolicyRenewalHistory)
-        private readonly _policyHistoryRepo: Repository<InsurancePolicyRenewalHistory>
+        private readonly _policyHistoryRepo: Repository<InsurancePolicyRenewalHistory>,
+
+        private readonly loggedInsUserService: LoggedInsUserService
     ) {}
 
     async createPolicy(
@@ -54,6 +57,7 @@ export class InsurancePolicyService {
                 }
                 const policy = this._policyRepo.create({
                     originalTicket: ticket,
+                    currentTicket: ticket,
                     insuranceUser: ticket.insuranceUserId, // assuming ticket already has insuranceUser relation
                     insuranceCompany: ticket.selectedProduct.insuranceCompanyId, // from product relation
                     insuranceProduct: ticket.selectedProduct, // directly from ticket
@@ -260,6 +264,72 @@ export class InsurancePolicyService {
                 null,
                 error,
                 'insurance-policy/getInsurancePolicyCard'
+            );
+        }
+
+        return res;
+    }
+
+    async getInsurancePolicyDetails(policyId: any): Promise<any> {
+        let res = null;
+
+        try {
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+
+            if (!userEntity) {
+                return standardResponse(
+                    false,
+                    'Logged user not found',
+                    404,
+                    null,
+                    null,
+                    'insurance-policy/getInsurancePolicyDetails'
+                );
+            }
+            console.log('in backend policy id ', policyId);
+
+            const policy = await this._policyRepo.findOne({ where: { id: policyId } });
+            if (!policy) {
+                return standardResponse(
+                    false,
+                    'failed! policy not exists',
+                    404,
+                    null,
+                    null,
+                    'insurance-policy/getInsurancePolicyDetails'
+                );
+            }
+
+            const query = 'CALL get_insurancePolicyDetails(?)';
+
+            const result = await this._policyRepo.query(query, [policyId]);
+            const policyDetails = result[0][0];
+            if (policyDetails.claimProcess) {
+                try {
+                    policyDetails.claimProcess = JSON.parse(policyDetails.claimProcess);
+                } catch (e) {
+                    policyDetails.claimProcess = {}; // fallback if invalid JSON
+                }
+            }
+           
+
+            // return result[0];
+            res = standardResponse(
+                true,
+                'data fetch successfully',
+                200,
+                policyDetails,
+                null,
+                'insurance-policy/getInsurancePolicyDetails'
+            );
+        } catch (error) {
+            res = standardResponse(
+                false,
+                'data fetch successfully',
+                500,
+                null,
+                error,
+                'insurance-policy/getInsurancePolicyDetails'
             );
         }
 
