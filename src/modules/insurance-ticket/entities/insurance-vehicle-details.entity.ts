@@ -57,6 +57,9 @@ export class InsuranceVehicleDetails extends BaseEntity {
     @Column({ name: 'model_number', nullable: true })
     modelNumber: string;
 
+    @Column({ type: 'json', name: 'documents', nullable: true })
+    documents: any;
+
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'created_by' })
     createdBy: User;

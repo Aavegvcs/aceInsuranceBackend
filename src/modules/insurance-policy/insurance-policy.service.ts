@@ -300,9 +300,9 @@ export class InsurancePolicyService {
                 );
             }
 
-            const query = 'CALL get_insurancePolicyDetails(?)';
+            const query = 'CALL get_insurancePolicyDetails(?, ?)';
 
-            const result = await this._policyRepo.query(query, [policyId]);
+            const result = await this._policyRepo.query(query, [policyId, policy.policyType]);
             const policyDetails = result[0][0];
             if (policyDetails.claimProcess) {
                 try {
