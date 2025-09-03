@@ -18,6 +18,7 @@ import { User } from '@modules/user/user.entity';
 import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
 import { Insurance_Type, Policy_Status } from 'src/utils/app.utils';
 import { InsurancePolicyRenewalHistory } from './insurance-policy-renewal-history.entity';
+import { InsuranceClaim } from '@modules/insurance-claim/entities/insurance-claim.entity';
 
 @Entity({ name: 'insurance_policy' })
 export class InsurancePolicy {
@@ -101,4 +102,7 @@ export class InsurancePolicy {
 
     @OneToMany(() => InsurancePolicyRenewalHistory, (renewal) => renewal.policy, { nullable: true })
     renewals: InsurancePolicyRenewalHistory[];
+    
+    @OneToMany(() => InsuranceClaim, (renewal) => renewal.policy, { nullable: true })
+    claims: InsuranceClaim[];
 }

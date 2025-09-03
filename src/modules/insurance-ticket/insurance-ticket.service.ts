@@ -521,7 +521,7 @@ export class InsuranceTicketService {
         const query = 'CALL get_allAgent()';
 
         const result = await this.agentRepo.query(query);
-        console.log(result[0]);
+        // console.log(result[0]);
         return result[0];
     }
     // ============================ api for get ticket details ============================

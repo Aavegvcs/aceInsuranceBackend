@@ -883,6 +883,7 @@ export enum InsuranceModuleType {
     product = 'product',
     ticket = 'ticket',
     policy = 'policy',
+    claim = 'claim',
     escalation = 'escalation',
     quotation = 'quotation',
     roleMapping = 'roleMapping',
@@ -922,4 +923,19 @@ export function isUserAuthorizedToAccessTicket(user: User, ticket: any): boolean
     }
     // Default: only assigned or created by
     return ticket.assignTo?.id === user.id || ticket.createdBy?.id === user.id;
+}
+
+export enum Claim_Status {
+  REGISTERED = 'REGISTERED',
+  PENDING = 'PENDING',
+  PROCESSED = 'PROCESSED',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  ESCALATED = 'ESCALATED',
+  CLOSED = 'CLOSED',
+}
+
+export enum Claim_Type {
+  CASHLESS = 'CASHLESS',
+  REIMBURSEMENT = 'REIMBURSEMENT',
 }

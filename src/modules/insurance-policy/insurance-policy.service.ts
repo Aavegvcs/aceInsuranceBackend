@@ -299,11 +299,15 @@ export class InsurancePolicyService {
                     'insurance-policy/getInsurancePolicyDetails'
                 );
             }
+            console.log("here is backe3n ", policyId, policy.policyType);
+            
 
             const query = 'CALL get_insurancePolicyDetails(?, ?)';
 
             const result = await this._policyRepo.query(query, [policyId, policy.policyType]);
             const policyDetails = result[0][0];
+            console.log("policy details 1", policyDetails);
+            
             if (policyDetails.claimProcess) {
                 try {
                     policyDetails.claimProcess = JSON.parse(policyDetails.claimProcess);
@@ -312,6 +316,7 @@ export class InsurancePolicyService {
                 }
             }
            
+            console.log("policy details 2", policyDetails);
 
             // return result[0];
             res = standardResponse(
