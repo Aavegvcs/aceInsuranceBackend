@@ -286,7 +286,7 @@ export class InsurancePolicyService {
                     'insurance-policy/getInsurancePolicyDetails'
                 );
             }
-            console.log('in backend policy id ', policyId);
+            // console.log('in backend policy id ', policyId);
 
             const policy = await this._policyRepo.findOne({ where: { id: policyId } });
             if (!policy) {
@@ -299,7 +299,7 @@ export class InsurancePolicyService {
                     'insurance-policy/getInsurancePolicyDetails'
                 );
             }
-            console.log("here is backe3n ", policyId, policy.policyType);
+            // console.log("here is backe3n ", policyId, policy.policyType);
             
 
             const query = 'CALL get_insurancePolicyDetails(?, ?)';
@@ -316,7 +316,7 @@ export class InsurancePolicyService {
                 }
             }
            
-            console.log("policy details 2", policyDetails);
+            // console.log("policy details 2", policyDetails);
 
             // return result[0];
             res = standardResponse(

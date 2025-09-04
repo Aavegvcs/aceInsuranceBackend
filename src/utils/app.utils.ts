@@ -346,7 +346,6 @@ export enum Features {
     'client' = 'Client'
 }
 
-
 export const featuresArr = [
     Features.user,
     Features.role,
@@ -915,7 +914,7 @@ export function isUserAuthorizedToAccessTicket(user: User, ticket: any): boolean
     const role = user.userType.roleName;
     const branchRoles = ['teleCaller', 'insuranceManager', 'productHead'];
     // console.log("here role is in auhto---", role, user.branch.id, ticket.createdBy.branch.id );
-    
+
     if (['admin', 'superadmin'].includes(role)) return true;
     // Check if the role is one of branch-level roles
     if (branchRoles.includes(role)) {
@@ -926,16 +925,22 @@ export function isUserAuthorizedToAccessTicket(user: User, ticket: any): boolean
 }
 
 export enum Claim_Status {
-  REGISTERED = 'REGISTERED',
-  PENDING = 'PENDING',
-  PROCESSED = 'PROCESSED',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  ESCALATED = 'ESCALATED',
-  CLOSED = 'CLOSED',
+    REGISTERED = 'REGISTERED',
+    PENDING = 'PENDING',
+    PROCESSED = 'PROCESSED',
+    APPROVED = 'APPROVED',
+    REJECTED = 'REJECTED',
+    ESCALATED = 'ESCALATED',
+    CLOSED = 'CLOSED'
 }
 
 export enum Claim_Type {
-  CASHLESS = 'CASHLESS',
-  REIMBURSEMENT = 'REIMBURSEMENT',
+    CASHLESS = 'CASHLESS',
+    REIMBURSEMENT = 'REIMBURSEMENT'
+}
+
+export enum Claim_Final_Status {
+    PENDING = 'PENDING',
+    APPROVED = 'APPROVED',
+    REJECTED = 'REJECTED'
 }

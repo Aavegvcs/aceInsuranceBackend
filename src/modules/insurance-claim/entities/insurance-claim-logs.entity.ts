@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { InsuranceClaim } from '@modules/insurance-claim/entities/insurance-claim.entity';
 import { User } from '@modules/user/user.entity';
-import { Claim_Status } from 'src/utils/app.utils';
+import { Claim_Final_Status, Claim_Status } from 'src/utils/app.utils';
 
 @Entity({ name: 'insurance_claim_logs' })
 export class InsuranceClaimLogs {
@@ -28,6 +28,9 @@ export class InsuranceClaimLogs {
 
     @Column({ name: 'new_status', type: 'enum', enum: Claim_Status, nullable: false })
     newStatus: Claim_Status;
+
+    @Column({ name: 'final_status', type: 'enum', enum: Claim_Final_Status, default: Claim_Final_Status.PENDING })
+    finalStatus: Claim_Final_Status;
 
     @Column({ name: 'log_details', type: 'json', nullable: false })
     logDetails: object;
