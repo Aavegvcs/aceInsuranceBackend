@@ -6,7 +6,7 @@ import {
     NotFoundException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InsuranceProduct } from './entities/insurance-product.entity';
 import { read } from 'fs';
 import { Branch } from '@modules/branch/entities/branch.entity';
@@ -22,6 +22,7 @@ import { InsurancePurchasedProduct } from './entities/insurance-puchased-product
 import { CreateInsurancePurchasedDto } from './dto/insurance-purchased.dto';
 import { response } from 'express';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
+import { standardResponse } from 'src/utils/helper/response.helper';
 
 @Injectable()
 export class InsuranceProductService {
@@ -68,7 +69,7 @@ export class InsuranceProductService {
     }
     async updateCompany(reqBody: any, req: any): Promise<any> {
         let response: any = {};
-console.log("in company reqBody", reqBody);
+        console.log('in company reqBody', reqBody);
         try {
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
             // console.log('loggedInUser', loggedInUser);
@@ -98,7 +99,7 @@ console.log("in company reqBody", reqBody);
                 email: reqBody.email,
                 contactPerson: reqBody.contactPerson,
                 contactNumber: reqBody.contactNumber,
-                secondaryContactPerson:reqBody.secondaryContactPerson,
+                secondaryContactPerson: reqBody.secondaryContactPerson,
                 secondaryContactNumber: reqBody.secondaryContactNumber,
                 secondaryEmail: reqBody.secondaryEmail,
                 isActive: reqBody.isActive,
@@ -181,7 +182,137 @@ console.log("in company reqBody", reqBody);
         }
         return result;
     }
+
+    async companyBulkUpload(reqBody: any): Promise<any> {
+        const failed: { index: number; name: string; reason: string }[] = [];
+        const data = reqBody.data || [];
+        const startIndex = reqBody.startIndex || 1;
+        const userEntity = await this.loggedInsUserService.getCurrentUser();
+
+        if (!userEntity) {
+            return standardResponse(false, 'Logged user not found', 404, null, null, 'insurance-claim/createClaim');
+        }
+        try {
+            if (!Array.isArray(data) || data.length === 0) {
+                const result = {
+                    successCount: 0,
+                    failedCount: 0,
+                    failed: [],
+                    message: 'No data provided for bulk upload'
+                };
+                return standardResponse(
+                    true,
+                    'No data provided for bulk upload',
+                    404,
+                    result,
+                    null,
+                    'insurance-product/companyBulkUpload'
+                );
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const incomingNames = data.map((item) => item.companyName);
+            const existingCompanies = await this.insuranceCompanyRepo.find({
+                where: { companyName: In(incomingNames) },
+                select: ['companyName']
+            });
+
+            const existingNames = new Set(existingCompanies.map((c) => c.companyName));
+            const uniqueData = [];
+            data.forEach((item, index) => {
+                const rowIndex = startIndex + index;
+
+                if (existingNames.has(item.companyName)) {
+                    failed.push({
+                        index: rowIndex,
+                        name: item.companyName,
+                        reason: `Company with name ${item.companyName} already exists`
+                    });
+                    return;
+                }
+
+                if (item.email && !emailRegex.test(item.email)) {
+                    failed.push({
+                        index: rowIndex,
+                        name: item.companyName || 'Unknown',
+                        reason: `Invalid email format: ${item.email}`
+                    });
+                    return;
+                }
+
+                uniqueData.push(item);
+            });
+
+            // Step 4: Bulk insert only unique data if any
+            if (uniqueData.length > 0) {
+                try {
+                    const insertData = uniqueData.map((item) => ({
+                        ...item,
+                        createdBy: userEntity // or whatever field represents the user in your table
+                    }));
+                    await this.insuranceCompanyRepo
+                        .createQueryBuilder()
+                        .insert()
+                        .into(this.insuranceCompanyRepo.metadata.tableName)
+                        .values(insertData)
+                        .execute();
+                } catch (error) {
+                    uniqueData.forEach((item, index) => {
+                        failed.push({
+                            index: startIndex + data.indexOf(item),
+                            name: item.companyName,
+                            reason: error.message || 'Database insert error'
+                        });
+                    });
+                }
+            }
+
+            let message = null;
+            const successCount = uniqueData.length - failed.length;
+            const failedCount = failed.length;
+            console.log('here is hero', successCount, failedCount);
+            if (successCount >= 0 && failedCount > 0) {
+                message = 'Data partialy inserted!';
+            } else if (successCount < 0 && failedCount > 0) message = 'Failed to inserted data';
+            else {
+                console.log('here is hero', successCount, failedCount);
+
+                message = 'Data inserted successfully.';
+            }
+            return standardResponse(
+                true,
+                message,
+                202,
+                {
+                    successCount: successCount,
+                    failedCount: failedCount,
+                    failed
+                },
+                null,
+                'insurance-product/companyBulkUpload'
+            );
+        } catch (error) {
+            return standardResponse(
+                true,
+                'Failed! to insert data',
+                404,
+                {
+                    successCount: 0,
+                    failedCount: data.length,
+                    failed: data.map((item, index) => ({
+                        index: startIndex + index,
+                        name: item.companyName || 'Unknown',
+                        reason: error.message || 'Unexpected server error'
+                    }))
+                },
+                null,
+                'insurance-product/companyBulkUpload'
+            );
+        }
+    }
+
     //------------------------------- product services ------------------------------//
+
     async createProduct(requestParam: CreateInsuranceProductDto): Promise<InsuranceProduct> {
         // const branch = await this.branchRepo.findOne({ where: { id: requestParam.branchId } });
         const insuranceCompany = await this.companyRepo.findOne({ where: { id: requestParam.insuranceCompanyId } });

@@ -54,6 +54,11 @@ export class InsuranceProductController {
     async deleteCompany(@Body() reqBody: any) {
         return this._productService.deleteCompany(reqBody);
     }
+    @Post('companyBulkUpload')
+    @ApiOperation({ summary: 'bulk upload of company' })
+    async companyBulkUpload(@Body() reqBody: any) {
+        return this._productService.companyBulkUpload(reqBody);
+    }
     //---------------------------- products apis ----------------------------//
     @Post('createProduct')
     @ApiOperation({ summary: 'Create new insurance product' })
@@ -147,4 +152,6 @@ export class InsuranceProductController {
     async getProductForSelection(@Body() reqObj: any) {
         return this._productService.getProductForSelection(reqObj);
     }
+
+    
 }

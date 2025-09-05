@@ -17,7 +17,7 @@ export class InsuranceCompanies {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ name: 'company_name', nullable: false })
+    @Column({ name: 'company_name', unique: true, nullable: false })
     companyName: string;
 
     @Column({ name: 'company_address', nullable: true })
@@ -29,7 +29,7 @@ export class InsuranceCompanies {
     @Column({ name: 'contact_number', nullable: false })
     contactNumber: string;
 
-    @Column({ name: 'email', unique: true, nullable: false })
+    @Column({ name: 'email', nullable: false })
     email: string;
 
     @Column({ name: 'secondary_contact_person', nullable: true })
