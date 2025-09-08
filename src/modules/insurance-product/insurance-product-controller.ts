@@ -13,7 +13,6 @@ import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
 export class InsuranceProductController {
     constructor(private readonly _productService: InsuranceProductService) {}
 
-
     //---------------------------- insurance companies apis ----------------------------//
 
     @Post('createCompany')
@@ -22,15 +21,14 @@ export class InsuranceProductController {
         return this._productService.createCompany(reqeustParam);
     }
 
-   @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Post('updateCompany')
     @ApiOperation({ summary: 'update existing compnay' })
     async companyUpdate(@Body() reqBody: any, @Req() req: any) {
-
         // console.log('here in update company', loggedInUser);
         return this._productService.updateCompany(reqBody, req);
     }
-   @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Get('getAllCompany')
     @ApiOperation({ summary: 'get all company' })
     async getAllCompany() {
@@ -54,6 +52,7 @@ export class InsuranceProductController {
     async deleteCompany(@Body() reqBody: any) {
         return this._productService.deleteCompany(reqBody);
     }
+
     @Post('companyBulkUpload')
     @ApiOperation({ summary: 'bulk upload of company' })
     async companyBulkUpload(@Body() reqBody: any) {
@@ -69,7 +68,6 @@ export class InsuranceProductController {
     @Patch('updateProduct')
     @ApiOperation({ summary: 'Update insurance product' })
     async updateProduct(@Body() reqBody: any, @Req() req: any) {
-
         return this._productService.updateProduct(reqBody, req);
     }
 
@@ -93,7 +91,7 @@ export class InsuranceProductController {
 
     @Post('getAllProductByType')
     @ApiOperation({ summary: 'Get insurance product by ID' })
-    async getAllProductByType(@Body() reqBody:any) {
+    async getAllProductByType(@Body() reqBody: any) {
         return this._productService.getAllProductByType(reqBody);
     }
 
@@ -146,12 +144,16 @@ export class InsuranceProductController {
         return this._productService.deleteProduct(reqBody, req);
     }
 
-    
     @Post('getProductForSelection')
     @ApiOperation({ summary: 'Get purchased products by purchsae id, policy number and product id' })
     async getProductForSelection(@Body() reqObj: any) {
         return this._productService.getProductForSelection(reqObj);
     }
 
-    
+    @UseGuards(JwtInsAuthGuard)
+    @Post('productBulkUpload')
+    @ApiOperation({ summary: 'bulk upload of product' })
+    async productBulkUpload(@Body() reqBody: any) {
+        return this._productService.productBulkUpload(reqBody);
+    }
 }

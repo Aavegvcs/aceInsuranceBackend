@@ -63,11 +63,11 @@ export class InsuranceProduct {
         type: 'decimal',
         precision: 10,
         scale: 2,
-        nullable: false
+        nullable: true
     })
     incentivePercentage: number;
 
-    @Column({ name: 'duration_months', nullable: false })
+    @Column({ name: 'duration_months', nullable: true })
     durationMonths: number;
 
     @Column({ name: 'short_description', type: 'text', nullable: true })
@@ -82,7 +82,7 @@ export class InsuranceProduct {
     @Column({ name: 'benefits', type: 'text', nullable: true })
     benefits: string;
 
-    @Column({ name: 'payout_percentage', type: 'decimal', precision: 10, scale: 2, nullable: false })
+    @Column({ name: 'payout_percentage', type: 'decimal', precision: 10, scale: 2, nullable: true })
     payoutPercentage: number;
     // added filed on 22-08-2025 @Aftab
 
