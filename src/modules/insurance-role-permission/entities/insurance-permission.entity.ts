@@ -11,7 +11,7 @@ export class InsurancePermission {
     @Column({ nullable: true })
     name: string; // e.g., 'quote.view', 'quote.edit'
 
-    @Column()
+    @Column('text')
     description: string;
 
     @Column({

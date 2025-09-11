@@ -49,6 +49,10 @@ export class InsurancePolicy {
     @Column({ name: 'policy_number', nullable: false })
     policyNumber: string;
 
+    @Column({ name: 'previous_policy_number', nullable: true })
+    previousPolicyNumber: string;
+
+
     @Column({ type: 'enum', enum: Insurance_Type, name: 'policy_type', nullable: true })
     policyType: Insurance_Type; // e.g. Health, Motor, Life
 

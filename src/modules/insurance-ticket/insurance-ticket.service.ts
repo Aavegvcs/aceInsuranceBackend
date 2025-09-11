@@ -230,7 +230,6 @@ export class InsuranceTicketService {
     //this api is for getting all ticket card on dashboard
     async getTicket(reqObj: any): Promise<InsuranceTicket[]> {
         const loggedInUser = this.loggedInsUserService.getCurrentUser();
-        // console.log(reqObj.agentId, reqObj.userId)
         if (!loggedInUser) {
             throw new UnauthorizedException('User not logged in');
         }
@@ -241,6 +240,7 @@ export class InsuranceTicketService {
         } else {
             agentId = reqObj.agentId;
         }
+        // console.log("this is main ticket card.....");
 
         // else if (loggedInUser.userType.id == RoleId.superadmin || loggedInUser.userType.id == RoleId.admin) {
         //     agentId = null;
@@ -772,6 +772,14 @@ export class InsuranceTicketService {
                 };
             }
 
+            if (ticket.ticketStatus === Ticket_Status.CLOSED) {
+                return {
+                    status: 'error',
+                    message: 'Ticket already closed',
+                    data: null
+                };
+            }
+
             // Update InsuranceUser (Proposer) Details
             await this.ticketRepo.manager.transaction(async (manager) => {
                 await manager.update(InsuranceUser, ticket.insuranceUserId.id, {
@@ -1186,7 +1194,7 @@ export class InsuranceTicketService {
                 };
             }
 
-            if (ticket.currentStepStart === Current_Step.CLOSED) {
+            if (ticket.currentStepStart === Current_Step.CLOSED || ticket.ticketStatus === Ticket_Status.CLOSED) {
                 return {
                     status: 'error',
                     message: `Ticket is already closed`,
@@ -1287,6 +1295,15 @@ export class InsuranceTicketService {
                     data: { ticketId }
                 };
             }
+
+            if (ticket.currentStepStart === Current_Step.CLOSED || ticket.ticketStatus === Ticket_Status.CLOSED) {
+                return {
+                    status: 'error',
+                    message: `Ticket already closed`,
+                    data: { ticketId }
+                };
+            }
+
             const product = await this.productRepo.findOne({
                 where: { id: ticket.selectedProduct.id }
             });
@@ -1348,9 +1365,15 @@ export class InsuranceTicketService {
                     const end = new Date(start); // clone the date
                     end.setMonth(end.getMonth() + product.durationMonths); // add months
 
-                    const policyResult = await this.policyService.createPolicy(ticketId, policyNumber, userEntity, start, end);
-                    console.log("in current step change policy_issued-", policyResult?.message);
-                    
+                    const policyResult = await this.policyService.createPolicy(
+                        ticketId,
+                        policyNumber,
+                        userEntity,
+                        start,
+                        end
+                    );
+                    console.log('in current step change policy_issued-', policyResult?.message);
+
                     if (!policyResult || policyResult.status !== true) {
                         return {
                             status: 'error',

@@ -279,12 +279,12 @@ export class InsuranceProductService {
             let message = null;
             const successCount = uniqueData.length - failed.length;
             const failedCount = failed.length;
-            console.log('here is hero', successCount, failedCount);
-            if (successCount >= 0 && failedCount > 0) {
+            console.log('before set message in company bulk upload', successCount, failedCount);
+            if (successCount > 0 && failedCount > 0) {
                 message = 'Data partialy inserted!';
             } else if (successCount < 0 && failedCount > 0) message = 'Failed to inserted data';
             else {
-                console.log('here is hero', successCount, failedCount);
+                console.log('else part in company bulk upload', successCount, failedCount);
 
                 message = 'Data inserted successfully.';
             }

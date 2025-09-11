@@ -12,6 +12,12 @@ export class InsurancePolicyRenewalHistory {
     @JoinColumn({ name: 'policy_id' })
     policy: InsurancePolicy;
 
+    @Column({ name: 'policy_number', nullable: true })
+    policyNumber: string;
+
+    @Column({ name: 'previous_policy_number', nullable: true })
+    previousPolicyNumber: string;
+
     @ManyToOne(() => InsuranceTicket, { nullable: true })
     @JoinColumn({ name: 'original_ticket_id' })
     originalTicket: InsuranceTicket;

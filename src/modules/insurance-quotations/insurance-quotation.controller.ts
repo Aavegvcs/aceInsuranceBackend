@@ -30,7 +30,7 @@ export class InsuranceQuotationController {
     @Post('downloadQuotation')
     async downloadQuotation(@Body() reqBody: { ticketId?: string; quotationId?: string }, @Res() res: any) {
         try {
-              console.log('in download function-----------:');
+            //   console.log('in download function-----------:');
             const { ticketId, quotationId } = reqBody;
             if (!ticketId || !quotationId) {
                 return res.status(HttpStatus.BAD_REQUEST).json({

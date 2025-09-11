@@ -7,6 +7,7 @@ import { USER_STATUS } from 'src/utils/app.utils';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { InsurancePermission } from './entities/insurance-permission.entity';
 import { log } from 'console';
+import { standardResponse } from 'src/utils/helper/response.helper';
 @Injectable()
 export class InsuranceRolePermissionService {
     constructor(
@@ -69,32 +70,60 @@ export class InsuranceRolePermissionService {
     }
 
     async createPermission(reqBody: any, req: any): Promise<any> {
-        const loggedInUser = this.loggedInsUserService.getCurrentUser();
-        if (!loggedInUser) {
-            throw new UnauthorizedException('User not logged in');
-        }
-        const { name, type, module, description } = reqBody;
-        const result = await this.permissionRepo.query('CALL ins_permission(?, ?, ?, ?, ?)', [
-            name,
-            type,
-            module,
-            description,
-            loggedInUser.id
-        ]);
-        // console.log('result--------', result[0][0]);
-        const res_message = result[0][0].responseMessage;
-        if (res_message == 'success') {
-            return {
-                status: 'success',
-                message: res_message,
-                data: null
-            };
-        } else {
-            return {
-                status: 'failed',
-                message: res_message,
-                data: null
-            };
+        try {
+            const loggedInUser = this.loggedInsUserService.getCurrentUser();
+            if (!loggedInUser) {
+                throw new UnauthorizedException('User not logged in');
+            }
+            const { name, type, module, description } = reqBody;
+            console.log('here is details', reqBody);
+
+            const result = await this.permissionRepo.query('CALL ins_permission(?, ?, ?, ?, ?)', [
+                name,
+                type,
+                module,
+                description,
+                loggedInUser.id
+            ]);
+            // console.log('result--------', result[0][0]);
+            const res_message = result[0][0].responseMessage;
+            if (res_message == 'success') {
+                // return {
+                //     status: 'success',
+                //     message: res_message,
+                //     data: null
+                // };
+                return standardResponse(
+                    true,
+                    res_message,
+                    201,
+                    null,
+                    null,
+                    'insurance-role-permission/createPermission'
+                );
+            } else {
+          console.log('-api- insurance-role-permission/createPermission - in else part', res_message);
+           
+
+                return standardResponse(
+                    false,
+                    res_message,
+                    402,
+                    null,
+                    null,
+                    'insurance-role-permission/createPermission'
+                );
+            }
+        } catch (error) {
+            console.log('-api- insurance-role-permission/createPermission ', error.message);
+            return standardResponse(
+                false,
+                error.message,
+                500,
+                null,
+                null,
+                'insurance-role-permission/createPermission'
+            );
         }
     }
 
