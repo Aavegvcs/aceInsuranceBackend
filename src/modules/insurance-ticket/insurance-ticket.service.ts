@@ -2,6 +2,7 @@ import {
     Inject,
     Injectable,
     InternalServerErrorException,
+    Logger,
     NotFoundException,
     UnauthorizedException
 } from '@nestjs/common';
@@ -733,6 +734,8 @@ export class InsuranceTicketService {
     }
 
     async updateTicketDetails(ticketId: number, reqBody: any): Promise<any> {
+        
+        
         const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
         if (!userEntity) {
             return {
@@ -779,7 +782,6 @@ export class InsuranceTicketService {
                     data: null
                 };
             }
-
             // Update InsuranceUser (Proposer) Details
             await this.ticketRepo.manager.transaction(async (manager) => {
                 await manager.update(InsuranceUser, ticket.insuranceUserId.id, {
@@ -904,14 +906,13 @@ export class InsuranceTicketService {
                         });
                     }
                 }
-
                 // Update Dependents (HEALTH or LIFE)
                 if (ticket.insuranceType === Insurance_Type.Health && dependents && !includeSelfAsDependent) {
                     const existingDependents = await manager.find(InsuranceDependent, {
                         where: { ticketId: { id: ticketId } },
                         relations: ['medicalDetails']
                     });
-
+                   
                     for (const dep of dependents) {
                         const existingDep = dep.id ? existingDependents.find((d) => d.id === dep.id) : null;
 
@@ -931,18 +932,6 @@ export class InsuranceTicketService {
                                     ? existingDep.medicalDetails[0]
                                     : null;
 
-                                // Prepare documents object for dependent
-                                // let depDocuments: { [key: string]: string } = existingMed?.documents
-                                //     ? JSON.parse(existingMed.documents)
-                                //     : {};
-                                // if (typeof depDocuments !== 'object' || depDocuments === null) depDocuments = {};
-
-                                // if (dep.medicalDetails.dischargeSummary) {
-                                //     depDocuments.dischargeSummary = dep.medicalDetails.dischargeSummary; // Map to dischargeSummary
-                                // }
-                                // if (dep.medicalDetails.diagnosticReport) {
-                                //     depDocuments.diagnosticReport = dep.medicalDetails.diagnosticReport; // Map to diagnosticReport
-                                // }
 
                                 if (existingMed) {
                                     await manager.update(DependentMedical, existingMed.id, {
@@ -993,13 +982,6 @@ export class InsuranceTicketService {
                             });
 
                             if (dep.medicalDetails) {
-                                // let depDocuments: { [key: string]: string } = {};
-                                // if (dep.medicalDetails.dischargeSummary) {
-                                //     depDocuments.dischargeSummary = dep.medicalDetails.dischargeSummary;
-                                // }
-                                // if (dep.medicalDetails.diagnosticReport) {
-                                //     depDocuments.diagnosticReport = dep.medicalDetails.diagnosticReport;
-                                // }
                                 await manager.save(DependentMedical, {
                                     dependentId: newDependent,
                                     ticketId: ticket,
