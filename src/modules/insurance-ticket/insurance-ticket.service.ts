@@ -1467,13 +1467,13 @@ export class InsuranceTicketService {
     }
 
     // @Cron('0 0 2 * * *')
-    @Cron('0 56 16 * * *', {
-        timeZone: 'Asia/Kolkata'
-    })
-    async croncheckfun() {
-        const today = new Date();
-        console.log('this is cronjob checking********************** on : ', today);
-    }
+    // @Cron('0 56 16 * * *', {
+    //     timeZone: 'Asia/Kolkata'
+    // })
+    // async croncheckfun() {
+    //     const today = new Date();
+    //     console.log('this is cronjob checking********************** on : ', today);
+    // }
 
     async getStepStatusByRole(reqObj: any, req: any): Promise<any> {
         const role = reqObj.role;

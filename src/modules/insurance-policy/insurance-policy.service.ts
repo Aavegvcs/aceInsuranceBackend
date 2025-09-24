@@ -308,7 +308,7 @@ export class InsurancePolicyService {
 
             const result = await this._policyRepo.query(query, [policyId, policy.policyType]);
             const policyDetails = result[0][0];
-            console.log('policy details 1', policyDetails);
+            // console.log('policy details 1', policyDetails);
 
             if (policyDetails.claimProcess) {
                 try {
