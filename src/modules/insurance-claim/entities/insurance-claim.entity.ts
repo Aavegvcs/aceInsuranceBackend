@@ -61,6 +61,12 @@ export class InsuranceClaim {
     @Column({ type: 'json', name: 'documents', nullable: true })
     documents: any;
 
+     @Column({ name: 'updated_remarks', type: 'varchar', length: 255, nullable: true })
+    updatedRemarks: string;
+
+    @Column({ name: 'is_document_collected', type: 'boolean', default: false })
+    isDocumentCollected : boolean;
+
     @ManyToOne(() => User)
     @JoinColumn({ name: 'created_by' })
     createdBy: User;

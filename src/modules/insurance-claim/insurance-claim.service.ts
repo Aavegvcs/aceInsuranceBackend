@@ -111,13 +111,13 @@ export class InsuranceClaimService {
                     );
                 } else {
                     console.log(
-                        'api- insurance-claim/createClaim-,  Claim is created but logs is created. policyId is: ',
+                        'api- insurance-claim/createClaim-,  Claim is created but logs is not created. policyId is: ',
                         policy.policyNumber
                     );
 
                     return standardResponse(
                         false,
-                        'Claim is created but logs is created',
+                        'Claim is created but logs is not created',
                         202,
                         null,
                         null,
@@ -183,7 +183,7 @@ export class InsuranceClaimService {
     async getAllClaims(reqObj: any): Promise<any> {
         let res = null;
         try {
-            const { policyNumber, mobileNumber, claimId, startDate, endDate, pageNo, pageSize } = reqObj;   
+            const { policyNumber, mobileNumber, claimId, startDate, endDate, pageNo, pageSize } = reqObj;
 
             const query = 'CALL get_allClaims(?, ?, ?, ?, ?, ?, ?)';
 
@@ -215,6 +215,209 @@ export class InsuranceClaimService {
                 null,
                 error.message,
                 'insurance-claim/getAllClaims'
+            );
+        }
+
+        return res;
+    }
+
+    async updateClaim(reqBody: any): Promise<any> {
+        try {
+            const { claimId, updatedRemarks, documents, isDocumentCollected } = reqBody;
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+
+            if (!userEntity) {
+                return standardResponse(false, 'Logged user not found', 404);
+            }
+
+            const claim = await this._claimRepo.findOne({ where: { id: claimId } });
+            if (!claim) {
+                return standardResponse(false, 'Claim not found', 404);
+            }
+
+            // -------- Update claim data -------
+            claim.documents = documents || claim.documents;
+            claim.isDocumentCollected = isDocumentCollected;
+            claim.updatedRemarks = updatedRemarks || claim.updatedRemarks;
+            claim.updatedBy = userEntity;
+            claim.updatedAt = new Date();
+
+            // ----------------------------
+            // Status change Logic
+            // ----------------------------
+            let oldStatus = claim.status;
+            let newStatus = claim.status; // default → no change
+
+            if (claim.status === Claim_Status.REGISTERED) {
+                // ----- If docs uploaded but not marked as collected → PENDING ----------
+                // console.log("console log 2--------: ", claim.status);
+                if (documents?.length && !isDocumentCollected) {
+                    // console.log("console log 3--------: ", claim.status);
+                    newStatus = Claim_Status.PENDING;
+                }
+                // ----- If docs uploaded & collected → PROCESSED ----------
+                if (isDocumentCollected) {
+                    // console.log("console log 4--------: ", claim.status);
+                    newStatus = Claim_Status.PROCESSED;
+                }
+            } else if (claim.status === Claim_Status.PENDING && isDocumentCollected) {
+                // console.log("console log 5--------: ", claim.status);
+                newStatus = Claim_Status.PROCESSED;
+            }
+
+            // ----- Update status if changed ---------
+            if (newStatus !== oldStatus) {
+                // console.log("console log 6--------: ", claim.status);
+                claim.status = newStatus;
+            }
+
+            const result = await this._claimRepo.save(claim);
+
+            // ---------- here is old logs start -------------
+            if (result) {
+                // here log history will be created
+                // console.log("console log 7--------: ", claim.status);
+                const result2 = await this.createClaimLogs(
+                    result,
+                    claim.policyNumber,
+                    oldStatus,
+                    newStatus,
+                    'Claim Updated',
+                    userEntity
+                );
+                if (result2) {
+                    // console.log("console log 8--------: ", claim.status);
+                    return standardResponse(
+                        true,
+                        'Claim is Updated & logs is created',
+                        201,
+                        null,
+                        null,
+                        'insurance-claim/updatedClaim'
+                    );
+                } else {
+                    console.log(
+                        'api- insurance-claim/updatedClaim-,  Claim is updated but logs is not created. claimId is: ',
+                        claimId
+                    );
+
+                    return standardResponse(
+                        false,
+                        'Claim is updated but logs is not created',
+                        202,
+                        null,
+                        null,
+                        'insurance-claim/updatedClaim'
+                    );
+                }
+            } else {
+                console.log('api- insurance-claim/updatedClaim-,  Failed to updated claim. claimId is: ', claimId);
+
+                return standardResponse(
+                    false,
+                    'Failed to updated claim',
+                    500,
+                    null,
+                    null,
+                    'insurance-claim/updatedClaim'
+                );
+            }
+
+            // ---- here is old logs is end ---------------
+        } catch (error) {
+            console.error('Error in updateClaim:', error);
+            return standardResponse(false, error.message, 500, null);
+        }
+    }
+
+    async changeClaimStatus(reqBody: any): Promise<any> {
+        try {
+            const { claimId, newStatus, remarks } = reqBody;
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+
+            if (!userEntity) {
+                return standardResponse(false, 'Logged user not found', 404);
+            }
+
+            const claim = await this._claimRepo.findOne({ where: { id: claimId } });
+            if (!claim) {
+                return standardResponse(false, 'Claim not found', 404);
+            }
+
+            const allowedStatuses = [
+                Claim_Status.APPROVED,
+                Claim_Status.REJECTED,
+                Claim_Status.ESCALATED,
+                Claim_Status.CLOSED
+            ];
+
+            if (!allowedStatuses.includes(newStatus)) {
+                return standardResponse(false, 'Invalid status transition', 400);
+            }
+
+            const oldStatus = claim.status;
+
+            claim.status = newStatus;
+            claim.updatedRemarks = remarks || claim.updatedRemarks;
+            claim.updatedBy = userEntity;
+            claim.updatedAt = new Date();
+
+            await this._claimRepo.save(claim);
+
+            await this.createClaimLogs(claim, claim.policyNumber, oldStatus, newStatus, remarks || '', userEntity);
+
+            return standardResponse(true, `Claim status changed to ${newStatus}`, 200);
+        } catch (error) {
+            console.error('Error in changeClaimStatus:', error);
+            return standardResponse(false, error.message, 500);
+        }
+    }
+
+    async getClaimsStatusForChange(reqObj: any): Promise<any> {
+        const { claimId, claimType, currentStatus } = reqObj;
+        console.log('in this claim get status', reqObj);
+
+        let res = null;
+        try {
+            let allowedStatuses: Claim_Status[] = [];
+
+            switch (currentStatus) {
+                case Claim_Status.PROCESSED:
+                    allowedStatuses = [
+                        Claim_Status.APPROVED,
+                        Claim_Status.REJECTED,
+                        Claim_Status.ESCALATED,
+                        Claim_Status.CLOSED
+                    ];
+                    break;
+                case Claim_Status.APPROVED:
+                    allowedStatuses = [Claim_Status.ESCALATED, Claim_Status.CLOSED];
+                    break;
+                case Claim_Status.REJECTED:
+                    allowedStatuses = [Claim_Status.ESCALATED, Claim_Status.CLOSED];
+                    break;
+                default:
+                    allowedStatuses = [];
+            }
+
+            res = standardResponse(
+                true,
+                'Data fetched successfully',
+                200,
+                allowedStatuses,
+                null,
+                'insurance-claim/getClaimsStatusForChange'
+            );
+        } catch (error) {
+            console.log('-api: insurance-claim/getClaimsStatusForChange ', error.message);
+
+            res = standardResponse(
+                false,
+                'Error fetching data',
+                500,
+                null,
+                error.message,
+                'insurance-claim/getClaimsStatusForChange'
             );
         }
 

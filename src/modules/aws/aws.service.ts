@@ -44,6 +44,8 @@ async uploadFile(
     file: Express.Multer.File,
     documentType: string
   ): Promise<{ fileUploaded: boolean; name: string }> {
+    console.log("document type is heere", documentType, file);
+    
     const validDocumentTypes = [
       'ticket-document',
       'insurance-user',
@@ -53,6 +55,7 @@ async uploadFile(
       'insured-person',
       'insured-medical',
       'vehicle-document',
+      'claims'
     ];
 
     if (!validDocumentTypes.includes(documentType)) {
@@ -157,6 +160,7 @@ async getFile(documentType: string, fileName: string, res: Response): Promise<vo
       'insured-person',
       'insured-medical',
       'vehicle-document',
+      'claims'
     ];
 
     if (!validDocumentTypes.includes(documentType)) {
