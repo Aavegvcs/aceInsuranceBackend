@@ -48,6 +48,7 @@ import { RoleService } from '@modules/role/role.service';
 import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
 import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
 import { InsurancePolicyService } from '@modules/insurance-policy/insurance-policy.service';
+import { InsuranceNominee } from './entities/insurance-nominee-details.entity';
 @Injectable()
 export class InsuranceTicketService {
     constructor(
@@ -331,7 +332,7 @@ export class InsuranceTicketService {
             documents
         } = userDetails;
 
-        // console.log('in api user details is ', userDetails);
+        //  console.log('in api ticket details is ', ticketDetails);
 
         // Validate required fields
         if (!name || !gender || !primaryContactNumber || !emailId) {
@@ -434,7 +435,10 @@ export class InsuranceTicketService {
             let currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
             const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(@ticket_count)');
             // console.log('ticketNumber2', ticketNumberResult[0][0].ticketcode);
-
+            let ticketDocuments = [];
+            if (ticketDetails.ticketType === Ticket_Type.PORT) {
+                ticketDocuments = [{ name: 'portDocument', url: ticketDetails.portDocument }];
+            }
             const ticket = await this.ticketRepo.save({
                 insuranceUserId: savedInsuranceUser,
                 ticketNumber: ticketNumberResult[0][0].ticketcode,
@@ -458,7 +462,7 @@ export class InsuranceTicketService {
                 nomineeEmailId: ticketDetails.nomineeEmailId || null,
                 assignTo: assignPerson, // hardcoded as per original
                 branch: branch,
-                documents: ticketDetails.documents || null,
+                documents: ticketDocuments || null,
                 currentStepStart: Current_Step.INITIAL_REVIEW,
                 currentStepStartAt: new Date(),
                 nextStepStart: Current_Step.DOCUMENT_COLLECTED,
@@ -548,6 +552,7 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('ticket.assignTo', 'assignTo') // ← add this line
                 .leftJoinAndSelect('ticket.createdBy', 'createdBy')
                 .leftJoinAndSelect('createdBy.branch', 'branch')
+                .leftJoinAndSelect('ticket.nominee', 'nominee')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
             // console.log("toicket detailslskjdkfjdk", ticket);
@@ -734,8 +739,6 @@ export class InsuranceTicketService {
     }
 
     async updateTicketDetails(ticketId: number, reqBody: any): Promise<any> {
-        
-        
         const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
         if (!userEntity) {
             return {
@@ -753,13 +756,14 @@ export class InsuranceTicketService {
             insuredPersons,
             insuredMedicalDetails
         } = reqBody;
+// console.log("dependent details is here",includeSelfAsDependent, dependents);
 
         const response = {
             status: 'success',
             message: 'Ticket details updated successfully',
             data: { ticketId }
         };
-        // console.log('is markDocumentCollected', reqBody.markDocumentCollected);
+        // console.log('is insuredMedicalDetails', insuredMedicalDetails);
         let ticket = null;
         try {
             ticket = await this.ticketRepo.findOne({
@@ -796,10 +800,10 @@ export class InsuranceTicketService {
                 });
 
                 const updatePayload: any = {
-                    nomineeName: insuranceUser.nomineeName || null,
-                    nomineeRelation: insuranceUser.nomineeRelation || null,
-                    nomineeMobileNumber: insuranceUser.nomineeMobileNumber || null,
-                    nomineeEmailId: insuranceUser.nomineeEmailId || null,
+                    // nomineeName: insuranceUser.nomineeName || null,
+                    // nomineeRelation: insuranceUser.nomineeRelation || null,
+                    // nomineeMobileNumber: insuranceUser.nomineeMobileNumber || null,
+                    // nomineeEmailId: insuranceUser.nomineeEmailId || null,
                     includeSelfAsDependent: includeSelfAsDependent || false,
                     ticketStatus: Ticket_Status.IN_PROGRESS,
                     preferredCompany: reqBody.preferredCompany || null,
@@ -856,9 +860,38 @@ export class InsuranceTicketService {
                         userEntity.id
                     ]);
                 }
+                
 
                 await manager.update(InsuranceTicket, ticketId, updatePayload);
                 // --- END OF CHANGES ---
+                // -----------upate nominee details-----------
+                  console.log("exiting nominee details=================11111111");
+               const existingNominee = await manager.findOne(InsuranceNominee, {where:{ticketId:{id:ticketId}}});
+                console.log("exiting nominee details=================", existingNominee);
+                 if (existingNominee) {
+                        await manager.update(InsuranceNominee, existingNominee.id, {
+                            name: insuranceUser.nomineeName || null,
+                            gender: insuranceUser.nomineeGender || null,
+                            dateOfBirth: insuranceUser.nomineeDateOfBirth || null,
+                            primaryContactNumber: insuranceUser.nomineeMobileNumber || null,
+                            relation: insuranceUser.nomineeRelation || null,
+                            updatedBy: userEntity,
+                            updatedAt: new Date()
+                        });
+                    } else {
+                        await manager.save(InsuranceNominee, {
+                            name: insuranceUser.nomineeName || null,
+                            gender: insuranceUser.nomineeGender || null,
+                            dateOfBirth: insuranceUser.nomineeDateOfBirth || null,
+                            primaryContactNumber: insuranceUser.nomineeMobileNumber || null,
+                            relation: insuranceUser.nomineeRelation || null,
+                            ticketId : ticket,
+                            createdBy: userEntity,
+                            createdAt: new Date()
+                        });
+                    }
+
+                //------ end code of update nominee details ----
 
                 // Update Medical Details (HEALTH or LIFE)
                 if (
@@ -907,12 +940,16 @@ export class InsuranceTicketService {
                     }
                 }
                 // Update Dependents (HEALTH or LIFE)
-                if (ticket.insuranceType === Insurance_Type.Health && dependents && !includeSelfAsDependent) {
+                if (
+                    (ticket.insuranceType === Insurance_Type.Health || ticket.insuranceType === Insurance_Type.Life) &&
+                    dependents &&
+                    !includeSelfAsDependent
+                ) {
                     const existingDependents = await manager.find(InsuranceDependent, {
                         where: { ticketId: { id: ticketId } },
                         relations: ['medicalDetails']
                     });
-                   
+
                     for (const dep of dependents) {
                         const existingDep = dep.id ? existingDependents.find((d) => d.id === dep.id) : null;
 
@@ -931,7 +968,6 @@ export class InsuranceTicketService {
                                 const existingMed = existingDep.medicalDetails?.length
                                     ? existingDep.medicalDetails[0]
                                     : null;
-
 
                                 if (existingMed) {
                                     await manager.update(DependentMedical, existingMed.id, {
@@ -1105,7 +1141,7 @@ export class InsuranceTicketService {
                             await manager.update(InsuredMedical, existingInsuredMedi.id, {
                                 height: insuredMedicalDetails.height || null,
                                 weight: insuredMedicalDetails.weight || null,
-                                preExistDiseases: insuredMedicalDetails.preExistDiseases || null,
+                                preExistDiseases: insuredMedicalDetails?.preExistDiseases || null,
                                 medication: insuredMedicalDetails.medication || null,
                                 bloodGroup: insuredMedicalDetails.bloodGroup || null,
                                 isPastSurgery: insuredMedicalDetails.isPastSurgery || false,

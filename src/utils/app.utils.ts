@@ -737,7 +737,7 @@ export enum Gender {
 }
 
 export enum Ticket_Type {
-    NEW = 'NEW',
+    FRESH = 'FRESH',
     PORT = 'PORT',
     RENEWAL = 'RENNEWAL'
 }
@@ -770,7 +770,9 @@ export enum Insurance_Purpose {
     TERM = 'TERM',
     SAVINGS = 'SAVINGS',
     ULIP = 'ULIP',
-    ENDOWMENT = 'ENDOWMENT'
+    ENDOWMENT = 'ENDOWMENT',
+    Protection = 'PROTECTION',
+    GuaranteedReturns = 'GUARANTEED_RETURNS'
 }
 export enum Employment_Type {
     BUSINESS = 'BUSINESS',

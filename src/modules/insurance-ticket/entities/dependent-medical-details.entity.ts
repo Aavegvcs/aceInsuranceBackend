@@ -32,8 +32,11 @@ export class DependentMedical extends BaseEntity {
     @Column({ type: 'decimal', name: 'weight', precision: 10, scale: 2, nullable: true })
     weight: number;
 
-    @Column({ type: 'enum', enum: Pre_Existing_Diseases, name: 'pre_exist_diseases', nullable: true })
-    preExistDiseases: Pre_Existing_Diseases;
+    // @Column({ type: 'enum', enum: Pre_Existing_Diseases, name: 'pre_exist_diseases', nullable: true })
+    // preExistDiseases: Pre_Existing_Diseases;
+    
+    @Column({ type: 'simple-array', name: 'pre_exist_diseases', nullable: true })
+    preExistDiseases: string[];
 
     @Column({ type: 'varchar', name: 'others_diseases', nullable: true })
     othersDiseases: string;

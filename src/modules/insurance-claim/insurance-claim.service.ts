@@ -163,17 +163,33 @@ export class InsuranceClaimService {
             createdAt: new Date()
         };
         try {
-            const logsParam = this._claimLogsRepo.create({
-                claim: claim,
-                policyNumber: policyNumber,
-                previousStatus: previousStatus,
-                newStatus: newStatus,
-                logDetails: newLogs,
-                createdBy: createdBy,
-                createdAt: new Date()
+            let existingLog = await this._claimLogsRepo.findOne({
+                where: { claim: { id: claim.id } }
             });
 
-            return await this._claimLogsRepo.save(logsParam);
+            if (existingLog) {
+                let logsArray = Array.isArray(existingLog.logDetails) ? existingLog.logDetails : [];
+                logsArray.push(newLogs);
+
+                existingLog.logDetails = logsArray;
+                existingLog.previousStatus = previousStatus;
+                existingLog.newStatus = newStatus;
+                existingLog.updatedAt = new Date();
+                existingLog.updatedBy = createdBy;
+                return await this._claimLogsRepo.save(existingLog);
+            } else {
+                const logsParam = this._claimLogsRepo.create({
+                    claim: claim,
+                    policyNumber: policyNumber,
+                    previousStatus: previousStatus,
+                    newStatus: newStatus,
+                    logDetails: newLogs,
+                    createdBy: createdBy,
+                    createdAt: new Date()
+                });
+
+                return await this._claimLogsRepo.save(logsParam);
+            }
         } catch (error) {
             console.log('api- insurance-claim/createClaim-,  Failed to created claim. policyId is: ', policyNumber);
             return null;

@@ -46,7 +46,7 @@ export class InsurancePolicyService {
     //             where: { policyNumber: policyNumber }
     //         });
 
-    //         if (ticket.ticketType === Ticket_Type.NEW) {
+    //         if (ticket.ticketType === Ticket_Type.FRESH) {
     //             // Prepare policy object
     //             if (prevPolicy) {
     //                 return {
@@ -367,7 +367,7 @@ export class InsurancePolicyService {
             });
 
             // ------------------- NEW POLICY CREATION ------------------- //
-            if (ticket.ticketType === Ticket_Type.NEW) {
+            if (ticket.ticketType === Ticket_Type.FRESH) {
                 if (prevPolicy) {
                     return { status: false, message: 'Policy already created with this number', data: null };
                 }

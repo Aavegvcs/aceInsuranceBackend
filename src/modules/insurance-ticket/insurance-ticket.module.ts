@@ -31,6 +31,7 @@ import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-
 import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
 import { InsurancePolicyService } from '@modules/insurance-policy/insurance-policy.service';
 import { InsurancePolicyRenewalHistory } from '@modules/insurance-policy/entities/insurance-policy-renewal-history.entity';
+import { InsuranceNominee } from './entities/insurance-nominee-details.entity';
 
 @Module({
     imports: [
@@ -55,7 +56,8 @@ import { InsurancePolicyRenewalHistory } from '@modules/insurance-policy/entitie
             Role,
             InsuranceProduct,
             InsurancePolicy,
-            InsurancePolicyRenewalHistory
+            InsurancePolicyRenewalHistory,
+            InsuranceNominee
         ]),
         InsuranceEscalationModule,
         ScheduleModule.forRoot(),

@@ -42,6 +42,7 @@ import { InsuranceTicketNotification } from '@modules/insurance-escalation/entit
 import { InsuranceTicketDeviation } from '@modules/insurance-escalation/entities/insurance-notification-deviation.entity';
 import { EscalationCase } from '@modules/insurance-escalation/entities/escalation-case.entity';
 import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
+import { InsuranceNominee } from './insurance-nominee-details.entity';
 
 @Entity({ name: 'insurance_ticket' })
 export class InsuranceTicket {
@@ -271,4 +272,7 @@ export class InsuranceTicket {
 
     @OneToMany(() => EscalationCase, (data) => data.ticket, { nullable: true })
     escalationCases: EscalationCase[];
+
+    @OneToMany(() => InsuranceNominee, (data) => data.ticketId, { nullable: true })
+    nominee: InsuranceNominee[];
 }
