@@ -41,7 +41,7 @@ export class InsuranceNominee extends BaseEntity {
     @Column({ type: 'enum', enum: Family_Member_Type, name: 'relation', nullable: true })
     relation: Family_Member_Type;
 
-    @ManyToOne(() => InsuranceTicket, (data) => data.nominee, { nullable: true })
+    @OneToOne(() => InsuranceTicket, (data) => data.nominee, { nullable: true })
     @JoinColumn({ name: 'ticket_id' })
     ticketId: InsuranceTicket;
 

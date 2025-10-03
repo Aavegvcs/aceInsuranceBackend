@@ -11,7 +11,7 @@ import {
 import { User } from '@modules/user/user.entity';
 import { InsuranceUser } from './insurance-user.entity';
 import { InsuranceTicket } from './insurance-ticket.entity';
-import { Vehicle_Type } from 'src/utils/app.utils';
+import { Vehicle_Category, Vehicle_Type } from 'src/utils/app.utils';
 
 @Entity('vehicle_details')
 export class InsuranceVehicleDetails extends BaseEntity {
@@ -46,8 +46,28 @@ export class InsuranceVehicleDetails extends BaseEntity {
 
     @Column({ name: 'made_by', nullable: true })
     madeBy: string;
-    
 
+    @Column({type:'enum', enum: Vehicle_Category, name: 'vehicle_category', nullable: true })
+    vehicleCategory: Vehicle_Category;
+
+    @Column({ name: 'others_vehicle_category', nullable: true })
+    othersVehicleCategory: string;
+
+    @Column({ name: 'seating_capacity', nullable: true })
+    seatingCapacity: number;
+
+    @Column({type: 'decimal', name: 'gross_vehicle_weight',precision: 10, scale: 2, nullable: true })
+    grossVehicleWeight: number;
+
+    @Column({type: 'boolean', name: 'over_turning', default: false })
+    overTurning: boolean;
+
+    @Column({type: 'boolean', name: 'no_claim_bonus', default : false })
+    noClaimBonus: boolean;
+
+    @Column({ name: 'no_claim_bonus_on_prePolicy', nullable: true })
+    noClaimBonusOnPrePolicy: number;
+ 
     @Column({ name: 'making_year', nullable: true })
     makingYear: string;
 

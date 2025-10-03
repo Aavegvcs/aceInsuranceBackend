@@ -555,7 +555,7 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('ticket.nominee', 'nominee')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
-            // console.log("toicket detailslskjdkfjdk", ticket);
+             console.log("toicket detailslskjdkfjdk", ticket);
 
             if (!ticket) {
                 return {
@@ -656,13 +656,21 @@ export class InsuranceTicketService {
                         emailId: ticket.insuranceUserId.emailId,
                         employmentType: ticket.insuranceUserId.employmentType,
                         dateOfBirth: ticket.insuranceUserId.dateOfBirth ?? null,
-                        nomineeName: ticket.nomineeName ?? null,
-                        nomineeRelation: ticket.nomineeRelation ?? null,
-                        nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
-                        nomineeEmailId: ticket.nomineeEmailId ?? null,
+                        // nomineeName: ticket.nomineeName ?? null,
+                        // nomineeRelation: ticket.nomineeRelation ?? null,
+                        // nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
+                        // nomineeEmailId: ticket.nomineeEmailId ?? null,
                         updatedBy: ticket.insuranceUserId.updatedBy?.id ?? null,
                         updatedAt: ticket.insuranceUserId.updatedAt ?? null,
                         documents: ticket.insuranceUserId.documents ?? null
+                    },
+                    nomineeDetails: {
+                        id:ticket?.nominee?.id ?? null,
+                        name: ticket?.nominee?.name ?? null,
+                        gender: ticket?.nominee?.gender ?? null,
+                        relation: ticket?.nominee?.relation ?? null,
+                        contactNumber: ticket?.nominee?.primaryContactNumber ?? null,
+                        dateOfBirth: ticket?.nominee?.dateOfBirth ?? null,
                     },
                     medicalDetails: formatMedicalDetails(medicalDetails),
                     // ticket.insuranceDependent?.map((dep) => {
@@ -698,6 +706,13 @@ export class InsuranceTicketService {
                               chassisNumber: ticket.vehicleDetails[0].chassisNumber ?? null,
                               dateOfReg: ticket.vehicleDetails[0].dateOfReg ?? null,
                               madeBy: ticket.vehicleDetails[0].madeBy ?? null,
+                              vehicleCategory: ticket.vehicleDetails[0].vehicleCategory ?? null,
+                              othersVehicleCategory: ticket.vehicleDetails[0].othersVehicleCategory ?? null,
+                              seatingCapacity: ticket.vehicleDetails[0].seatingCapacity ?? null,
+                              grossVehicleWeight: ticket.vehicleDetails[0].grossVehicleWeight ?? null,
+                              overTurning: ticket.vehicleDetails[0].overTurning ?? false,
+                              noClaimBonus: ticket.vehicleDetails[0].noClaimBonus ?? false,
+                              noClaimBonusOnPrePolicy: ticket.vehicleDetails[0].noClaimBonusOnPrePolicy ?? null,
                               createdBy: ticket.vehicleDetails[0].createdBy?.id ?? null,
                               updatedBy: ticket.vehicleDetails[0].updatedBy?.id ?? null,
                               createdAt: ticket.vehicleDetails[0].createdAt ?? null,
@@ -754,9 +769,10 @@ export class InsuranceTicketService {
             includeSelfAsDependent,
             vehicleDetails,
             insuredPersons,
-            insuredMedicalDetails
+            insuredMedicalDetails,
+            nomineeDetails
         } = reqBody;
-// console.log("dependent details is here",includeSelfAsDependent, dependents);
+        console.log("nomineeDetails details is here", nomineeDetails);
 
         const response = {
             status: 'success',
@@ -860,36 +876,37 @@ export class InsuranceTicketService {
                         userEntity.id
                     ]);
                 }
-                
 
                 await manager.update(InsuranceTicket, ticketId, updatePayload);
                 // --- END OF CHANGES ---
                 // -----------upate nominee details-----------
-                  console.log("exiting nominee details=================11111111");
-               const existingNominee = await manager.findOne(InsuranceNominee, {where:{ticketId:{id:ticketId}}});
-                console.log("exiting nominee details=================", existingNominee);
-                 if (existingNominee) {
-                        await manager.update(InsuranceNominee, existingNominee.id, {
-                            name: insuranceUser.nomineeName || null,
-                            gender: insuranceUser.nomineeGender || null,
-                            dateOfBirth: insuranceUser.nomineeDateOfBirth || null,
-                            primaryContactNumber: insuranceUser.nomineeMobileNumber || null,
-                            relation: insuranceUser.nomineeRelation || null,
-                            updatedBy: userEntity,
-                            updatedAt: new Date()
-                        });
-                    } else {
-                        await manager.save(InsuranceNominee, {
-                            name: insuranceUser.nomineeName || null,
-                            gender: insuranceUser.nomineeGender || null,
-                            dateOfBirth: insuranceUser.nomineeDateOfBirth || null,
-                            primaryContactNumber: insuranceUser.nomineeMobileNumber || null,
-                            relation: insuranceUser.nomineeRelation || null,
-                            ticketId : ticket,
-                            createdBy: userEntity,
-                            createdAt: new Date()
-                        });
-                    }
+                // console.log('exiting nominee details=================11111111');
+                const existingNominee = await manager.findOne(InsuranceNominee, {
+                    where: { ticketId: { id: ticketId } }
+                });
+                // console.log('exiting nominee details=================', existingNominee);
+                if (existingNominee) {
+                    await manager.update(InsuranceNominee, existingNominee.id, {
+                        name: nomineeDetails.name || null,
+                        gender: nomineeDetails.gender || null,
+                        dateOfBirth: nomineeDetails.dateOfBirth || null,
+                        primaryContactNumber: nomineeDetails.contactNumber || null,
+                        relation: nomineeDetails.relation || null,
+                        updatedBy: userEntity,
+                        updatedAt: new Date()
+                    });
+                } else {
+                    await manager.save(InsuranceNominee, {
+                        name: nomineeDetails.name  || null,
+                        gender: nomineeDetails.gender || null,
+                        dateOfBirth: nomineeDetails.dateOfBirth || null,
+                        primaryContactNumber: nomineeDetails.contactNumber || null,
+                        relation: nomineeDetails.relation || null,
+                        ticketId: ticket,
+                        createdBy: userEntity,
+                        createdAt: new Date()
+                    });
+                }
 
                 //------ end code of update nominee details ----
 
@@ -1058,6 +1075,13 @@ export class InsuranceTicketService {
                             chassisNumber: vehicleDetails.chassisNumber || null,
                             dateOfReg: vehicleDetails.dateOfReg || null,
                             madeBy: vehicleDetails.madeBy || null,
+                            vehicleCategory: vehicleDetails.vehicleCategory || null,
+                            othersVehicleCategory: vehicleDetails.othersVehicleCategory || null,
+                            seatingCapacity: vehicleDetails.seatingCapacity || null,
+                            grossVehicleWeight: vehicleDetails.grossVehicleWeight || null,
+                            overTurning: vehicleDetails.overTurning || null,
+                            noClaimBonus: vehicleDetails.noClaimBonus || null,
+                            noClaimBonusOnPrePolicy: vehicleDetails.noClaimBonusOnPrePolicy || null,
 
                             //documents: JSON.stringify(documents), // Store as JSON string
                             updatedBy: userEntity,
@@ -1077,6 +1101,14 @@ export class InsuranceTicketService {
                             chassisNumber: vehicleDetails.chassisNumber || null,
                             dateOfReg: vehicleDetails.dateOfReg || null,
                             madeBy: vehicleDetails.madeBy || null,
+                            vehicleCategory: vehicleDetails.vehicleCategory || null,
+                            othersVehicleCategory: vehicleDetails.othersVehicleCategory || null,
+                            seatingCapacity: vehicleDetails.seatingCapacity || null,
+                            grossVehicleWeight: vehicleDetails.grossVehicleWeight || null,
+                            overTurning: vehicleDetails.overTurning || null,
+                            noClaimBonus: vehicleDetails.noClaimBonus || null,
+                            noClaimBonusOnPrePolicy: vehicleDetails.noClaimBonusOnPrePolicy || null,
+
                             //documents: JSON.stringify(documents), // Store as JSON string
                             createdBy: userEntity
                         });

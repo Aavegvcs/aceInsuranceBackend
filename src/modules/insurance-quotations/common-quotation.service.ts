@@ -119,13 +119,11 @@ export class CommonQuotationService {
                         emailId: ticket.insuranceUserId.emailId,
                         employmentType: ticket.insuranceUserId.employmentType,
                         dateOfBirth: ticket.insuranceUserId.dateOfBirth ?? null,
-                        nomineeName: ticket.nomineeName ?? null,
-                        nomineeRelation: ticket.nomineeRelation ?? null,
-                        nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
-                        nomineeEmailId: ticket.nomineeEmailId ?? null,
-                        pinCode: ticket.insuranceUserId.permanentPinCode ?? null,
-                        updatedBy: ticket.insuranceUserId.updatedBy?.id ?? null,
-                        updatedAt: ticket.insuranceUserId.updatedAt ?? null
+                        // nomineeName: ticket.nomineeName ?? null,
+                        // nomineeRelation: ticket.nomineeRelation ?? null,
+                        // nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
+                        // nomineeEmailId: ticket.nomineeEmailId ?? null,
+                        pinCode: ticket.insuranceUserId.permanentPinCode ?? null,           
                     },
                     medicalDetails: formatMedicalDetails(medicalDetails),
 
@@ -145,6 +143,7 @@ export class CommonQuotationService {
                     vehicleDetails: ticket.vehicleDetails?.[0]
                         ? {
                               id: ticket.vehicleDetails[0].id,
+                              vehicleCategory:ticket.vehicleDetails[0].vehicleCategory,
                               vehicleType: ticket.vehicleDetails[0].vehicleType,
                               vehicleNumber: ticket.vehicleDetails[0].vehicleNumber,
                               makingYear: ticket.vehicleDetails[0].makingYear ?? null,
@@ -155,11 +154,7 @@ export class CommonQuotationService {
                               chassisNumber: ticket.vehicleDetails[0].chassisNumber ?? null,
                               dateOfReg: ticket.vehicleDetails[0].dateOfReg ?? null,
                               madeBy: ticket.vehicleDetails[0].madeBy ?? null,
-                              createdBy: ticket.vehicleDetails[0].createdBy?.id ?? null,
-                              updatedBy: ticket.vehicleDetails[0].updatedBy?.id ?? null,
-                              createdAt: ticket.vehicleDetails[0].createdAt ?? null,
-                              updatedAt: ticket.vehicleDetails[0].updatedAt ?? null,
-                              isActive: ticket.vehicleDetails[0].isActive
+                              
                           }
                         : null,
                     insuredPersons: ticket.insuredPersons
@@ -176,11 +171,7 @@ export class CommonQuotationService {
                               permanentCity: ticket.insuredPersons.permanentCity ?? null,
                               permanentState: ticket.insuredPersons.permanentState ?? null,
                               permanentPinCode: ticket.insuredPersons.permanentPinCode ?? null,
-                              createdBy: ticket.insuredPersons.createdBy?.id ?? null,
-                              updatedBy: ticket.insuredPersons.updatedBy?.id ?? null,
-                              createdAt: ticket.insuredPersons.createdAt ?? null,
-                              updatedAt: ticket.insuredPersons.updatedAt ?? null,
-                              isActive: ticket.insuredPersons.isActive
+                             
                           }
                         : null,
                     insuredMedicalDetails: formatMedicalDetails(insuredMedicalDetails)

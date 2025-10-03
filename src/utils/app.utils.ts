@@ -739,7 +739,7 @@ export enum Gender {
 export enum Ticket_Type {
     FRESH = 'FRESH',
     PORT = 'PORT',
-    RENEWAL = 'RENNEWAL'
+    RENEWAL = 'RENEWAL'
 }
 
 export enum Policy_Holerder_Type {
@@ -787,6 +787,15 @@ export enum Vehicle_Type {
     BUS = 'BUS',
     OTHERS = 'OTHERS'
 }
+
+export enum Vehicle_Category {
+  TwoWheeler = 'TWO_WHEELER',
+  PrivateCar = 'PRIVATE_CAR',
+  GoodsCarryingVehicle = 'GOODS_CARRYING_VEHICLE',
+  PassengerCarryingVehicle = 'PASSENGER_CARRYING_VEHICLE',
+  Miscellaneous = 'MISCELLANEOUS',
+}
+
 
 export enum Client_Type {
     NEW_CLIENT = 'NEW_CLIENT',

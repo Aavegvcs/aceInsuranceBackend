@@ -100,7 +100,8 @@ export class InsuranceQuotationService {
                         dateOfReg: ticketDetails.data.vehicleDetails?.dateOfReg || 'N/A',
                         modelNumber: ticketDetails.data.vehicleDetails?.modelNumber || 'N/A',
                         makingYear: ticketDetails.data.vehicleDetails?.makingYear || 'N/A',
-                        madeBy: ticketDetails.data.vehicleDetails?.madeBy || 'N/A'
+                        madeBy: ticketDetails.data.vehicleDetails?.madeBy || 'N/A',
+                        vehicleCategory: ticketDetails.data.vehicleDetails?.vehicleCategory || 'N/A'
                     },
                     dependentDetails: ticketDetails.data.dependents?.map((dependent) => ({
                         name: dependent?.name,
@@ -950,7 +951,7 @@ export class InsuranceQuotationService {
                 },
                 relations: ['quotationId', 'product', 'company']
             });
-            console.log('in insurance quotation service quote is here', quote);
+            // console.log('in insurance quotation service quote is here', quote);
             let nextStep = Current_Step[status as keyof typeof Current_Step] || Current_Step.SUBMITTED_FOR_REVISION;
             let nextStepDeadline = ticket.nextStepDeadline;
 

@@ -156,18 +156,6 @@ export class InsuranceTicket {
     @Column({ type: 'enum', enum: Client_Type, name: 'client_type', nullable: true })
     clientType: Client_Type;
 
-    @Column({ name: 'nominee_name', nullable: true })
-    nomineeName: string;
-
-    @Column({ type: 'enum', enum: Family_Member_Type, name: 'nominee_relation', nullable: true })
-    nomineeRelation: Family_Member_Type;
-
-    @Column({ name: 'nominee_mobile_number', nullable: true })
-    nomineeMobileNumber: string;
-
-    @Column({ name: 'nominee_email_id', nullable: true })
-    nomineeEmailId: string;
-
     @Column({ name: 'include_self_as_dependent', type: 'boolean', default: false })
     includeSelfAsDependent: boolean;
 
@@ -273,6 +261,6 @@ export class InsuranceTicket {
     @OneToMany(() => EscalationCase, (data) => data.ticket, { nullable: true })
     escalationCases: EscalationCase[];
 
-    @OneToMany(() => InsuranceNominee, (data) => data.ticketId, { nullable: true })
-    nominee: InsuranceNominee[];
+    @OneToOne(() => InsuranceNominee, (data) => data.ticketId, { nullable: true })
+    nominee: InsuranceNominee;
 }
