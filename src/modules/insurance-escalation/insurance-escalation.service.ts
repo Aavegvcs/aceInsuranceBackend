@@ -409,4 +409,5 @@ export class InsuranceEscalationService {
             throw new Error(error.message || 'Something went wrong');
         }
     }
+    
 }

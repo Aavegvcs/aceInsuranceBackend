@@ -41,6 +41,7 @@ import Redis from 'ioredis';
 import { RedisModule } from '@modules/redis/redis.module';
 import { InsurancePolicyModule } from '@modules/insurance-policy/insurance-policy.module';
 import { InsuranceClaimModule } from '@modules/insurance-claim/insurance-claim.module';
+import { InsuranceFeaturesModule } from '@modules/insurance-features/insurance-features.module';
 @Module({
     imports: [
         AwsModule,
@@ -70,6 +71,7 @@ import { InsuranceClaimModule } from '@modules/insurance-claim/insurance-claim.m
         InsuranceRolePermissionModule,
         InsurancePolicyModule,
         InsuranceClaimModule,
+        InsuranceFeaturesModule,
 
         BullModule.forRoot({
             redis: {

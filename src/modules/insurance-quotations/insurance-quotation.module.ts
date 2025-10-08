@@ -12,6 +12,7 @@ import { QuoteEntity } from './entities/quote.entity';
 import { CommonQuotationService } from './common-quotation.service';
 import { InsuranceAssignedTo } from '@modules/insurance-ticket/entities/insurance-ticket-assignedTo.entity';
 import { InsuranceEscalationModule } from '@modules/insurance-escalation/insurance-escalation.module';
+import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 
 @Module({
     imports: [
@@ -21,7 +22,8 @@ import { InsuranceEscalationModule } from '@modules/insurance-escalation/insuran
             InsuranceCompanies,
             InsuranceProduct,
             QuoteEntity,
-            User
+            User,
+            ProductFeatures
         ]),
         EmailModule,
         InsuranceEscalationModule

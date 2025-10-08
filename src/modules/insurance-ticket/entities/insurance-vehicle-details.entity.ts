@@ -97,3 +97,4 @@ export class InsuranceVehicleDetails extends BaseEntity {
     @Column({ type: 'boolean', name: 'is_active', default: true })
     isActive: boolean;  
 }
+// 06:25

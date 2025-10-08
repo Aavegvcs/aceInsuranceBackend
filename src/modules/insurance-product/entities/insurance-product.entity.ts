@@ -18,6 +18,7 @@ import { User } from '@modules/user/user.entity';
 import { InsurancePurchasedProduct } from '@modules/insurance-product/entities/insurance-puchased-product.entity';
 import { InsuranceProductSuggestions } from '@modules/insurance-escalation/entities/insurance-product-suggestions.entity';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
+import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 
 @Entity({ name: 'insurance_product' })
 export class InsuranceProduct {
@@ -149,4 +150,7 @@ export class InsuranceProduct {
 
     @OneToMany(() => InsuranceProductSuggestions, (data) => data.suggestedProducts)
     suggestedProducts: InsuranceProductSuggestions[];
+    
+    @OneToMany(() => ProductFeatures, productFeature => productFeature.product)
+    productFeatures: ProductFeatures[];
 }

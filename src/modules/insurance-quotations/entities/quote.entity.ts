@@ -7,13 +7,15 @@ import {
     OneToOne,
     CreateDateColumn,
     UpdateDateColumn,
-    DeleteDateColumn
+    DeleteDateColumn,
+    OneToMany
 } from 'typeorm';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceQuotation } from './insurance-quotation.entity';
 import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
 import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
+import { QuoteFeatures } from '@modules/insurance-features/entities/quote-features.entity';
 
 @Entity({ name: 'quote_entity' })
 export class QuoteEntity {
@@ -24,7 +26,6 @@ export class QuoteEntity {
     @JoinColumn({ name: 'quotation_id' })
     quotationId: InsuranceQuotation;
 
-    
     @ManyToOne(() => InsuranceCompanies, { nullable: false })
     @JoinColumn({ name: 'company_id' })
     company: InsuranceCompanies;
@@ -47,13 +48,12 @@ export class QuoteEntity {
 
     @Column({ name: 'coverage_included', nullable: true })
     coverageIncluded: string;
-    
+
     @Column({ name: 'idv', nullable: true })
     idv: string;
 
     @Column({ name: 'coverage_type', nullable: true })
     coverageType: string;
-
 
     @Column({ name: 'features', nullable: true })
     features: string;
@@ -63,7 +63,7 @@ export class QuoteEntity {
 
     @Column({ name: 'benefits', nullable: true })
     benefits: string;
-    
+
     @Column({ name: 'shortDescription', nullable: true })
     shortDescription: string;
 
@@ -99,4 +99,6 @@ export class QuoteEntity {
 
     @DeleteDateColumn({ type: 'timestamp', nullable: true })
     deletedAt: Date;
+    @OneToMany(() => QuoteFeatures, (quoteFeature) => quoteFeature.quote)
+    quoteFeatures: QuoteFeatures[];
 }

@@ -54,6 +54,7 @@
     "@nestjs/swagger": "^11.0.6",
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "^11.0.0",
+    "@react-pdf/renderer": "^4.3.1",
     "aes-cross": "^1.1.2",
     "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
