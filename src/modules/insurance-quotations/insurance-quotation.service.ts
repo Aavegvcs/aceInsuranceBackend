@@ -836,14 +836,17 @@ export class InsuranceQuotationService {
                 // if (fs.existsSync(logoPath)) {
                 //     doc.image(logoPath, 40, 10, { width: 30 });
                 // }
-                const logoPath = path.join(__dirname, '../../assets/images/logo-accumen.png');
+                const logoPath = path.join(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.png');
                 console.log('Checking logo path:', logoPath);
                 console.log('Exists?', fs.existsSync(logoPath));
-                const logoURL =
-                    'https://aceuat.acumengroup.in:3002/backend/s3/getDocument/insurance-user/1760007691361_logo-accumen.png';
-                const response = await axios.get(logoURL, { responseType: 'arraybuffer' });
-                const imageBuffer = Buffer.from(response.data, 'binary');
-                doc.image(imageBuffer, 40, 10, { width: 30 });
+                 if (fs.existsSync(logoPath)) {
+                    doc.image(logoPath, 40, 10, { width: 30 });
+                }
+                // const logoURL =
+                //     'https://aceuat.acumengroup.in:3002/backend/s3/getDocument/insurance-user/1760007691361_logo-accumen.png';
+                // const response = await axios.get(logoURL, { responseType: 'arraybuffer' });
+                // const imageBuffer = Buffer.from(response.data, 'binary');
+                // doc.image(imageBuffer, 40, 10, { width: 30 });
 
                 // Title
                 http: doc.fillColor('#0055A5')
