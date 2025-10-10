@@ -32,6 +32,7 @@ import { TicketNotificationService } from '@modules/insurance-escalation/ticket-
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
+import { getAssetPath } from 'src/utils/images-path-utils';
 const today = new Date();
 const formattedDate = today.toLocaleString('en-GB', {
     day: '2-digit',
@@ -836,23 +837,28 @@ export class InsuranceQuotationService {
                 // if (fs.existsSync(logoPath)) {
                 //     doc.image(logoPath, 40, 10, { width: 30 });
                 // }
-                const logoPath = path.join(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.png');
-                console.log('Checking logo path:', logoPath);
+                const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
+                    ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG'); // for dev
+
+                console.log('Resolved logo path:', logoPath);
                 console.log('Exists?', fs.existsSync(logoPath));
-                 if (fs.existsSync(logoPath)) {
-                    doc.image(logoPath, 40, 10, { width: 30 });
-                }
+
+                doc.image(logoPath, 40, 20, { width: 150, height: 24 });
+
+                // fallback logic: handle if assets are in different location during dev
+
                 // const logoURL =
-                //     'https://aceuat.acumengroup.in:3002/backend/s3/getDocument/insurance-user/1760007691361_logo-accumen.png';
+                //     'https://aceuat.acumengroup.in:3002/backend/s3/getDocument/insurance-user/1760009143448_ACUMEN_-_BLUE_LOGO.PNG';
                 // const response = await axios.get(logoURL, { responseType: 'arraybuffer' });
                 // const imageBuffer = Buffer.from(response.data, 'binary');
-                // doc.image(imageBuffer, 40, 10, { width: 30 });
+                // doc.image(imageBuffer, 40, 20, { width: 150, height: 24 });
 
                 // Title
-                http: doc.fillColor('#0055A5')
-                    .fontSize(18) // Reduced from 22
-                    .font('DejaVuSans-Bold')
-                    .text('Acumen', 80, 18, { align: 'left' });
+                //  doc.fillColor('#0055A5')
+                //     .fontSize(18) // Reduced from 22
+                //     .font('DejaVuSans-Bold')
+                //     .text('Acumen', 80, 18, { align: 'left' });
 
                 doc.moveDown(1);
 
@@ -898,6 +904,68 @@ export class InsuranceQuotationService {
                 doc.moveDown(1);
 
                 // === Helper Function to Draw Table it is used to generate dependent, vehicle etc table===
+                // const drawTable = (
+                //     title: string,
+                //     headers: string[],
+                //     rows: string[][],
+                //     startX: number,
+                //     startY: number,
+                //     colWidths: number[]
+                // ) => {
+                //     const columnX: number[] = [startX];
+
+                //     for (let i = 0; i < colWidths.length - 1; i++) {
+                //         columnX.push(columnX[i] + colWidths[i]);
+                //     }
+
+                //     doc.font('DejaVuSans-Bold')
+                //         .fontSize(10) // Reduced from 12
+                //         .fillColor('#003087')
+                //         .text(title, startX, startY);
+                //     let y = startY + 20;
+                //     // Draw Header
+                //     doc.font('DejaVuSans-Bold')
+                //         .fontSize(9) // Reduced from 9
+                //         .fillColor('#242424');
+                //     headers.forEach((header, i) => {
+                //         const x = columnX[i];
+                //         doc.strokeColor('#CCCCCC').lineWidth(1);
+                //         doc.fillColor('#FFFFFF');
+                //         doc.rect(x, y, colWidths[i], 20).stroke().fill();
+                //         doc.fillColor('#242424');
+                //         doc.text(header, x + 5, y + 5, {
+                //             width: colWidths[i] - 10,
+
+                //             align: 'center'
+                //         });
+                //     });
+                //     y += 20;
+
+                //     // Draw Rows
+                //     doc.font('DejaVuSans')
+                //         .fontSize(9) // Reduced from 9
+                //         .fillColor('black');
+                //     rows.forEach((row, rowIndex) => {
+                //         if (!Array.isArray(row)) {
+                //             console.error(`Invalid row at index ${rowIndex}:`, row);
+                //             throw new Error(`Invalid row data for table: ${title}`);
+                //         }
+                //         row.forEach((cell, i) => {
+                //             const x = columnX[i];
+                //             doc.strokeColor('#CCCCCC').lineWidth(1);
+                //             doc.fillColor('#FFFFFF');
+                //             doc.rect(x, y, colWidths[i], 20).stroke().fill();
+                //             doc.fillColor('black');
+                //             doc.text(cell, x + 5, y + 5, {
+                //                 width: colWidths[i] - 10,
+                //                 align: 'center'
+                //             });
+                //         });
+                //         y += 20;
+                //     });
+
+                //     return y;
+                // };
                 const drawTable = (
                     title: string,
                     headers: string[],
@@ -912,49 +980,61 @@ export class InsuranceQuotationService {
                         columnX.push(columnX[i] + colWidths[i]);
                     }
 
-                    doc.font('DejaVuSans-Bold')
-                        .fontSize(10) // Reduced from 12
-                        .fillColor('#003087')
-                        .text(title, startX, startY);
+                    doc.font('DejaVuSans-Bold').fontSize(10).fillColor('#003087').text(title, startX, startY);
+
                     let y = startY + 20;
-                    // Draw Header
-                    doc.font('DejaVuSans-Bold')
-                        .fontSize(9) // Reduced from 9
-                        .fillColor('#242424');
+
+                    // --- Draw Header ---
+                    doc.font('DejaVuSans-Bold').fontSize(9).fillColor('#242424');
+
+                    // First, calculate max header height
+                    const headerHeights = headers.map((header, i) => {
+                        return doc.heightOfString(header, { width: colWidths[i] - 10, align: 'center' });
+                    });
+                    const headerHeight = Math.max(...headerHeights) + 10; // Add some padding
+
                     headers.forEach((header, i) => {
                         const x = columnX[i];
-                        doc.strokeColor('#CCCCCC').lineWidth(1);
-                        doc.fillColor('#FFFFFF');
-                        doc.rect(x, y, colWidths[i], 20).stroke().fill();
+                        // doc.strokeColor('#0055A5').lineWidth(1);
+                        doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                        doc.fillColor('#0055A5');
+                        doc.rect(x, y, colWidths[i], headerHeight).stroke().fill();
                         doc.fillColor('#242424');
                         doc.text(header, x + 5, y + 5, {
                             width: colWidths[i] - 10,
                             align: 'center'
                         });
                     });
-                    y += 20;
+                    y += headerHeight;
 
-                    // Draw Rows
-                    doc.font('DejaVuSans')
-                        .fontSize(9) // Reduced from 9
-                        .fillColor('black');
+                    // --- Draw Rows ---
+                    doc.font('DejaVuSans').fontSize(9).fillColor('black');
+
                     rows.forEach((row, rowIndex) => {
                         if (!Array.isArray(row)) {
                             console.error(`Invalid row at index ${rowIndex}:`, row);
                             throw new Error(`Invalid row data for table: ${title}`);
                         }
+
+                        // Calculate dynamic row height based on cell content
+                        const rowHeights = row.map((cell, i) => {
+                            return doc.heightOfString(cell, { width: colWidths[i] - 10, align: 'center' });
+                        });
+                        const rowHeight = Math.max(...rowHeights) + 10; // Add padding
+
                         row.forEach((cell, i) => {
                             const x = columnX[i];
-                            doc.strokeColor('#CCCCCC').lineWidth(1);
-                            doc.fillColor('#FFFFFF');
-                            doc.rect(x, y, colWidths[i], 20).stroke().fill();
+                            doc.strokeColor('#0055A5').lineWidth(1);
+                            doc.fillColor('#0055A5');
+                            doc.rect(x, y, colWidths[i], rowHeight).stroke().fill();
                             doc.fillColor('black');
                             doc.text(cell, x + 5, y + 5, {
                                 width: colWidths[i] - 10,
                                 align: 'center'
                             });
                         });
-                        y += 20;
+
+                        y += rowHeight;
                     });
 
                     return y;
@@ -964,8 +1044,8 @@ export class InsuranceQuotationService {
                     .font('DejaVuSans-Bold')
                     .fillColor('black')
                     .text('Proposer Details', 50, doc.y + 10);
-                doc.moveDown(0.5);
-                const proposerStartY = doc.y + 15; // Add a bit of padding
+                doc.moveDown(0.2);
+                const proposerStartY = doc.y + 10; // Add a bit of padding
 
                 // LEFT SIDE DETAILS
                 let currentY = proposerStartY;
@@ -1066,7 +1146,7 @@ export class InsuranceQuotationService {
                         'Chassis No.',
                         'Date of Reg.',
                         'Vehicle No.',
-                        'Vehicle Model & Make'
+                        'Vehicle Model-Make'
                     ];
 
                     const vehicleRows = [
@@ -1106,7 +1186,7 @@ export class InsuranceQuotationService {
                             dependentRows,
                             50,
                             yPosition,
-                            [130, 90, 80, 80, 80]
+                            [100, 90, 80, 80, 80]
                         );
                         doc.moveDown(1);
                     }
@@ -1211,7 +1291,10 @@ export class InsuranceQuotationService {
                 doc.font('DejaVuSans-Bold')
                     .fontSize(9) // Reduced from 10
                     .fillColor('black');
-                doc.rect(50, y, labelWidth, 20).strokeColor('#CCCCCC').lineWidth(1).fillAndStroke('#FFFFFF', '#CCCCCC');
+                doc.rect(50, y, labelWidth, 20)
+                    .strokeColor('#0055A5')
+                    .lineWidth(0.5)
+                    .fillAndStroke('#FFFFFF', '#0055A5');
                 doc.fillColor('black');
                 doc.text('Details', 50 + 2, y + 5, { width: labelWidth - 4, align: 'center' });
 
@@ -1232,9 +1315,9 @@ export class InsuranceQuotationService {
                 data.quotes.forEach((quote, i) => {
                     const x = 50 + labelWidth + i * quoteWidth;
                     doc.rect(x, y, quoteWidth, 20)
-                        .strokeColor('#CCCCCC')
-                        .lineWidth(1)
-                        .fillAndStroke('#FFFFFF', '#CCCCCC');
+                        .strokeColor('#0055A5')
+                        .lineWidth(0.5)
+                        .fillAndStroke('#FFFFFF', '#0055A5');
 
                     const imageBuffer = imageBuffers[i];
                     if (imageBuffer) {
@@ -1286,8 +1369,8 @@ export class InsuranceQuotationService {
                     y = ensureSpace(doc, rowHeight, y);
 
                     // Step 4: Draw the field name cell (e.g., "Features") with dynamic height
-                    doc.strokeColor('#CCCCCC').lineWidth(1);
-                    doc.fillColor('#FFFFFF');
+                    doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.fillColor('#0055A5');
                     doc.rect(50, y, labelWidth, rowHeight).stroke().fill();
                     doc.fillColor('black')
                         .font('DejaVuSans-Bold')
@@ -1302,8 +1385,8 @@ export class InsuranceQuotationService {
                         const key = fieldKeyMap[field];
                         const value = quote[key] || 'N/A';
 
-                        doc.strokeColor('#CCCCCC').lineWidth(1);
-                        doc.fillColor('#FFFFFF');
+                        doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                        doc.fillColor('#0055A5');
                         doc.rect(x, y, quoteWidth, rowHeight).stroke().fill();
                         doc.fillColor('black')
                             .font('DejaVuSans')
@@ -1322,8 +1405,8 @@ export class InsuranceQuotationService {
 
                 // Merged row for Basic Features
                 y = ensureSpace(doc, 20, y);
-                doc.strokeColor('#CCCCCC').lineWidth(1);
-                doc.fillColor('#FFFFFF');
+                doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                doc.fillColor('#0055A5');
                 doc.rect(50, y, totalWidth, 20).stroke().fill();
                 doc.fillColor('black');
                 doc.font('DejaVuSans-Bold')
@@ -1336,8 +1419,8 @@ export class InsuranceQuotationService {
                 // Merged row for Add-on Features
                 y = ensureSpace(doc, 20, y);
                 y = ensureSpace(doc, 20, y);
-                doc.strokeColor('#CCCCCC').lineWidth(1);
-                doc.fillColor('#FFFFFF');
+                doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                doc.fillColor('#0055A5');
                 doc.rect(50, y, totalWidth, 20).stroke().fill();
                 doc.fillColor('black');
                 doc.font('DejaVuSans-Bold')
@@ -1376,8 +1459,8 @@ export class InsuranceQuotationService {
                     y = ensureSpace(doc, rowHeight, y);
 
                     // Step 4: Draw the field name cell (e.g., "Features") with dynamic height
-                    doc.strokeColor('#CCCCCC').lineWidth(1);
-                    doc.fillColor('#FFFFFF');
+                    doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.fillColor('#0055A5');
                     doc.rect(50, y, labelWidth, rowHeight).stroke().fill();
                     doc.fillColor('black')
                         .font('DejaVuSans-Bold')
@@ -1392,8 +1475,8 @@ export class InsuranceQuotationService {
                         const key = fieldKeyMap[field];
                         const value = quote[key] || 'N/A';
 
-                        doc.strokeColor('#CCCCCC').lineWidth(1);
-                        doc.fillColor('#FFFFFF');
+                        doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                        doc.fillColor('#0055A5');
                         doc.rect(x, y, quoteWidth, rowHeight).stroke().fill();
                         doc.fillColor('black')
                             .font('DejaVuSans')
