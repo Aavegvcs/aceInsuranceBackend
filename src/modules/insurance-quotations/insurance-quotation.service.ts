@@ -30,7 +30,7 @@ import { Type } from 'class-transformer';
 import { features } from 'process';
 import { TicketNotificationService } from '@modules/insurance-escalation/ticket-notification-service';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import autoTable, { jsPDFDocument } from 'jspdf-autotable';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 import { getAssetPath } from 'src/utils/images-path-utils';
 const today = new Date();
@@ -619,7 +619,47 @@ export class InsuranceQuotationService {
     async generateQuotationPDF(ticketId: string, quotationId: string): Promise<Buffer> {
         return new Promise(async (resolve, reject) => {
             try {
+                const colors = {
+                    primary: '#1F2937',
+                    accent: '#3B82F6',
+                    lightAccent: '#EFF6FF',
+                    border: '#E5E7EB',
+                    text: '#374151',
+                    lightText: '#6B7280',
+                    success: '#10B981',
+                    background: '#FFFFFF',
+                    error: '#FF2C2C'
+                };
                 const doc = new PDFDocument({ size: 'A4', margin: 50 });
+                // === Watermark logic ===
+                const watermarksPath = fs.existsSync(path.resolve(__dirname, 'assets/images/logo-accumen.PNG'))
+                    ? path.resolve(__dirname, 'assets/images/logo-accumen.PNG') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/logo-accumen.PNG'); // for dev
+
+                function addWatermark() {
+                    const pageWidth = doc.page.width;
+                    const pageHeight = doc.page.height;
+
+                    // Logo size (adjust as needed)
+                    const logoWidth = 200;
+                    const logoHeight = 100;
+
+                    // Center position
+                    const x = (pageWidth - logoWidth) / 2;
+                    const y = (pageHeight - logoHeight) / 2;
+
+                    doc.opacity(0.1); // very faint watermark
+                    doc.image(watermarksPath, x, y, { width: logoWidth, height: logoHeight });
+                    doc.opacity(1); // reset opacity for normal content
+                }
+                // Add watermark to first page
+                addWatermark();
+
+                // Automatically add watermark on every new page
+                doc.on('pageAdded', () => {
+                    addWatermark();
+                });
+
                 const fontPath = path.join(__dirname, '../../assets/fonts/DejaVuSans.ttf');
                 const boldFontPath = path.join(__dirname, '../../assets/fonts/DejaVuSans-Bold.ttf');
                 const NotoSans = path.join(__dirname, '../../assets/fonts/NotoSans-Regular.ttf');
@@ -711,12 +751,12 @@ export class InsuranceQuotationService {
                         // Header row
                         doc.font('DejaVuSans').fontSize(9); // Changed from 7 to 10
                         y = ensureSpace(doc, 20, y);
-                        doc.rect(startX, y, labelWidth, 20).fillAndStroke('#FFFFFF', '#CCCCCC');
+                        doc.rect(startX, y, labelWidth, 20).fillAndStroke('#CCCCCC', '#0055A5');
                         doc.fillColor('black').text('Feature Details', startX + 5, y + 5);
 
                         quotation.quotes.forEach((quote, i) => {
                             const x = startX + labelWidth + i * quoteWidth;
-                            doc.rect(x, y, quoteWidth, 20).fillAndStroke('#FFFFFF', '#CCCCCC');
+                            doc.rect(x, y, quoteWidth, 20).fillAndStroke('#0055A5', '#0055A5');
                             doc.fillColor('black').text(quote.company.companyName, x + 5, y + 5, {
                                 width: quoteWidth - 10
                             });
@@ -743,18 +783,19 @@ export class InsuranceQuotationService {
                         y = ensureSpace(doc, rowHeight, y);
 
                         // Feature column
-                        doc.rect(startX, y, labelWidth, rowHeight).fillAndStroke('#FFFFFF', '#CCCCCC');
+                        doc.rect(startX, y, labelWidth, rowHeight).fillAndStroke('#FFFFFF', '#0055A5');
                         doc.fillColor('black').text(row.feature, startX + 5, y + 5, {
                             width: labelWidth - 10,
                             align: 'center'
                         });
 
                         // Quote columns
-                        doc.font('DejaVuSans').fontSize(10);
+                        doc.font('DejaVuSans').fontSize(10).fillColor(colors.success);
                         row.quoteValues.forEach((val, i) => {
                             const x = startX + labelWidth + i * quoteWidth;
-                            doc.rect(x, y, quoteWidth, rowHeight).fillAndStroke('#FFFFFF', '#CCCCCC');
-                            doc.fillColor('black').text(val, x + 5, y + 5, { width: quoteWidth - 10, align: 'center' });
+                            doc.rect(x, y, quoteWidth, rowHeight).fillAndStroke('#FFFFFF', '#0055A5');
+                            doc.fillColor(val === '✓' ? colors.success : colors.error);
+                            doc.fontSize(11).text(val, x + 5, y + 5, { width: quoteWidth - 10, align: 'center' });
                         });
 
                         y += rowHeight;
@@ -833,10 +874,6 @@ export class InsuranceQuotationService {
                     }
                 };
                 // === Include Logo ===
-                // const logoPath = 'D:/ACE/aceInsuranceDash/public/faviconlogo.jpg';
-                // if (fs.existsSync(logoPath)) {
-                //     doc.image(logoPath, 40, 10, { width: 30 });
-                // }
                 const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
                     ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG') // for build / Docker
                     : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG'); // for dev
@@ -844,37 +881,30 @@ export class InsuranceQuotationService {
                 console.log('Resolved logo path:', logoPath);
                 console.log('Exists?', fs.existsSync(logoPath));
 
-                doc.image(logoPath, 40, 20, { width: 150, height: 24 });
+                doc.image(logoPath, 50, 25, { width: 140, height: 22 });
 
-                // fallback logic: handle if assets are in different location during dev
-
-                // const logoURL =
-                //     'https://aceuat.acumengroup.in:3002/backend/s3/getDocument/insurance-user/1760009143448_ACUMEN_-_BLUE_LOGO.PNG';
-                // const response = await axios.get(logoURL, { responseType: 'arraybuffer' });
-                // const imageBuffer = Buffer.from(response.data, 'binary');
-                // doc.image(imageBuffer, 40, 20, { width: 150, height: 24 });
-
-                // Title
-                //  doc.fillColor('#0055A5')
-                //     .fontSize(18) // Reduced from 22
-                //     .font('DejaVuSans-Bold')
-                //     .text('Acumen', 80, 18, { align: 'left' });
+                // Header info on the right
+                doc.fontSize(8).fillColor(colors.lightText).font('DejaVuSans');
+                doc.text(`Generated: ${new Date().toLocaleDateString()}`, 350, 35, { align: 'right' });
+                doc.text(`Validity: ${data.validityDate}`, 350, 48, { align: 'right' });
 
                 doc.moveDown(1);
 
                 doc.fillColor('#0055A5')
-                    .fontSize(14)
+                    .fontSize(18)
                     .font('DejaVuSans-Bold')
-                    .text('INSURANCE QUOTATION', 50, doc.y, { align: 'center' });
+                    .text('INSURANCE QUOTATION', 50, 70, { align: 'left' });
+                doc.moveTo(50, 100).lineTo(560, 100).lineWidth(2).strokeColor(colors.accent).stroke();
 
-                doc.moveDown(1);
+                doc.moveDown(0.5);
+
                 // Customer Greeting
                 doc.fillColor('#242424')
-                    .fontSize(9) // Reduced from 10
+                    .fontSize(11) // Reduced from 10
                     .font('DejaVuSans-Bold')
-                    .text(`Dear ${data.customerName},`, 50, doc.y);
-                doc.moveDown(0.2);
-                doc.fillColor('#3B3B3B').fontSize(10).font('DejaVuSans');
+                    .text(`Dear ${data.customerName},`, 50, doc.y + 5);
+                doc.moveDown(0.3);
+                doc.fillColor('#3B3B3B').fontSize(9.5).font('DejaVuSans');
                 if (data.insuranceType === Insurance_Type.Health) {
                     doc.text(
                         `Warm greetings from Acumen! We Truly appriciate the trust you've placed in us to safeguard your faimily's health and wellbeing.`,
@@ -902,70 +932,7 @@ export class InsuranceQuotationService {
                 }
 
                 doc.moveDown(1);
-
-                // === Helper Function to Draw Table it is used to generate dependent, vehicle etc table===
-                // const drawTable = (
-                //     title: string,
-                //     headers: string[],
-                //     rows: string[][],
-                //     startX: number,
-                //     startY: number,
-                //     colWidths: number[]
-                // ) => {
-                //     const columnX: number[] = [startX];
-
-                //     for (let i = 0; i < colWidths.length - 1; i++) {
-                //         columnX.push(columnX[i] + colWidths[i]);
-                //     }
-
-                //     doc.font('DejaVuSans-Bold')
-                //         .fontSize(10) // Reduced from 12
-                //         .fillColor('#003087')
-                //         .text(title, startX, startY);
-                //     let y = startY + 20;
-                //     // Draw Header
-                //     doc.font('DejaVuSans-Bold')
-                //         .fontSize(9) // Reduced from 9
-                //         .fillColor('#242424');
-                //     headers.forEach((header, i) => {
-                //         const x = columnX[i];
-                //         doc.strokeColor('#CCCCCC').lineWidth(1);
-                //         doc.fillColor('#FFFFFF');
-                //         doc.rect(x, y, colWidths[i], 20).stroke().fill();
-                //         doc.fillColor('#242424');
-                //         doc.text(header, x + 5, y + 5, {
-                //             width: colWidths[i] - 10,
-
-                //             align: 'center'
-                //         });
-                //     });
-                //     y += 20;
-
-                //     // Draw Rows
-                //     doc.font('DejaVuSans')
-                //         .fontSize(9) // Reduced from 9
-                //         .fillColor('black');
-                //     rows.forEach((row, rowIndex) => {
-                //         if (!Array.isArray(row)) {
-                //             console.error(`Invalid row at index ${rowIndex}:`, row);
-                //             throw new Error(`Invalid row data for table: ${title}`);
-                //         }
-                //         row.forEach((cell, i) => {
-                //             const x = columnX[i];
-                //             doc.strokeColor('#CCCCCC').lineWidth(1);
-                //             doc.fillColor('#FFFFFF');
-                //             doc.rect(x, y, colWidths[i], 20).stroke().fill();
-                //             doc.fillColor('black');
-                //             doc.text(cell, x + 5, y + 5, {
-                //                 width: colWidths[i] - 10,
-                //                 align: 'center'
-                //             });
-                //         });
-                //         y += 20;
-                //     });
-
-                //     return y;
-                // };
+                // draw table is for dependent details, insured details, vehicle details
                 const drawTable = (
                     title: string,
                     headers: string[],
@@ -996,7 +963,7 @@ export class InsuranceQuotationService {
                     headers.forEach((header, i) => {
                         const x = columnX[i];
                         // doc.strokeColor('#0055A5').lineWidth(1);
-                        doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                        doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                         doc.fillColor('#0055A5');
                         doc.rect(x, y, colWidths[i], headerHeight).stroke().fill();
                         doc.fillColor('#242424');
@@ -1024,7 +991,7 @@ export class InsuranceQuotationService {
 
                         row.forEach((cell, i) => {
                             const x = columnX[i];
-                            doc.strokeColor('#0055A5').lineWidth(1);
+                            doc.lineWidth(0.5);
                             doc.fillColor('#0055A5');
                             doc.rect(x, y, colWidths[i], rowHeight).stroke().fill();
                             doc.fillColor('black');
@@ -1040,11 +1007,11 @@ export class InsuranceQuotationService {
                     return y;
                 };
 
-                doc.fontSize(10)
+                doc.fontSize(11)
                     .font('DejaVuSans-Bold')
                     .fillColor('black')
-                    .text('Proposer Details', 50, doc.y + 10);
-                doc.moveDown(0.2);
+                    .text('Proposer Information', 50, doc.y + 15);
+                doc.moveDown(0.1);
                 const proposerStartY = doc.y + 10; // Add a bit of padding
 
                 // LEFT SIDE DETAILS
@@ -1056,7 +1023,7 @@ export class InsuranceQuotationService {
                     const labelWidth = 60; // adjust for alignment
 
                     // Label in bold
-                    doc.font('DejaVuSans-Bold').fontSize(9).fillColor('#525252').text(label, startX, currentY);
+                    doc.font('DejaVuSans-Bold').fontSize(8).fillColor('#525252').text(label, startX, currentY);
 
                     // Value in normal
                     doc.font('DejaVuSans')
@@ -1213,7 +1180,7 @@ export class InsuranceQuotationService {
                     );
                     doc.moveDown(1);
                 }
-
+                // this is for message 1
                 const tableBottomY = yPosition;
                 const padding = 15;
                 if (data.insuranceType === Insurance_Type.Health) {
@@ -1249,7 +1216,7 @@ export class InsuranceQuotationService {
 
                 doc.moveDown(1);
 
-                // === Quotes Table ===
+                // === Quotes Table code start from here ===
                 const tableTop = doc.y + 10;
                 // const quoteWidth = 130;
                 // const labelWidth = 100;
@@ -1291,10 +1258,7 @@ export class InsuranceQuotationService {
                 doc.font('DejaVuSans-Bold')
                     .fontSize(9) // Reduced from 10
                     .fillColor('black');
-                doc.rect(50, y, labelWidth, 20)
-                    .strokeColor('#0055A5')
-                    .lineWidth(0.5)
-                    .fillAndStroke('#FFFFFF', '#0055A5');
+                doc.rect(50, y, labelWidth, 20).lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                 doc.fillColor('black');
                 doc.text('Details', 50 + 2, y + 5, { width: labelWidth - 4, align: 'center' });
 
@@ -1314,10 +1278,7 @@ export class InsuranceQuotationService {
                 // Draw each company logo (or fallback text) in the header
                 data.quotes.forEach((quote, i) => {
                     const x = 50 + labelWidth + i * quoteWidth;
-                    doc.rect(x, y, quoteWidth, 20)
-                        .strokeColor('#0055A5')
-                        .lineWidth(0.5)
-                        .fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.rect(x, y, quoteWidth, 20).lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
 
                     const imageBuffer = imageBuffers[i];
                     if (imageBuffer) {
@@ -1369,7 +1330,7 @@ export class InsuranceQuotationService {
                     y = ensureSpace(doc, rowHeight, y);
 
                     // Step 4: Draw the field name cell (e.g., "Features") with dynamic height
-                    doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                     doc.fillColor('#0055A5');
                     doc.rect(50, y, labelWidth, rowHeight).stroke().fill();
                     doc.fillColor('black')
@@ -1385,7 +1346,7 @@ export class InsuranceQuotationService {
                         const key = fieldKeyMap[field];
                         const value = quote[key] || 'N/A';
 
-                        doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                        doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                         doc.fillColor('#0055A5');
                         doc.rect(x, y, quoteWidth, rowHeight).stroke().fill();
                         doc.fillColor('black')
@@ -1405,7 +1366,7 @@ export class InsuranceQuotationService {
 
                 // Merged row for Basic Features
                 y = ensureSpace(doc, 20, y);
-                doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                 doc.fillColor('#0055A5');
                 doc.rect(50, y, totalWidth, 20).stroke().fill();
                 doc.fillColor('black');
@@ -1413,13 +1374,13 @@ export class InsuranceQuotationService {
                     .fontSize(9) // Reduced from 10
                     .text('Basic Features', 50 + 5, y + 5, { width: totalWidth - 10 });
                 y += 20;
-
+                // here is code for basic features details
                 y = drawComparisonTable(doc, finalBasicData, 50, y, true);
 
                 // Merged row for Add-on Features
                 y = ensureSpace(doc, 20, y);
                 y = ensureSpace(doc, 20, y);
-                doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                 doc.fillColor('#0055A5');
                 doc.rect(50, y, totalWidth, 20).stroke().fill();
                 doc.fillColor('black');
@@ -1459,7 +1420,7 @@ export class InsuranceQuotationService {
                     y = ensureSpace(doc, rowHeight, y);
 
                     // Step 4: Draw the field name cell (e.g., "Features") with dynamic height
-                    doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                     doc.fillColor('#0055A5');
                     doc.rect(50, y, labelWidth, rowHeight).stroke().fill();
                     doc.fillColor('black')
@@ -1475,7 +1436,7 @@ export class InsuranceQuotationService {
                         const key = fieldKeyMap[field];
                         const value = quote[key] || 'N/A';
 
-                        doc.strokeColor('#0055A5').lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                        doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                         doc.fillColor('#0055A5');
                         doc.rect(x, y, quoteWidth, rowHeight).stroke().fill();
                         doc.fillColor('black')
@@ -1493,7 +1454,7 @@ export class InsuranceQuotationService {
                 // === NEW QUOTES COMPARISON TABLE ===
                 doc.moveTo(50, y + 10)
                     .lineTo(530, y + 10)
-                    .lineWidth(1)
+                    .lineWidth(0.5)
                     .strokeColor('#cccccc')
                     .stroke();
                 doc.moveDown(3);
@@ -1504,6 +1465,50 @@ export class InsuranceQuotationService {
                     50,
                     doc.y
                 );
+                // Bottom footer section with contact info
+                const footerY = doc.page.height - 80;
+                // Decorative line above footer
+                // doc.moveTo(50, footerY).lineTo(560, footerY).lineWidth(2).strokeColor(colors.accent).stroke();
+
+                // Footer background
+                //      doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
+                // doc.text('☎ ', 200, footerY-20);
+                // doc.fontSize(9).fillColor(colors.text).font('DejaVuSans');
+                // doc.text(`${data.branchManager.contact} `, 230, footerY-20);
+                //  doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
+                // doc.text('◉', 325, footerY -20);
+                // doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
+                // doc.text('Branch Address', 360, footerY - 20);
+                doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
+                doc.text('☎ ', 200, footerY - 20, { continued: true });
+
+                doc.fontSize(9).fillColor(colors.text).font('DejaVuSans');
+                doc.text(`${data.branchManager.contact}  `, { continued: true }); // note extra space
+
+                doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
+                doc.text('◉ ', { continued: true });
+
+                doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
+                doc.text('Branch Address');
+
+                doc.fontSize(7.5).fillColor(colors.lightText).font('DejaVuSans');
+                doc.text('© 2025 Acumen Insurance. All rights reserved.', 50, footerY - 5, { align: 'center' });
+                //   doc.rect(80, footerY + 15, 500, 2).fillAndStroke('#668cff', '668cff'
+                doc.moveTo(50, footerY + 15)
+                    .lineTo(530, footerY + 15)
+                    .lineWidth(0.5)
+                    .strokeColor('#668cff')
+                    .stroke();
+
+                // Phone section (left)
+
+                // Location section (right)
+
+                // doc.fontSize(8).fillColor(colors.lightText);
+                // doc.text('Validity until: ' + data.validityDate, 360, footerY + 32);
+
+                // Bottom text
+
                 doc.end();
             } catch (err) {
                 reject(err);
