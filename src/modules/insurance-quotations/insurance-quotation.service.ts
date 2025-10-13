@@ -88,17 +88,17 @@ export class InsuranceQuotationService {
                 };
                 const doc = new PDFDocument({ size: 'A4', margin: 50 });
                 // === Watermark logic ===
-                const watermarksPath = fs.existsSync(path.resolve(__dirname, 'assets/images/logo-accumen.PNG'))
-                    ? path.resolve(__dirname, 'assets/images/logo-accumen.PNG') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/logo-accumen.PNG'); // for dev
+                const watermarksPath = fs.existsSync(path.resolve(__dirname, 'assets/images/logo-accumen.png'))
+                    ? path.resolve(__dirname, 'assets/images/logo-accumen.png') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/logo-accumen.png'); // for dev
 
-                const locationPath = fs.existsSync(path.resolve(__dirname, 'assets/images/placeholder.PNG'))
-                    ? path.resolve(__dirname, 'assets/images/placeholder.PNG') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/placeholder.PNG'); // for dev
+                const locationPath = fs.existsSync(path.resolve(__dirname, 'assets/images/placeholder.png'))
+                    ? path.resolve(__dirname, 'assets/images/placeholder.png') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/placeholder.png'); // for dev
 
-                const phonePath = fs.existsSync(path.resolve(__dirname, 'assets/images/phone.PNG'))
-                    ? path.resolve(__dirname, 'assets/images/phone.PNG') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/phone.PNG'); // for dev
+                const phonePath = fs.existsSync(path.resolve(__dirname, 'assets/images/phone.png'))
+                    ? path.resolve(__dirname, 'assets/images/phone.png') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/phone.png'); // for dev
 
                 function addWatermark() {
                     const pageWidth = doc.page.width;
@@ -361,9 +361,9 @@ export class InsuranceQuotationService {
                 }
 
                 // === Include Logo ===
-                const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
-                    ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG'); // for dev
+                const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.png'))
+                    ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.png') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.png'); // for dev
 
                 console.log('Resolved logo path:', logoPath);
                 console.log('Exists?', fs.existsSync(logoPath));
