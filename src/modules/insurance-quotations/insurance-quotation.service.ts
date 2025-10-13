@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import autoTable, { jsPDFDocument } from 'jspdf-autotable';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 import { getAssetPath } from 'src/utils/images-path-utils';
+import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
 const today = new Date();
 const formattedDate = today.toLocaleString('en-GB', {
     day: '2-digit',
@@ -63,560 +64,15 @@ export class InsuranceQuotationService {
         @InjectRepository(ProductFeatures)
         private productFeaturesRepo: Repository<ProductFeatures>,
 
+        @InjectRepository(InsuranceFeatures)
+        private insurncetFeaturesRepo: Repository<InsuranceFeatures>,
+
         private readonly emailService: EmailService,
         private readonly quotationService: CommonQuotationService,
         private readonly ticketNotiService: TicketNotificationService
     ) {}
 
-    // this is for generating the pdf
-
-    // async generateQuotationPDF(ticketId: string, quotationId: string): Promise<Buffer> {
-    //     return new Promise(async (resolve, reject) => {
-    //         try {
-    //             const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    //             const buffers: Buffer[] = [];
-
-    //             doc.on('data', buffers.push.bind(buffers));
-    //             doc.on('end', () => resolve(Buffer.concat(buffers)));
-    //             doc.on('error', reject);
-
-    //             // const quotation = await this.quotationRepository.findOneOrFail({
-    //             //     where: { id: parseInt(quotationId), ticketId: { id: parseInt(ticketId) } },
-    //             //     relations: ['quotes', 'quotes.company', 'quotes.product, quotes.quoteFeatures', 'quotes.quoteFeatures.insuranceFeatures']
-    //             // });
-
-    //             // 06-10-2025 ---------------------------
-
-    //             const quotation = await this.quotationRepository.findOneOrFail({
-    //                 where: {
-    //                     id: parseInt(quotationId),
-    //                     ticketId: { id: parseInt(ticketId) }
-    //                 },
-    //                 relations: [
-    //                     'quotes',
-    //                     'quotes.company',
-    //                     'quotes.product',
-    //                     'quotes.quoteFeatures',
-    //                     'quotes.quoteFeatures.insuranceFeatures'
-    //                 ]
-    //             });
-
-    //             // Step 1: Collect all features across products
-    //             const allFeaturesSet = new Set<string>();
-    //             for (const quote of quotation.quotes) {
-    //                 const productFeatures = await this.productFeaturesRepo.find({
-    //                     where: { product: { id: quote.product.id }, isActive: true },
-    //                     relations: ['insuranceFeatures']
-    //                 });
-
-    //                 productFeatures.forEach((f) => allFeaturesSet.add(f.insuranceFeatures.featuresName));
-    //             }
-    //             const allFeatures = Array.from(allFeaturesSet);
-
-    //             // Step 2: Prepare final comparison data
-    //             const finalComparisonData: { feature: string; quoteValues: string[] }[] = allFeatures.map((feature) => {
-    //                 return {
-    //                     feature,
-    //                     quoteValues: quotation.quotes.map((quote) => {
-    //                         const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.featuresName);
-    //                         return includedFeatures.includes(feature) ? '✓' : '×';
-    //                     })
-    //                 };
-    //             });
-
-    //             function drawComparisonTable(
-    //                 doc: any,
-    //                 data: { feature: string; quoteValues: string[] }[],
-    //                 startX: number,
-    //                 startY: number
-    //             ) {
-    //                 const labelWidth = 150;
-    //                 const quoteWidth = 130;
-    //                 let y = startY;
-
-    //                 // Header row
-    //                 doc.font('Helvetica-Bold').fontSize(10);
-    //                 doc.rect(startX, y, labelWidth, 20).fillAndStroke('#FFFFFF', '#CCCCCC');
-    //                 doc.fillColor('black').text('Feature Details', startX + 5, y + 5);
-
-    //                 quotation.quotes.forEach((quote, i) => {
-    //                     const x = startX + labelWidth + i * quoteWidth;
-    //                     doc.rect(x, y, quoteWidth, 20).fillAndStroke('#FFFFFF', '#CCCCCC');
-    //                     doc.fillColor('black').text(quote.company.companyName, x + 5, y + 5, {
-    //                         width: quoteWidth - 10
-    //                     });
-    //                 });
-    //                 y += 20;
-
-    //                 // Rows
-    //                 doc.font('Helvetica').fontSize(9);
-    //                 data.forEach((row) => {
-    //                     // Feature column
-    //                     doc.rect(startX, y, labelWidth, 20).stroke();
-    //                     doc.fillColor('black').text(row.feature, startX + 5, y + 5, { width: labelWidth - 10 });
-
-    //                     // Quote columns
-    //                     row.quoteValues.forEach((val, i) => {
-    //                         const x = startX + labelWidth + i * quoteWidth;
-    //                         doc.rect(x, y, quoteWidth, 20).stroke();
-    //                         doc.fillColor(val === '✓' ? 'green' : 'red').text(val, x + 5, y + 5, {
-    //                             width: quoteWidth - 10
-    //                         });
-    //                     });
-
-    //                     y += 20;
-    //                 });
-
-    //                 return y;
-    //             }
-    //             // end 06-10-2025
-
-    //             const ticket = await this.ticketRepo.findOneOrFail({
-    //                 where: { id: parseInt(ticketId) },
-    //                 relations: ['insuranceUserId']
-    //             });
-
-    //             const ticketDetails = await this.quotationService.getTicketDetails(parseInt(ticketId));
-
-    //             const data = {
-    //                 customerName: ticketDetails.data.insuranceUser.name,
-    //                 insuranceType: ticketDetails.data.insuranceType,
-    //                 ticketNumber: ticketDetails.data.ticketNumber,
-    //                 proposer: {
-    //                     name: ticketDetails.data.insuranceUser.name,
-    //                     dob: ticketDetails.data.insuranceUser.dateOfBirth?.toString().split('T')[0] || 'N/A',
-    //                     gender: formatToCamelCase(ticketDetails.data.insuranceUser.gender) || 'N/A',
-    //                     height: ticketDetails.data.medicalDetails.height || 0,
-    //                     weight: ticketDetails.data.medicalDetails.weight || 0
-    //                 },
-    //                 vehicleDetails: {
-    //                     vehicleNumber: ticketDetails.data.vehicleDetails?.vehicleNumber || 'N/A',
-    //                     rcOwnerName: ticketDetails.data.vehicleDetails?.rcOwnerName || 'N/A',
-    //                     engineNumber: ticketDetails.data.vehicleDetails?.engineNumber || 'N/A',
-    //                     chassisNumber: ticketDetails.data.vehicleDetails?.chassisNumber || 'N/A',
-    //                     dateOfReg: ticketDetails.data.vehicleDetails?.dateOfReg || 'N/A',
-    //                     modelNumber: ticketDetails.data.vehicleDetails?.modelNumber || 'N/A',
-    //                     makingYear: ticketDetails.data.vehicleDetails?.makingYear || 'N/A',
-    //                     madeBy: ticketDetails.data.vehicleDetails?.madeBy || 'N/A',
-    //                     vehicleCategory: ticketDetails.data.vehicleDetails?.vehicleCategory || 'N/A'
-    //                 },
-    //                 dependentDetails: ticketDetails.data.dependents?.map((dependent) => ({
-    //                     name: dependent?.name,
-    //                     dob: dependent?.dateOfBirth?.toString().split('T')[0] || 'N/A',
-    //                     gender: formatToCamelCase(dependent?.gender) || 'N/A',
-    //                     height: dependent?.medicalDetails?.height || 0,
-    //                     weight: dependent?.medicalDetails?.weight || 0
-    //                 })),
-    //                 insuredPersons: {
-    //                     name: ticketDetails.data.insuredPersons?.name || '-',
-    //                     dob: ticketDetails.data.insuredPersons?.dateOfBirth?.toString().split('T')[0] || 'N/A',
-    //                     gender: formatToCamelCase(ticketDetails?.data?.insuredPersons?.gender ?? '') || 'N/A',
-    //                     height: ticketDetails?.data?.insuredPersons?.height || 0,
-    //                     weight: ticketDetails.data.insuredPersons?.weight || 0
-    //                 },
-    //                 pinCode: ticketDetails.data.insuranceUser.pinCode || 'N/A',
-    //                 mobileNo: ticketDetails.data.insuranceUser.primaryContactNumber || 'N/A',
-    //                 emailId: ticketDetails.data.insuranceUser.emailId || 'N/A',
-    //                 pedDeclared: formatToCamelCase(ticketDetails.data.medicalDetails.preExistDiseases) || 'N/A',
-    //                 quotes: quotation.quotes.map((quote) => ({
-    //                     companyLogo: quote.company.companyLogo,
-    //                     companyName: quote.company.companyName,
-    //                     productName: quote.product.name,
-    //                     coverage: quote.coveragedRequired || 0,
-    //                     premium: quote.Premium || 0,
-    //                     features: quote.features || 'N/A',
-    //                     benefits: quote.benefits || 'N/A',
-    //                     advantages: quote.advantages || 'N/A',
-    //                     remarks: quote.additionalRemarks || 'N/A',
-    //                     idv: quote.idv || 'N/A',
-    //                     coverType: formatToCamelCase(quote.coverageType) || 'N/A',
-    //                     coverageIncluded: quote.coverageIncluded || 'N/A',
-    //                     ncb: quote.ncb || 'N/A'
-    //                 })),
-
-    //                 validityDate: quotation.validityDate.toISOString().split('T')[0],
-    //                 branchManager: {
-    //                     name: ticketDetails.data.branchContactPerson,
-    //                     contact: ticketDetails.data.branchPhone
-    //                 }
-    //             };
-    //             // === Include Logo ===
-    //             const logoPath = 'D:/ACE/aceInsuranceDash/public/faviconlogo.jpg';
-    //             if (fs.existsSync(logoPath)) {
-    //                 doc.image(logoPath, 50, 20, { width: 40 });
-    //             }
-
-    //             // Title
-    //             doc.fillColor('#003087')
-    //                 .fontSize(22)
-    //                 .font('Helvetica-Bold')
-    //                 .text('Acumen Insurance Quotation', 50, 30, { align: 'center' });
-    //             doc.fontSize(10).text(`Ticket Number: ${data.ticketNumber}`, 50, doc.y, { align: 'center' });
-    //             doc.fontSize(10).text(`Insurance Type: ${formatToCamelCase(data.insuranceType)}`, 50, doc.y, {
-    //                 align: 'center'
-    //             });
-    //             doc.moveDown(2);
-
-    //             // Divider
-    //             doc.moveTo(50, doc.y).lineTo(530, doc.y).lineWidth(1).strokeColor('#cccccc').stroke();
-    //             doc.moveDown(1);
-
-    //             // Customer Greeting
-    //             doc.fillColor('black').fontSize(10).font('Helvetica').text(`Dear ${data.customerName},`, 50, doc.y);
-    //             doc.text('Thank you for choosing Acumen. Below is your personalized insurance quotation:', 50, doc.y);
-    //             doc.moveDown(1);
-
-    //             // === Helper Function to Draw Table ===
-    //             const drawTable = (
-    //                 title: string,
-    //                 headers: string[],
-    //                 rows: string[][],
-    //                 startX: number,
-    //                 startY: number,
-    //                 colWidths: number[]
-    //             ) => {
-    //                 const columnX: number[] = [startX];
-    //                 for (let i = 0; i < colWidths.length - 1; i++) {
-    //                     columnX.push(columnX[i] + colWidths[i]);
-    //                 }
-
-    //                 doc.font('Helvetica-Bold').fontSize(12).fillColor('#003087').text(title, startX, startY);
-    //                 let y = startY + 20;
-    //                 // Draw Header
-    //                 doc.font('Helvetica-Bold').fontSize(9).fillColor('black');
-    //                 headers.forEach((header, i) => {
-    //                     // const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
-    //                     const x = columnX[i];
-    //                     //-------
-    //                     doc.strokeColor('#CCCCCC').lineWidth(1); // Set stroke (border) color
-    //                     doc.fillColor('#FFFFFF'); // Set fill (background) color
-
-    //                     doc.rect(x, y, colWidths[i], 20)
-    //                         .stroke() // Draw border first
-    //                         .fill(); // Then fill background inside it
-
-    //                     doc.fillColor('black'); // Set text color
-    //                     doc.text(header, x + 5, y + 5, {
-    //                         width: colWidths[i] - 10,
-    //                         align: 'left'
-    //                     });
-    //                 });
-    //                 y += 20;
-
-    //                 // Draw Rows
-    //                 doc.font('Helvetica').fontSize(9);
-    //                 rows.forEach((row, rowIndex) => {
-    //                     if (!Array.isArray(row)) {
-    //                         console.error(`Invalid row at index ${rowIndex}:`, row);
-    //                         throw new Error(`Invalid row data for table: ${title}`);
-    //                     }
-    //                     row.forEach((cell, i) => {
-    //                         // const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
-    //                         const x = columnX[i];
-    //                         //---
-    //                         doc.strokeColor('#CCCCCC').lineWidth(1); // Set stroke (border) color
-    //                         doc.fillColor('#FFFFFF'); // Set fill (background) color
-
-    //                         doc.rect(x, y, colWidths[i], 20)
-    //                             .stroke() // Draw border first
-    //                             .fill(); // Then fill background inside it
-
-    //                         doc.fillColor('black'); // Set text color
-    //                         doc.text(cell, x + 5, y + 5, {
-    //                             width: colWidths[i] - 10,
-    //                             align: 'left'
-    //                         });
-    //                     });
-    //                     y += 20;
-    //                 });
-
-    //                 return y;
-    //             };
-
-    //             // === Proposer Details (Plain Text) ===
-    //             doc.fontSize(12).font('Helvetica-Bold').fillColor('#003087').text('Proposer Details', 50, doc.y);
-    //             doc.fillColor('black').font('Helvetica').fontSize(10);
-    //             doc.text(`Name: ${data.proposer.name}`, 50, doc.y);
-    //             doc.text(`Mobile No: ${data.mobileNo}`, 50, doc.y);
-    //             doc.text(`Email ID: ${data.emailId}`, 50, doc.y);
-    //             doc.text(`PIN Code: ${data.pinCode}`, 50, doc.y);
-    //             if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
-    //                 doc.text(`DOB: ${data.proposer.dob}`, 50, doc.y);
-    //                 doc.text(`Gender: ${data.proposer.gender}`, 50, doc.y);
-    //                 doc.text(`Height: ${data.proposer.height} cm`, 50, doc.y);
-    //                 doc.text(`Weight: ${data.proposer.weight} kg`, 50, doc.y);
-    //                 doc.text(`PED Declared: ${data.pedDeclared}`, 50, doc.y);
-    //             }
-    //             doc.moveDown(1);
-    //             let yPosition = doc.y;
-
-    //             // === Conditional Tables Based on Insurance Type ===
-    //             if (data.insuranceType === Insurance_Type.Motor) {
-    //                 const vehicleHeaders = [
-    //                     'RC Owner',
-    //                     'Engine No.',
-    //                     'Chassis No.',
-    //                     'Date of Reg.',
-    //                     'Vehicle No.',
-    //                     'Vehicle Model & Make'
-    //                 ];
-
-    //                 const vehicleRows = [
-    //                     [
-    //                         data.vehicleDetails.rcOwnerName || 'N/A',
-    //                         data.vehicleDetails.engineNumber || 'N/A',
-    //                         data.vehicleDetails.chassisNumber || 'N/A',
-    //                         data.vehicleDetails.dateOfReg || 'N/A',
-    //                         data.vehicleDetails.vehicleNumber || 'N/A',
-    //                         `${data.vehicleDetails.modelNumber || 'N/A'} - ${data.vehicleDetails.makingYear || 'N/A'}`
-    //                     ]
-    //                 ];
-    //                 yPosition = drawTable(
-    //                     'Vehicle Details',
-    //                     vehicleHeaders,
-    //                     vehicleRows,
-    //                     50,
-    //                     yPosition,
-    //                     [100, 80, 80, 80, 80, 110]
-    //                 );
-    //                 doc.moveDown(1);
-    //             }
-
-    //             if (data.insuranceType === Insurance_Type.Health) {
-    //                 if (data.dependentDetails && data.dependentDetails.length > 0) {
-    //                     const dependentHeaders = ['Name', 'DOB', 'Gender', 'Height', 'Weight'];
-    //                     const dependentRows = data.dependentDetails.map((person) => [
-    //                         person.name || 'N/A',
-    //                         person.dob,
-    //                         person.gender,
-    //                         `${person.height} cm`,
-    //                         `${person.weight} kg`
-    //                     ]);
-    //                     yPosition = drawTable(
-    //                         'Dependent Details',
-    //                         dependentHeaders,
-    //                         dependentRows,
-    //                         50,
-    //                         yPosition,
-    //                         [130, 90, 80, 80, 80]
-    //                     );
-    //                     doc.moveDown(1);
-    //                 }
-    //             }
-
-    //             if (data.insuranceType === Insurance_Type.Life) {
-    //                 const insuredHeaders = ['Name', 'DOB', 'Gender', 'Height', 'Weight'];
-    //                 const insuredRows = [
-    //                     [
-    //                         data.insuredPersons.name,
-    //                         data.insuredPersons.dob,
-    //                         data.insuredPersons.gender,
-    //                         `${data.insuredPersons.height} cm`,
-    //                         `${data.insuredPersons.weight} kg`
-    //                     ]
-    //                 ];
-    //                 yPosition = drawTable(
-    //                     'Insured Person Details',
-    //                     insuredHeaders,
-    //                     insuredRows,
-    //                     50,
-    //                     yPosition,
-    //                     [130, 90, 80, 80, 80]
-    //                 );
-    //                 doc.moveDown(1);
-    //             }
-
-    //             //--
-    //             const tableBottomY = yPosition; // You track this manually
-    //             const padding = 15;
-
-    //             doc.text(
-    //                 `We have customized product list suiting your requirements. Still if you feel the need for clarity, please contact ${data.branchManager.name} at ${data.branchManager.contact}`,
-    //                 50,
-    //                 tableBottomY + padding,
-    //                 { width: 500 }
-    //             );
-
-    //             // Divider
-    //             // doc.moveTo(50, doc.y).lineTo(530, doc.y).lineWidth(1).strokeColor('#cccccc').stroke();
-    //             doc.moveDown(1);
-
-    //             // === Quotes Table ===
-    //             const tableTop = doc.y + 10;
-    //             const quoteWidth = 130;
-    //             const labelWidth = 100;
-
-    //             let fields = [];
-    //             if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
-    //                 fields = [
-    //                     'Company',
-    //                     'Product',
-    //                     'Coverage',
-    //                     'Premium',
-    //                     'Features',
-    //                     'Benefits',
-    //                     'Advantages',
-    //                     'Remarks'
-    //                 ];
-    //             }
-    //             if (data.insuranceType === Insurance_Type.Motor) {
-    //                 fields = ['Company', 'IDV', 'Cover Type', 'NCB(%)', 'Premium', 'Coverage Included', 'Remarks'];
-    //             }
-
-    //             const fieldKeyMap = {
-    //                 Company: 'companyName',
-    //                 Product: 'productName',
-    //                 Coverage: 'coverage',
-    //                 Premium: 'premium',
-    //                 Features: 'features',
-    //                 Benefits: 'benefits',
-    //                 Advantages: 'advantages',
-    //                 Remarks: 'remarks',
-    //                 IDV: 'idv',
-    //                 'Cover Type': 'coverType',
-    //                 'NCB(%)': 'ncb',
-    //                 'Coverage Included': 'coverageIncluded'
-    //             };
-
-    //             let y = tableTop;
-    //             // --- Draw Header Row ("Details" and Company Logos) ---
-    //             doc.font('Helvetica-Bold').fontSize(10).fillColor('black');
-    //             doc.rect(50, y, labelWidth, 20).strokeColor('#CCCCCC').lineWidth(1).fillAndStroke('#FFFFFF', '#CCCCCC');
-    //             doc.fillColor('black').text('Details', 50 + 2, y + 5, {
-    //                 width: labelWidth - 4,
-    //                 align: 'left'
-    //             });
-
-    //             // Fetch company logos for the header
-    //             const imageBuffers = await Promise.all(
-    //                 data.quotes.map(async (quote) => {
-    //                     try {
-    //                         const response = await axios.get(quote.companyLogo, { responseType: 'arraybuffer' });
-    //                         //console.log("in quotation service company logo-> ", response);
-    //                         return Buffer.from(response.data, 'binary');
-    //                     } catch (err) {
-    //                         console.error(`Error fetching logo for ${quote.companyName}: ${err.message}`);
-    //                         return null;
-    //                     }
-    //                 })
-    //             );
-
-    //             // Draw each company logo (or fallback text) in the header
-    //             data.quotes.forEach((quote, i) => {
-    //                 const x = 50 + labelWidth + i * quoteWidth;
-    //                 doc.rect(x, y, quoteWidth, 20)
-    //                     .strokeColor('#CCCCCC')
-    //                     .lineWidth(1)
-    //                     .fillAndStroke('#FFFFFF', '#CCCCCC');
-
-    //                 const imageBuffer = imageBuffers[i];
-    //                 if (imageBuffer) {
-    //                     doc.image(imageBuffer, x + 5, y + 2, {
-    //                         fit: [quoteWidth - 10, 16],
-    //                         align: 'left',
-    //                         valign: 'center'
-    //                     });
-    //                 } else {
-    //                     doc.fillColor('black').text(`Quote ${i + 1}`, x + 5, y + 5, {
-    //                         width: quoteWidth - 10,
-    //                         align: 'left'
-    //                     });
-    //                 }
-    //             });
-    //             y += 20;
-
-    //             // Quote Details with Adjusted Dynamic Heights
-    //             doc.font('Helvetica').fontSize(9).fillColor('black');
-
-    //             fields.forEach((field, fieldIndex) => {
-    //                 // Step 1: Calculate the height needed for the field name (e.g., "Features")
-    //                 doc.font('Helvetica-Bold'); // Set font for the label
-    //                 const labelHeight = doc.heightOfString(field, {
-    //                     width: labelWidth - 10,
-    //                     align: 'left'
-    //                 });
-
-    //                 // Step 2: Calculate the height needed for each quote value in this row
-    //                 const quoteHeights = data.quotes.map((quote) => {
-    //                     const key = fieldKeyMap[field];
-    //                     const value = quote[key] || 'N/A';
-    //                     doc.font('Helvetica'); // Set font for the value
-    //                     const baseHeight = doc.heightOfString(value.toString(), {
-    //                         width: quoteWidth - 10,
-    //                         align: 'left'
-    //                     });
-    //                     // Adjust height for line spacing (default lineGap in pdfkit is around 0.2 * fontSize)
-    //                     const lineCount = Math.ceil(baseHeight / (doc.currentLineHeight() || 9)); // Estimate number of lines
-    //                     const adjustedHeight = baseHeight + (lineCount - 1) * 2; // Add 2 units per extra line for spacing
-    //                     return adjustedHeight;
-    //                 });
-    //                 // console.log('quote hight->', quoteHeights);
-
-    //                 // Step 3: Determine the row height as the tallest cell in this row, with padding
-    //                 const baseRowHeight = Math.max(labelHeight, ...quoteHeights, 15); // Ensure minimum height of 20
-    //                 const rowHeight = baseRowHeight + 10; // Add 10 units padding for top and bottom
-    //                 // console.log('rowHeight hight->', rowHeight);
-
-    //                 // Step 4: Draw the field name cell (e.g., "Features") with dynamic height
-    //                 doc.strokeColor('#CCCCCC').lineWidth(1); // Set border color
-    //                 doc.fillColor('#FFFFFF'); // Set background color
-    //                 doc.rect(50, y, labelWidth, rowHeight) // Use dynamic row height with padding
-    //                     .stroke() // Draw border
-    //                     .fill(); // Fill background
-
-    //                 doc.fillColor('black'); // Set text color
-    //                 doc.font('Helvetica-Bold').text(field, 50 + 5, y + 5, {
-    //                     width: labelWidth - 10,
-    //                     align: 'left'
-    //                 });
-
-    //                 // Step 5: Draw each quote value cell in this row with dynamic height
-    //                 data.quotes.forEach((quote, quoteIndex) => {
-    //                     const x = 50 + labelWidth + quoteIndex * quoteWidth;
-    //                     const key = fieldKeyMap[field];
-    //                     const value = quote[key] || 'N/A';
-
-    //                     doc.strokeColor('#CCCCCC').lineWidth(1); // Set border color
-    //                     doc.fillColor('#FFFFFF'); // Set background color
-    //                     doc.rect(x, y, quoteWidth, rowHeight) // Use dynamic row height with padding
-    //                         .stroke() // Draw border
-    //                         .fill(); // Fill background
-
-    //                     doc.fillColor('black'); // Set text color
-    //                     doc.font('Helvetica').text(value.toString(), x + 5, y + 5, {
-    //                         width: quoteWidth - 10,
-    //                         align: 'left'
-    //                     });
-    //                 });
-
-    //                 // Step 6: Move down by the dynamic row height
-    //                 y += rowHeight; // Use the calculated row height with padding
-    //             });
-    //              // === NEW QUOTES COMPARISON TABLE ===
-    //            yPosition = drawComparisonTable(doc, finalComparisonData, 50, yPosition);
-
-    //             doc.moveTo(50, y + 10)
-    //                 .lineTo(530, y + 10)
-    //                 .lineWidth(1)
-    //                 .strokeColor('#cccccc')
-    //                 .stroke();
-    //             doc.moveDown(3);
-
-    //             doc.fillColor('black')
-    //                 .fontSize(10)
-    //                 .font('Helvetica')
-    //                 .text(`The Above generated quote will be valid till: ${data.validityDate}`, 50, doc.y);
-    //             doc.end();
-    //         } catch (err) {
-    //             reject(err);
-    //         }
-    //     });
-    // }
-    // ---------------------------------- changed new code 07-10-2025 ----------------------------
-
-    // Add "DATE:" prefix
-
-    async generateQuotationPDF(ticketId: string, quotationId: string): Promise<Buffer> {
+    async generateQuotationPDF(ticket: any, quotationId: string): Promise<Buffer> {
         return new Promise(async (resolve, reject) => {
             try {
                 const colors = {
@@ -635,6 +91,14 @@ export class InsuranceQuotationService {
                 const watermarksPath = fs.existsSync(path.resolve(__dirname, 'assets/images/logo-accumen.PNG'))
                     ? path.resolve(__dirname, 'assets/images/logo-accumen.PNG') // for build / Docker
                     : path.resolve(__dirname, '../../assets/images/logo-accumen.PNG'); // for dev
+
+                const locationPath = fs.existsSync(path.resolve(__dirname, 'assets/images/placeholder.PNG'))
+                    ? path.resolve(__dirname, 'assets/images/placeholder.PNG') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/placeholder.PNG'); // for dev
+
+                const phonePath = fs.existsSync(path.resolve(__dirname, 'assets/images/phone.PNG'))
+                    ? path.resolve(__dirname, 'assets/images/phone.PNG') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/phone.PNG'); // for dev
 
                 function addWatermark() {
                     const pageWidth = doc.page.width;
@@ -677,7 +141,7 @@ export class InsuranceQuotationService {
                 const quotation = await this.quotationRepository.findOneOrFail({
                     where: {
                         id: parseInt(quotationId),
-                        ticketId: { id: parseInt(ticketId) }
+                        ticketId: { id: parseInt(ticket.id) }
                     },
                     relations: [
                         'quotes',
@@ -688,29 +152,121 @@ export class InsuranceQuotationService {
                     ]
                 });
 
-                // Step 1: Collect all features across products
-                const allFeaturesSet = new Set<string>();
-                for (const quote of quotation.quotes) {
-                    const productFeatures = await this.productFeaturesRepo.find({
-                        where: { product: { id: quote.product.id }, isActive: true },
-                        relations: ['insuranceFeatures']
-                    });
+                const ticketDetails = await this.quotationService.getTicketDetails(ticket);
 
-                    productFeatures.forEach((f) => allFeaturesSet.add(f.insuranceFeatures.featuresName));
-                }
-                const allFeatures = Array.from(allFeaturesSet);
+                const data = {
+                    customerName: ticketDetails.data.insuranceUser.name,
+                    insuranceType: ticketDetails.data.insuranceType,
+                    ticketNumber: ticketDetails.data.ticketNumber,
+                    proposer: {
+                        name: ticketDetails.data.insuranceUser.name,
+                        dob: ticketDetails.data.insuranceUser.dateOfBirth?.toString().split('T')[0] || 'N/A',
+                        gender: formatToCamelCase(ticketDetails.data.insuranceUser.gender) || 'N/A',
+                        height: ticketDetails.data.medicalDetails
+                            ? ticketDetails.data.medicalDetails.height || 0
+                            : null,
+                        weight: ticketDetails.data.medicalDetails ? ticketDetails.data.medicalDetails.weight || 0 : null
+                    },
+
+                    vehicleDetails: ticketDetails?.data?.vehicleDetails
+                        ? {
+                              vehicleNumber: ticketDetails.data.vehicleDetails?.vehicleNumber || 'N/A',
+                              rcOwnerName: ticketDetails.data.vehicleDetails?.rcOwnerName || 'N/A',
+                              engineNumber: ticketDetails.data.vehicleDetails?.engineNumber || 'N/A',
+                              chassisNumber: ticketDetails.data.vehicleDetails?.chassisNumber || 'N/A',
+                              dateOfReg: ticketDetails.data.vehicleDetails?.dateOfReg || 'N/A',
+                              modelNumber: ticketDetails.data.vehicleDetails?.modelNumber || 'N/A',
+                              makingYear: ticketDetails.data.vehicleDetails?.makingYear || 'N/A',
+                              madeBy: ticketDetails.data.vehicleDetails?.madeBy || 'N/A',
+                              vehicleCategory: ticketDetails.data.vehicleDetails?.vehicleCategory || 'N/A'
+                          }
+                        : null,
+                    dependentDetails: ticketDetails.data.dependents
+                        ? ticketDetails.data.dependents?.map((dependent) => ({
+                              name: dependent?.name,
+                              dob: dependent?.dateOfBirth?.toString().split('T')[0] || 'N/A',
+                              gender: formatToCamelCase(dependent?.gender) || 'N/A',
+                              height: dependent?.medicalDetails?.height || 0,
+                              weight: dependent?.medicalDetails?.weight || 0
+                          }))
+                        : null,
+                    insuredPersons: ticketDetails.data.insuredPersons
+                        ? {
+                              name: ticketDetails.data.insuredPersons?.name || '-',
+                              dob: ticketDetails.data.insuredPersons?.dateOfBirth?.toString().split('T')[0] || 'N/A',
+                              gender: formatToCamelCase(ticketDetails?.data?.insuredPersons?.gender ?? '') || 'N/A',
+                              height: ticketDetails?.data?.insuredPersons?.height || 0,
+                              weight: ticketDetails.data.insuredPersons?.weight || 0
+                          }
+                        : null,
+                    pinCode: ticketDetails.data.insuranceUser.pinCode || 'N/A',
+                    mobileNo: ticketDetails.data.insuranceUser.primaryContactNumber || 'N/A',
+                    emailId: ticketDetails.data.insuranceUser.emailId || 'N/A',
+                    pedDeclared: ticketDetails.data.medicalDetails
+                        ? formatToCamelCase(ticketDetails.data.medicalDetails.preExistDiseases) || 'N/A'
+                        : null,
+                    quotes: quotation.quotes.map((quote) => ({
+                        companyLogo: quote.company.companyLogo,
+                        companyName: quote.company.companyName,
+                        productName: quote.product.name,
+                        coverage: quote.coveragedRequired || 0,
+                        premium: quote.Premium || 0,
+                        features: quote.features || 'N/A',
+                        benefits: quote.benefits || 'N/A',
+                        advantages: quote.advantages || 'N/A',
+                        remarks: quote.additionalRemarks || 'N/A',
+                        idv: quote.idv || 'N/A',
+                        coverType: formatToCamelCase(quote.coverageType) || 'N/A',
+                        coverageIncluded: quote.coverageIncluded || 'N/A',
+                        ncb: quote.ncb || 'N/A'
+                    })),
+
+                    validityDate: quotation.validityDate.toISOString().split('T')[0],
+                    branch: {
+                        name: ticketDetails.data?.branch?.ContactPerson,
+                        contact: ticketDetails.data?.branch?.phone,
+                        address: ticketDetails.data?.branch?.address
+                    }
+                };
+
+                // Step 1: Collect all features across products
+                // const allFeaturesSet = new Set<string>();
+                // for (const quote of quotation.quotes) {
+                //     const productFeatures = await this.productFeaturesRepo.find({
+                //         where: { product: { id: quote.product.id }, isActive: true },
+                //         relations: ['insuranceFeatures']
+                //     });
+
+                //     productFeatures.forEach((f) => allFeaturesSet.add(f.insuranceFeatures.featuresName));
+                // }
+
+                const insuranceFeatures = await this.insurncetFeaturesRepo.find({
+                    where: { isActive: true, insuranceType: ticket.insuranceType }
+                });
+
+                const basicFeatures: InsuranceFeatures[] = [];
+                const addOnFeatures: InsuranceFeatures[] = [];
+
+                // Separate based on isStandard
+                insuranceFeatures.forEach((feature) => {
+                    if (feature.isStandard) {
+                        basicFeatures.push(feature);
+                    } else {
+                        addOnFeatures.push(feature);
+                    }
+                });
 
                 // Split into basic and add-on based on name containing 'Cover' (assumption for categorization)
-                const basicFeatures = allFeatures.filter((f) => !f.toLowerCase().includes('cover'));
-                const addOnFeatures = allFeatures.filter((f) => f.toLowerCase().includes('cover'));
+                // const basicFeatures = allFeatures.filter((f) => !f.toLowerCase().includes('cover'));
+                // const addOnFeatures = allFeatures.filter((f) => f.toLowerCase().includes('cover'));
 
                 // Prepare final comparison data for basic
                 const finalBasicData: { feature: string; quoteValues: string[] }[] = basicFeatures.map((feature) => {
                     return {
-                        feature,
+                        feature: feature.featuresName,
                         quoteValues: quotation.quotes.map((quote) => {
-                            const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.featuresName);
-                            return includedFeatures.includes(feature) ? '✓' : '×';
+                            const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
+                            return includedFeatures.includes(feature.id) ? '✓' : '×';
                         })
                     };
                 });
@@ -718,10 +274,10 @@ export class InsuranceQuotationService {
                 // Prepare final comparison data for add-on
                 const finalAddOnData: { feature: string; quoteValues: string[] }[] = addOnFeatures.map((feature) => {
                     return {
-                        feature,
+                        feature: feature.featuresName,
                         quoteValues: quotation.quotes.map((quote) => {
-                            const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.featuresName);
-                            return includedFeatures.includes(feature) ? '✓' : '×';
+                            const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
+                            return includedFeatures.includes(feature.id) ? '✓' : '×';
                         })
                     };
                 });
@@ -770,7 +326,7 @@ export class InsuranceQuotationService {
                         // Calculate dynamic height for feature column
                         const featureHeight = doc.heightOfString(row.feature, { width: labelWidth - 10 });
                         const lineCountFeature = Math.ceil(featureHeight / doc.currentLineHeight());
-                        const rowHeightFeature = Math.max(lineCountFeature * 10, 30);
+                        const rowHeightFeature = Math.max(lineCountFeature * 15, 30);
 
                         // Calculate dynamic height for quote values
                         const quoteHeights = row.quoteValues.map((val) => {
@@ -804,75 +360,6 @@ export class InsuranceQuotationService {
                     return y;
                 }
 
-                const ticket = await this.ticketRepo.findOneOrFail({
-                    where: { id: parseInt(ticketId) },
-                    relations: ['insuranceUserId']
-                });
-
-                const ticketDetails = await this.quotationService.getTicketDetails(parseInt(ticketId));
-
-                const data = {
-                    customerName: ticketDetails.data.insuranceUser.name,
-                    insuranceType: ticketDetails.data.insuranceType,
-                    ticketNumber: ticketDetails.data.ticketNumber,
-                    proposer: {
-                        name: ticketDetails.data.insuranceUser.name,
-                        dob: ticketDetails.data.insuranceUser.dateOfBirth?.toString().split('T')[0] || 'N/A',
-                        gender: formatToCamelCase(ticketDetails.data.insuranceUser.gender) || 'N/A',
-                        height: ticketDetails.data.medicalDetails.height || 0,
-                        weight: ticketDetails.data.medicalDetails.weight || 0
-                    },
-                    vehicleDetails: {
-                        vehicleNumber: ticketDetails.data.vehicleDetails?.vehicleNumber || 'N/A',
-                        rcOwnerName: ticketDetails.data.vehicleDetails?.rcOwnerName || 'N/A',
-                        engineNumber: ticketDetails.data.vehicleDetails?.engineNumber || 'N/A',
-                        chassisNumber: ticketDetails.data.vehicleDetails?.chassisNumber || 'N/A',
-                        dateOfReg: ticketDetails.data.vehicleDetails?.dateOfReg || 'N/A',
-                        modelNumber: ticketDetails.data.vehicleDetails?.modelNumber || 'N/A',
-                        makingYear: ticketDetails.data.vehicleDetails?.makingYear || 'N/A',
-                        madeBy: ticketDetails.data.vehicleDetails?.madeBy || 'N/A',
-                        vehicleCategory: ticketDetails.data.vehicleDetails?.vehicleCategory || 'N/A'
-                    },
-                    dependentDetails: ticketDetails.data.dependents?.map((dependent) => ({
-                        name: dependent?.name,
-                        dob: dependent?.dateOfBirth?.toString().split('T')[0] || 'N/A',
-                        gender: formatToCamelCase(dependent?.gender) || 'N/A',
-                        height: dependent?.medicalDetails?.height || 0,
-                        weight: dependent?.medicalDetails?.weight || 0
-                    })),
-                    insuredPersons: {
-                        name: ticketDetails.data.insuredPersons?.name || '-',
-                        dob: ticketDetails.data.insuredPersons?.dateOfBirth?.toString().split('T')[0] || 'N/A',
-                        gender: formatToCamelCase(ticketDetails?.data?.insuredPersons?.gender ?? '') || 'N/A',
-                        height: ticketDetails?.data?.insuredPersons?.height || 0,
-                        weight: ticketDetails.data.insuredPersons?.weight || 0
-                    },
-                    pinCode: ticketDetails.data.insuranceUser.pinCode || 'N/A',
-                    mobileNo: ticketDetails.data.insuranceUser.primaryContactNumber || 'N/A',
-                    emailId: ticketDetails.data.insuranceUser.emailId || 'N/A',
-                    pedDeclared: formatToCamelCase(ticketDetails.data.medicalDetails.preExistDiseases) || 'N/A',
-                    quotes: quotation.quotes.map((quote) => ({
-                        companyLogo: quote.company.companyLogo,
-                        companyName: quote.company.companyName,
-                        productName: quote.product.name,
-                        coverage: quote.coveragedRequired || 0,
-                        premium: quote.Premium || 0,
-                        features: quote.features || 'N/A',
-                        benefits: quote.benefits || 'N/A',
-                        advantages: quote.advantages || 'N/A',
-                        remarks: quote.additionalRemarks || 'N/A',
-                        idv: quote.idv || 'N/A',
-                        coverType: formatToCamelCase(quote.coverageType) || 'N/A',
-                        coverageIncluded: quote.coverageIncluded || 'N/A',
-                        ncb: quote.ncb || 'N/A'
-                    })),
-
-                    validityDate: quotation.validityDate.toISOString().split('T')[0],
-                    branchManager: {
-                        name: ticketDetails.data.branchContactPerson,
-                        contact: ticketDetails.data.branchPhone
-                    }
-                };
                 // === Include Logo ===
                 const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
                     ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG') // for build / Docker
@@ -1072,7 +559,7 @@ export class InsuranceQuotationService {
 
                 doc.font('DejaVuSans')
                     .fillColor('black')
-                    .text(`${'QUOTE12XYZ'}`, rightX + 90, rightY + 15);
+                    .text(`${quotation.quotationNo || '-'}`, rightX + 90, rightY + 15);
 
                 rightY += 2;
 
@@ -1465,49 +952,60 @@ export class InsuranceQuotationService {
                     50,
                     doc.y
                 );
-                // Bottom footer section with contact info
-                const footerY = doc.page.height - 80;
-                // Decorative line above footer
-                // doc.moveTo(50, footerY).lineTo(560, footerY).lineWidth(2).strokeColor(colors.accent).stroke();
+                // -------------------------------
+                const footerX = 50;
+                const pageWidth = doc.page.width;
+                const bottomMargin = 50;
 
-                // Footer background
-                //      doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
-                // doc.text('☎ ', 200, footerY-20);
-                // doc.fontSize(9).fillColor(colors.text).font('DejaVuSans');
-                // doc.text(`${data.branchManager.contact} `, 230, footerY-20);
-                //  doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
-                // doc.text('◉', 325, footerY -20);
-                // doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
-                // doc.text('Branch Address', 360, footerY - 20);
-                doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
-                doc.text('☎ ', 200, footerY - 20, { continued: true });
+                // Footer elements' heights
+                const phoneHeight = 12;
+                const addressHeight = 12;
+                const copyrightHeight = 10;
+                const lineHeight = 2;
+                const spacing = 5;
 
+                const footerTotalHeight =
+                    phoneHeight + spacing + addressHeight + spacing + copyrightHeight + spacing + lineHeight;
+
+                // Calculate Y to position footer at the bottom
+                let footerY = doc.page.height - bottomMargin - footerTotalHeight;
+
+                // --- Phone Number ---
+                doc.image(phonePath, footerX, footerY, { width: 10, height: 10 });
                 doc.fontSize(9).fillColor(colors.text).font('DejaVuSans');
-                doc.text(`${data.branchManager.contact}  `, { continued: true }); // note extra space
+                doc.text(`${data.branch.contact}`, footerX + 12, footerY);
 
-                doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
-                doc.text('◉ ', { continued: true });
+                footerY += phoneHeight + spacing;
 
+                // --- Branch Address ---
+                // doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
+                // doc.text('◉ ', footerX, footerY, { continued: true });
+                // doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
+                // doc.text(data.branch.address);
+
+                // --- Location Icon + Address ---
+                // const locationIconPath = path.resolve(__dirname, 'assets/images/placeholder.png'); // your uploaded icon path
+                doc.image(locationPath, footerX, footerY, { width: 10, height: 10 }); // adjust y offset if needed
                 doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
-                doc.text('Branch Address');
+                doc.text(data.branch.address, footerX + 12, footerY); // text starts a bit right of icon
 
+                footerY += addressHeight + spacing;
+
+                // --- Copyright (centered) ---
                 doc.fontSize(7.5).fillColor(colors.lightText).font('DejaVuSans');
-                doc.text('© 2025 Acumen Insurance. All rights reserved.', 50, footerY - 5, { align: 'center' });
-                //   doc.rect(80, footerY + 15, 500, 2).fillAndStroke('#668cff', '668cff'
-                doc.moveTo(50, footerY + 15)
-                    .lineTo(530, footerY + 15)
+                doc.text('© 2025 Acumen Insurance. All rights reserved.', 0, footerY, {
+                    align: 'center',
+                    width: pageWidth
+                });
+
+                footerY += copyrightHeight + spacing;
+
+                // --- Decorative Line ---
+                doc.moveTo(50, footerY)
+                    .lineTo(pageWidth - 50, footerY)
                     .lineWidth(0.5)
                     .strokeColor('#668cff')
                     .stroke();
-
-                // Phone section (left)
-
-                // Location section (right)
-
-                // doc.fontSize(8).fillColor(colors.lightText);
-                // doc.text('Validity until: ' + data.validityDate, 360, footerY + 32);
-
-                // Bottom text
 
                 doc.end();
             } catch (err) {
@@ -1516,19 +1014,22 @@ export class InsuranceQuotationService {
         });
     }
 
-    async sendQuotation(ticketId: string, quotationId: string): Promise<any> {
+    async sendQuotation(ticket: any, quotationId: string): Promise<any> {
         try {
-            const pdfBuffer = await this.generateQuotationPDF(ticketId, quotationId);
-            const ticketData = await this.ticketRepo
-                .createQueryBuilder('ticket')
-                .leftJoinAndSelect('ticket.insuranceUserId', 'insuranceUserId')
-                .leftJoinAndSelect('ticket.branch', 'branch')
-                .where('ticket.id = :ticketId', { ticketId })
-                .getOne();
-            const customerEmail = ticketData.insuranceUserId.emailId;
-            const customerName = ticketData.insuranceUserId.name;
-            const branchManager = ticketData?.branch?.contactPerson;
-            const branchPhone = ticketData?.branch?.phone;
+            const pdfBuffer = await this.generateQuotationPDF(ticket, quotationId);
+            // const ticketData = await this.ticketRepo
+            //     .createQueryBuilder('ticket')
+            //     .leftJoinAndSelect('ticket.insuranceUserId', 'insuranceUserId')
+            //     .leftJoinAndSelect('ticket.branch', 'branch')
+            //     .where('ticket.id = :ticketId', { ticketId })
+            //     .getOne();
+            console.log('in send quoatation function ticket is', ticket);
+
+            const customerEmail = ticket.insuranceUserId.emailId;
+            const customerName = ticket.insuranceUserId.name;
+            const branchManager = ticket?.branch?.contactPerson;
+            const branchPhone = ticket?.branch?.phone;
+            console.log('in send quoatation ', customerEmail, customerName, branchManager, branchPhone);
 
             await this.emailService.sendEmailWithAttachments(
                 customerEmail,
@@ -1540,7 +1041,7 @@ export class InsuranceQuotationService {
             `,
                 [
                     {
-                        filename: `quotation_${ticketId}.pdf`,
+                        filename: `quotation_${ticket.insuranceType}_${ticket.id}.pdf`,
                         content: pdfBuffer
                     }
                     //   {
@@ -1565,11 +1066,11 @@ export class InsuranceQuotationService {
 
     // this is for download pdf
     async downloadQuotationPdf(
-        ticketId: string,
+        ticket: any,
         quotationId: string
     ): Promise<{ status: string; message: string; data: Buffer }> {
         try {
-            const pdfBuffer = await this.generateQuotationPDF(ticketId, quotationId);
+            const pdfBuffer = await this.generateQuotationPDF(ticket, quotationId);
 
             // Instead of sending email, return the PDF buffer for download
             return {
@@ -1607,7 +1108,7 @@ export class InsuranceQuotationService {
             // Fetch the ticket with relations
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId']
+                relations: ['insuranceUserId', 'branch']
             });
             if (!ticket) {
                 return {
@@ -1711,7 +1212,7 @@ export class InsuranceQuotationService {
 
             // Handle email sending if isSendMail is true
             if (isSendMail) {
-                const responsemsz = await this.sendQuotation(ticketId, String(savedQuotation.id));
+                const responsemsz = await this.sendQuotation(ticket, String(savedQuotation.id));
                 if (responsemsz.status === 'success') {
                     await this.quotationRepository.update(savedQuotation.id, {
                         status: Quotation_Status.QUOTATION_SENT,
@@ -1898,7 +1399,7 @@ export class InsuranceQuotationService {
             }
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId']
+                relations: ['insuranceUserId', 'branch']
             });
             if (!ticket) {
                 return {
@@ -1907,7 +1408,7 @@ export class InsuranceQuotationService {
                     data: null
                 };
             }
-            const responsedata = await this.downloadQuotationPdf(ticketId, String(quotationId));
+            const responsedata = await this.downloadQuotationPdf(ticket, String(quotationId));
             return responsedata;
         } catch (err) {
             console.error('send quotation mail Error:', err);

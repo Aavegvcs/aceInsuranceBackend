@@ -13,6 +13,7 @@ import { CommonQuotationService } from './common-quotation.service';
 import { InsuranceAssignedTo } from '@modules/insurance-ticket/entities/insurance-ticket-assignedTo.entity';
 import { InsuranceEscalationModule } from '@modules/insurance-escalation/insurance-escalation.module';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
+import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
 
 @Module({
     imports: [
@@ -23,7 +24,8 @@ import { ProductFeatures } from '@modules/insurance-features/entities/product-fe
             InsuranceProduct,
             QuoteEntity,
             User,
-            ProductFeatures
+            ProductFeatures,
+            InsuranceFeatures
         ]),
         EmailModule,
         InsuranceEscalationModule

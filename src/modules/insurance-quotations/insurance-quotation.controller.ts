@@ -7,7 +7,6 @@ import { InsuranceQuotationService } from './insurance-quotation.service';
 export class InsuranceQuotationController {
     constructor(private readonly quotationService: InsuranceQuotationService) {}
 
-    
     @Post('generateQuotation')
     async generateQuotation(@Body() reqBody: any) {
         try {
@@ -25,7 +24,6 @@ export class InsuranceQuotationController {
             throw new HttpException('Failed to send quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 
     @Post('downloadQuotation')
     async downloadQuotation(@Body() reqBody: { ticketId?: string; quotationId?: string }, @Res() res: any) {
@@ -84,8 +82,6 @@ export class InsuranceQuotationController {
         }
     }
 
-
-    
     @Post('changedQuotatinSatus')
     async changedQuotatinSatus(@Body() reqBody: any, @Req() req: any) {
         try {
@@ -99,7 +95,7 @@ export class InsuranceQuotationController {
     async getQuotationById(@Param('quotationId') quotationId: any) {
         try {
             // console.log(quotationId);
-            
+
             return await this.quotationService.getQuotationById(quotationId);
         } catch (error) {
             throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
