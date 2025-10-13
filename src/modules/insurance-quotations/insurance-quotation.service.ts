@@ -87,15 +87,26 @@ export class InsuranceQuotationService {
                     error: '#FF2C2C'
                 };
                 const doc = new PDFDocument({ size: 'A4', margin: 50 });
+                 // === Include Logo ===
+                const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
+                    ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG') // for build / Docker
+                    : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG'); // for dev
+
+                console.log('Resolved logo path:', logoPath);
+                console.log('Exists?', fs.existsSync(logoPath));
                 // === Watermark logic ===
                 const watermarksPath = fs.existsSync(path.resolve(__dirname, 'assets/images/logo-accumen.png'))
                     ? path.resolve(__dirname, 'assets/images/logo-accumen.png') // for build / Docker
                     : path.resolve(__dirname, '../../assets/images/logo-accumen.png'); // for dev
 
+                    console.log('watermarksPath logo path:', watermarksPath);
+                console.log('Exists?', fs.existsSync(watermarksPath));
+
                 const locationPath = fs.existsSync(path.resolve(__dirname, 'assets/images/placeholder.png'))
                     ? path.resolve(__dirname, 'assets/images/placeholder.png') // for build / Docker
                     : path.resolve(__dirname, '../../assets/images/placeholder.png'); // for dev
-
+  console.log('placeholder logo path:', locationPath);
+                console.log('Exists?', fs.existsSync(locationPath));
                 const phonePath = fs.existsSync(path.resolve(__dirname, 'assets/images/phone.png'))
                     ? path.resolve(__dirname, 'assets/images/phone.png') // for build / Docker
                     : path.resolve(__dirname, '../../assets/images/phone.png'); // for dev
@@ -360,13 +371,7 @@ export class InsuranceQuotationService {
                     return y;
                 }
 
-                // === Include Logo ===
-                const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.png'))
-                    ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.png') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.png'); // for dev
-
-                console.log('Resolved logo path:', logoPath);
-                console.log('Exists?', fs.existsSync(logoPath));
+               
 
                 doc.image(logoPath, 50, 25, { width: 140, height: 22 });
 
