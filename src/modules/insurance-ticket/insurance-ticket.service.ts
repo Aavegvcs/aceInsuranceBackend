@@ -555,7 +555,7 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('ticket.nominee', 'nominee')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
-             console.log("toicket detailslskjdkfjdk", ticket);
+            //  console.log("toicket detailslskjdkfjdk", ticket);
 
             if (!ticket) {
                 return {

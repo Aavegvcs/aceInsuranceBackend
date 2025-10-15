@@ -191,7 +191,7 @@ export class CommonQuotationService {
 
     async getTicketDetails(reqTicket: any): Promise<any> {
         try {
-            console.log('in get ticket details ', reqTicket);
+            // console.log('in get ticket details ', reqTicket);
 
             // Base query (common joins)
             let query = this.ticketRepo
@@ -302,7 +302,7 @@ export class CommonQuotationService {
                     break;
                 }
             }
-            console.log('in get ticket details res is ->>>>', data);
+            // console.log('in get ticket details res is ->>>>', data);
 
             return {
                 status: 'success',

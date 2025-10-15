@@ -1,12 +1,14 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Put, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { InsuranceQuotationService } from './insurance-quotation.service';
+import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
 
 @ApiTags('insurance-quotation')
 @Controller('insurance-quotation')
 export class InsuranceQuotationController {
     constructor(private readonly quotationService: InsuranceQuotationService) {}
 
+    @UseGuards(JwtInsAuthGuard)
     @Post('generateQuotation')
     async generateQuotation(@Body() reqBody: any) {
         try {
@@ -82,6 +84,7 @@ export class InsuranceQuotationController {
         }
     }
 
+     @UseGuards(JwtInsAuthGuard)
     @Post('changedQuotatinSatus')
     async changedQuotatinSatus(@Body() reqBody: any, @Req() req: any) {
         try {
@@ -94,18 +97,16 @@ export class InsuranceQuotationController {
     @Get('getQuotationById/:quotationId')
     async getQuotationById(@Param('quotationId') quotationId: any) {
         try {
-            // console.log(quotationId);
-
             return await this.quotationService.getQuotationById(quotationId);
         } catch (error) {
             throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
+ @UseGuards(JwtInsAuthGuard)
     @Put('updateQuotation')
     async updateQuotation(@Body() reqBody: any) {
         try {
-            return await this.quotationService.updateQuotation(reqBody);
+            return await this.quotationService.updateQuotatio(reqBody);
         } catch (error) {
             throw new HttpException('Failed to update quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }

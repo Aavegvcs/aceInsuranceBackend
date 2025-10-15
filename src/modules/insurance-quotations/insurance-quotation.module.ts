@@ -1,7 +1,7 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InsuranceQuotationController } from './insurance-quotation.controller';
 import { InsuranceQuotationService } from './insurance-quotation.service';
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { EmailModule } from '../email/email.module';
 import { InsuranceQuotation } from './entities/insurance-quotation.entity';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
@@ -14,6 +14,10 @@ import { InsuranceAssignedTo } from '@modules/insurance-ticket/entities/insuranc
 import { InsuranceEscalationModule } from '@modules/insurance-escalation/insurance-escalation.module';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
+import { UserModule } from '@modules/user/user.module';
+import { AuthModule } from '@modules/auth/auth.module';
+import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
+import { QuoteFeatures } from '@modules/insurance-features/entities/quote-features.entity';
 
 @Module({
     imports: [
@@ -25,13 +29,16 @@ import { InsuranceFeatures } from '@modules/insurance-features/entities/insuranc
             QuoteEntity,
             User,
             ProductFeatures,
-            InsuranceFeatures
+            InsuranceFeatures,
+            QuoteFeatures
         ]),
         EmailModule,
-        InsuranceEscalationModule
+        InsuranceEscalationModule,
+        forwardRef(() => UserModule),
+        forwardRef(() => AuthModule)
     ],
     controllers: [InsuranceQuotationController],
-    providers: [InsuranceQuotationService, CommonQuotationService],
+    providers: [InsuranceQuotationService, CommonQuotationService, LoggedInsUserService],
     exports: [InsuranceQuotationService, CommonQuotationService]
 })
 export class InsuranceQuotationModule {}
