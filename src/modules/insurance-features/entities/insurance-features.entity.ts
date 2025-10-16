@@ -34,7 +34,7 @@ export class InsuranceFeatures {
        insuranceType: Insurance_Type;
    
        @Column({ name: 'is_standard', type: 'boolean', default: true })
-       isStandard: boolean;
+       isStandard: boolean;  // isStandard is true means it is basic features
    
        @Column({ name: 'is_active', type: 'boolean', default: true })
        isActive: boolean;

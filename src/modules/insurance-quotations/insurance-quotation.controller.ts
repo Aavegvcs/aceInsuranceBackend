@@ -97,7 +97,8 @@ export class InsuranceQuotationController {
     @Get('getQuotationById/:quotationId')
     async getQuotationById(@Param('quotationId') quotationId: any) {
         try {
-            return await this.quotationService.getQuotationById(quotationId);
+            // return await this.quotationService.getQuotationById(quotationId);
+            return await this.quotationService.newGetQuotationById(quotationId);
         } catch (error) {
             throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -106,7 +107,7 @@ export class InsuranceQuotationController {
     @Put('updateQuotation')
     async updateQuotation(@Body() reqBody: any) {
         try {
-            return await this.quotationService.updateQuotatio(reqBody);
+            return await this.quotationService.newUpdateQuotation(reqBody);
         } catch (error) {
             throw new HttpException('Failed to update quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }

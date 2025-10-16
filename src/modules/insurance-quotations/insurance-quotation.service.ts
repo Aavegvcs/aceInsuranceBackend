@@ -156,21 +156,38 @@ export class InsuranceQuotationService {
                 doc.on('end', () => resolve(Buffer.concat(buffers)));
                 doc.on('error', reject);
 
-                const quotation = await this.quotationRepository.findOneOrFail({
-                    where: {
-                        id: parseInt(quotationId),
-                        ticketId: { id: parseInt(ticket.id) }
-                    },
-                    relations: [
-                        'quotes',
-                        'quotes.company',
-                        'quotes.product',
-                        'quotes.quoteFeatures',
-                        'quotes.quoteFeatures.insuranceFeatures'
-                    ]
-                });
+                // const quotation = await this.quotationRepository.findOneOrFail({
+                //     where: {
+                //         id: parseInt(quotationId),
+                //         ticketId: { id: parseInt(ticket.id) }
+                //     },
+                //     relations: [
+                //         'quotes',
+                //         'quotes.company',
+                //         'quotes.product',
+                //         'quotes.quoteFeatures',
+                //         'quotes.quoteFeatures.insuranceFeatures'
+                //     ]
+                // });
+                const quotation = await this.quotationRepository
+                    .createQueryBuilder('quotation')
+                    .leftJoinAndSelect('quotation.quotes', 'quote')
+                    .leftJoinAndSelect('quote.company', 'company')
+                    .leftJoinAndSelect('quote.product', 'product')
+                    .leftJoinAndSelect(
+                        'quote.quoteFeatures',
+                        'quoteFeature',
+                        'quoteFeature.isActive = true' // ✅ filter active quote features
+                    )
+                    .leftJoinAndSelect('quoteFeature.insuranceFeatures', 'insuranceFeature')
+                    .where('quotation.id = :quotationId', { quotationId: parseInt(quotationId) })
+                    .andWhere('quotation.ticketId = :ticketId', { ticketId: parseInt(ticket.id) })
+                    .getOne();
+
+                // console.log('line no 172 quotation details, ', quotation);
 
                 const ticketDetails = await this.quotationService.getTicketDetails(ticket);
+// console.log("ticket details line no 190", ticketDetails);
 
                 const data = {
                     customerName: ticketDetails.data.insuranceUser.name,
@@ -179,11 +196,11 @@ export class InsuranceQuotationService {
                     proposer: {
                         name: ticketDetails.data.insuranceUser.name,
                         dob: ticketDetails.data.insuranceUser.dateOfBirth?.toString().split('T')[0] || 'N/A',
-                        gender: formatToCamelCase(ticketDetails.data.insuranceUser.gender) || 'N/A',
-                        height: ticketDetails.data.medicalDetails
-                            ? ticketDetails.data.medicalDetails.height || 0
+                        gender: formatToCamelCase(ticketDetails.data?.insuranceUser?.gender) || 'N/A',
+                        height: ticketDetails.data?.medicalDetails
+                            ? ticketDetails.data.medicalDetails?.height || 0
                             : null,
-                        weight: ticketDetails.data.medicalDetails ? ticketDetails.data.medicalDetails.weight || 0 : null
+                        weight: ticketDetails.data.medicalDetails ? ticketDetails.data?.medicalDetails?.weight || 0 : null
                     },
 
                     vehicleDetails: ticketDetails?.data?.vehicleDetails
@@ -221,7 +238,7 @@ export class InsuranceQuotationService {
                     mobileNo: ticketDetails.data.insuranceUser.primaryContactNumber || 'N/A',
                     emailId: ticketDetails.data.insuranceUser.emailId || 'N/A',
                     pedDeclared: ticketDetails.data.medicalDetails
-                        ? formatToCamelCase(ticketDetails.data.medicalDetails.preExistDiseases) || 'N/A'
+                        ? ticketDetails.data?.medicalDetails?.preExistDiseases || 'N/A'
                         : null,
                     quotes: quotation.quotes.map((quote) => ({
                         companyLogo: quote.company.companyLogo,
@@ -246,21 +263,15 @@ export class InsuranceQuotationService {
                         address: ticketDetails.data?.branch?.address
                     }
                 };
+                // console.log('line no 250 data is here', data);
 
                 // Step 1: Collect all features across products
-                // const allFeaturesSet = new Set<string>();
-                // for (const quote of quotation.quotes) {
-                //     const productFeatures = await this.productFeaturesRepo.find({
-                //         where: { product: { id: quote.product.id }, isActive: true },
-                //         relations: ['insuranceFeatures']
-                //     });
-
-                //     productFeatures.forEach((f) => allFeaturesSet.add(f.insuranceFeatures.featuresName));
-                // }
-
+        //  console.log("testing line no 268");
+         
                 const insuranceFeatures = await this.insurncetFeaturesRepo.find({
                     where: { isActive: true, insuranceType: ticket.insuranceType }
                 });
+// console.log("line no 272 insurance features", insuranceFeatures);
 
                 const basicFeatures: InsuranceFeatures[] = [];
                 const addOnFeatures: InsuranceFeatures[] = [];
@@ -275,9 +286,6 @@ export class InsuranceQuotationService {
                 });
 
                 // Split into basic and add-on based on name containing 'Cover' (assumption for categorization)
-                // const basicFeatures = allFeatures.filter((f) => !f.toLowerCase().includes('cover'));
-                // const addOnFeatures = allFeatures.filter((f) => f.toLowerCase().includes('cover'));
-
                 // Prepare final comparison data for basic
                 const finalBasicData: { feature: string; quoteValues: string[] }[] = basicFeatures.map((feature) => {
                     return {
@@ -299,6 +307,7 @@ export class InsuranceQuotationService {
                         })
                     };
                 });
+
 
                 function ensureSpace(doc: any, neededHeight: number, startY: number) {
                     const bottomMargin = 50;
@@ -1149,6 +1158,7 @@ export class InsuranceQuotationService {
                 isActive: true
             });
             const savedQuotation = await this.quotationRepository.save(quotation);
+            // console.log("line no 1152 in saved quotation ", savedQuotation);
 
             // Save each quote in QuoteEntity
             const savedQuotes = [];
@@ -1413,7 +1423,7 @@ export class InsuranceQuotationService {
             };
         }
     }
-
+    // later remove this extra function and use downloadQuotationPdf directly function who is called
     async downloadQuotation(reqBody: any): Promise<any> {
         try {
             const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
@@ -1658,9 +1668,162 @@ export class InsuranceQuotationService {
     //     }
     // }
 
-    async getQuotationById(quotationId: any): Promise<any> {
+    // async getQuotationById(quotationId: any): Promise<any> {
+    //     try {
+    //         // Validate input
+    //         if (!quotationId) {
+    //             return {
+    //                 status: 'error',
+    //                 message: 'Quotation ID is required',
+    //                 data: null
+    //             };
+    //         }
+
+    //         // const quotation = await this.quotationRepository.findOneOrFail({
+    //         //     where: { id: quotationId },
+    //         //     relations: ['quotes', 'quotes.company', 'quotes.product', 'ticketId']
+    //         // });
+
+    //         // const quotationData = {
+    //         //     quotationId: quotation.id,
+    //         //     ticketId: quotation.ticketId.id,
+    //         //     status: quotation.status,
+    //         //     createdAt: quotation.createdAt,
+    //         //     updatedAt: quotation.updatedAt,
+    //         //     quotes: quotation.quotes.map((quote) => ({
+    //         //         id: quote.id,
+    //         //         companyId: quote.company?.id,
+    //         //         companyName: quote.company?.companyName,
+    //         //         productId: quote.product?.id,
+    //         //         productName: quote.product?.name,
+    //         //         premium: quote.Premium, // Note: Check if 'Premium' should be 'premium' (case sensitivity)
+    //         //         coveragedRequired: quote.coveragedRequired, // Typo: Should be 'coverageRequired'?
+    //         //         ncb: quote.ncb,
+    //         //         idv: quote.idv,
+    //         //         coverageIncluded: quote.coverageIncluded,
+    //         //         coverageType: quote.coverageType,
+    //         //         features: quote.features,
+    //         //         advantages: quote.advantages,
+    //         //         benefits: quote.benefits,
+    //         //         shortDescription: quote.shortDescription,
+    //         //         additionalRemarks: quote.additionalRemarks,
+    //         //         createdAt: quote.createdAt,
+    //         //         updatedAt: quote.updatedAt
+    //         //     }))
+    //         // };
+    //         const rawData = await this.quotationRepository
+    //             .createQueryBuilder('quotation')
+    //             .leftJoin('quotation.ticketId', 'ticket')
+    //             .leftJoin('quotation.quotes', 'quote')
+    //             .leftJoin('quote.company', 'insuranceCompany') // InsuranceCompanies
+    //             .leftJoin('quote.product', 'product') // InsuranceProduct
+    //             .leftJoin('product.productFeatures', 'productFeature') // ProductFeatures
+    //             .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature') // InsuranceFeatures
+    //             .leftJoin(
+    //                 'quote.quoteFeatures',
+    //                 'quoteFeature',
+    //                 'quoteFeature.insuranceFeatures = insuranceFeature.id' // QuoteFeatures
+    //             )
+    //             .select([
+    //                 'quotation.id AS quotationId',
+    //                 'quotation.status AS quotationStatus',
+    //                 'quotation.createdAt AS quotationCreatedAt',
+    //                 'quotation.updatedAt AS quotationUpdatedAt',
+
+    //                 'ticket.id AS ticketId',
+
+    //                 'quote.id AS quoteId',
+    //                 'quote.Premium AS quotePremium',
+    //                 'quote.coveragedRequired AS quoteCoverageRequired',
+    //                 'quote.ncb AS quoteNcb',
+    //                 'quote.idv AS quoteIdv',
+    //                 'quote.coverageIncluded AS quoteCoverageIncluded',
+    //                 'quote.coverageType AS quoteCoverageType',
+
+    //                 'insuranceCompany.id AS companyId',
+    //                 'insuranceCompany.companyName AS companyName',
+
+    //                 'product.id AS productId',
+    //                 'product.name AS productName',
+
+    //                 'insuranceFeature.id AS featureId',
+    //                 'insuranceFeature.featuresName AS featureName',
+    //                 'insuranceFeature.description AS featureDescription',
+    //                 'quoteFeature.id AS quoteFeatureId'
+    //             ])
+    //             .where('quotation.id = :quotationId', { quotationId })
+    //             .andWhere('insuranceFeature.isStandard = false')
+    //             .andWhere('productFeature.isActive = true')
+    //             .andWhere('insuranceFeature.isActive = true')
+    //             .getRawMany();
+
+    //         const first = rawData[0];
+    //         const quotationData = {
+    //             quotationId: first.quotationId,
+    //             ticketId: first.ticketId,
+    //             status: first.quotationStatus,
+    //             createdAt: first.quotationCreatedAt,
+    //             updatedAt: first.quotationUpdatedAt,
+    //             quotes: []
+    //         };
+
+    //         const quotesMap = new Map();
+
+    //         for (const row of rawData) {
+    //             if (!quotesMap.has(row.quoteId)) {
+    //                 quotesMap.set(row.quoteId, {
+    //                     id: row.quoteId,
+    //                     companyId: row.companyId,
+    //                     companyName: row.companyName,
+    //                     productId: row.productId,
+    //                     productName: row.productName,
+    //                     premium: row.quotePremium,
+    //                     coveragedRequired: row.quoteCoverageRequired,
+    //                     ncb: row.quoteNcb,
+    //                     idv: row.quoteIdv,
+    //                     coverageIncluded: row.quoteCoverageIncluded,
+    //                     coverageType: row.quoteCoverageType,
+    //                     productFeatures: []
+    //                 });
+    //             }
+
+    //             const quote = quotesMap.get(row.quoteId);
+
+    //             if (row.featureId) {
+    //                 const statusCheck = !!row.quoteFeatureId;
+
+    //                 quote.productFeatures.push({
+    //                     featureId: row.featureId,
+    //                     featureName: row.featureName,
+    //                     description: row.featureDescription,
+    //                     status: statusCheck
+    //                 });
+    //             }
+    //         }
+
+    //         quotationData.quotes = Array.from(quotesMap.values());
+    //         console.log('quotation is here in get api ', quotationData);
+
+    //         // ---------- Transform data (simple & readable) ----------
+    //         if (!rawData.length) throw new Error('Quotation not found');
+
+    //         return {
+    //             status: 'success',
+    //             message: 'Quotation fetched successfully',
+    //             data: quotationData
+    //         };
+    //     } catch (error) {
+    //         console.error('-api/insurance-ticket/getQuotationById', error.message);
+    //         return {
+    //             status: 'error',
+    //             message: `Internal server error: ${error.message}`,
+    //             data: null
+    //         };
+    //     }
+    // }
+
+    async newGetQuotationById(quotationId: number): Promise<any> {
         try {
-            // Validate input
             if (!quotationId) {
                 return {
                     status: 'error',
@@ -1669,50 +1832,19 @@ export class InsuranceQuotationService {
                 };
             }
 
-            // const quotation = await this.quotationRepository.findOneOrFail({
-            //     where: { id: quotationId },
-            //     relations: ['quotes', 'quotes.company', 'quotes.product', 'ticketId']
-            // });
-
-            // const quotationData = {
-            //     quotationId: quotation.id,
-            //     ticketId: quotation.ticketId.id,
-            //     status: quotation.status,
-            //     createdAt: quotation.createdAt,
-            //     updatedAt: quotation.updatedAt,
-            //     quotes: quotation.quotes.map((quote) => ({
-            //         id: quote.id,
-            //         companyId: quote.company?.id,
-            //         companyName: quote.company?.companyName,
-            //         productId: quote.product?.id,
-            //         productName: quote.product?.name,
-            //         premium: quote.Premium, // Note: Check if 'Premium' should be 'premium' (case sensitivity)
-            //         coveragedRequired: quote.coveragedRequired, // Typo: Should be 'coverageRequired'?
-            //         ncb: quote.ncb,
-            //         idv: quote.idv,
-            //         coverageIncluded: quote.coverageIncluded,
-            //         coverageType: quote.coverageType,
-            //         features: quote.features,
-            //         advantages: quote.advantages,
-            //         benefits: quote.benefits,
-            //         shortDescription: quote.shortDescription,
-            //         additionalRemarks: quote.additionalRemarks,
-            //         createdAt: quote.createdAt,
-            //         updatedAt: quote.updatedAt
-            //     }))
-            // };
             const rawData = await this.quotationRepository
                 .createQueryBuilder('quotation')
                 .leftJoin('quotation.ticketId', 'ticket')
                 .leftJoin('quotation.quotes', 'quote')
-                .leftJoin('quote.company', 'insuranceCompany') // InsuranceCompanies
-                .leftJoin('quote.product', 'product') // InsuranceProduct
-                .leftJoin('product.productFeatures', 'productFeature') // ProductFeatures
-                .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature') // InsuranceFeatures
+                .leftJoin('quote.company', 'insuranceCompany')
+                .leftJoin('quote.product', 'product')
+                .leftJoin('product.productFeatures', 'productFeature')
+                .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature')
+                // join quote features (but keep product features even if quote feature missing)
                 .leftJoin(
                     'quote.quoteFeatures',
                     'quoteFeature',
-                    'quoteFeature.insuranceFeatures = insuranceFeature.id' // QuoteFeatures
+                    'quoteFeature.insuranceFeatures = insuranceFeature.id AND quoteFeature.quote = quote.id'
                 )
                 .select([
                     'quotation.id AS quotationId',
@@ -1723,12 +1855,14 @@ export class InsuranceQuotationService {
                     'ticket.id AS ticketId',
 
                     'quote.id AS quoteId',
-                    'quote.Premium AS quotePremium',
+                    'quote.premium AS quotePremium',
                     'quote.coveragedRequired AS quoteCoverageRequired',
                     'quote.ncb AS quoteNcb',
                     'quote.idv AS quoteIdv',
                     'quote.coverageIncluded AS quoteCoverageIncluded',
                     'quote.coverageType AS quoteCoverageType',
+                    'quote.shortDescription AS shortDescription',
+                    'quote.additionalRemarks AS additionalRemarks',
 
                     'insuranceCompany.id AS companyId',
                     'insuranceCompany.companyName AS companyName',
@@ -1739,7 +1873,8 @@ export class InsuranceQuotationService {
                     'insuranceFeature.id AS featureId',
                     'insuranceFeature.featuresName AS featureName',
                     'insuranceFeature.description AS featureDescription',
-                    'quoteFeature.id AS quoteFeatureId'
+                    'quoteFeature.id AS quoteFeatureId',
+                    'quoteFeature.isActive AS quoteFeatureIsActive'
                 ])
                 .where('quotation.id = :quotationId', { quotationId })
                 .andWhere('insuranceFeature.isStandard = false')
@@ -1747,6 +1882,12 @@ export class InsuranceQuotationService {
                 .andWhere('insuranceFeature.isActive = true')
                 .getRawMany();
 
+            if (!rawData.length) {
+                throw new Error('Quotation not found');
+            }
+            // console.log('line no 1876 rawData ', rawData);
+
+            // ---------- Group and structure ----------
             const first = rawData[0];
             const quotationData = {
                 quotationId: first.quotationId,
@@ -1756,6 +1897,8 @@ export class InsuranceQuotationService {
                 updatedAt: first.quotationUpdatedAt,
                 quotes: []
             };
+
+            // console.log('line no 1889 rawDataFirst ', first);
 
             const quotesMap = new Map();
 
@@ -1772,30 +1915,31 @@ export class InsuranceQuotationService {
                         ncb: row.quoteNcb,
                         idv: row.quoteIdv,
                         coverageIncluded: row.quoteCoverageIncluded,
-                        coverageType: row.quoteCoverageType,
+                        additionalRemarks: row.additionalRemarks,
+                        shortDescription: row.shortDescription,
                         productFeatures: []
                     });
                 }
 
                 const quote = quotesMap.get(row.quoteId);
+                // console.log('line no 1912 quote ', quote);
 
                 if (row.featureId) {
-                    const statusCheck = !!row.quoteFeatureId;
+                    // ✅ Conditional logic for status
+                    const status = row.quoteFeatureId && row.quoteFeatureIsActive ? true : false;
 
                     quote.productFeatures.push({
                         featureId: row.featureId,
                         featureName: row.featureName,
                         description: row.featureDescription,
-                        status: statusCheck
+                        status
                     });
                 }
             }
 
             quotationData.quotes = Array.from(quotesMap.values());
-             console.log('quotation is here in get api ', quotationData);
 
-            // ---------- Transform data (simple & readable) ----------
-            if (!rawData.length) throw new Error('Quotation not found');
+            // console.log('line no 1930 findal quotation data ', quotationData);
 
             return {
                 status: 'success',
@@ -1803,7 +1947,7 @@ export class InsuranceQuotationService {
                 data: quotationData
             };
         } catch (error) {
-            console.error('-api/insurance-ticket/getQuotationById', error.message);
+            console.error('Error in getQuotationById:', error.message);
             return {
                 status: 'error',
                 message: `Internal server error: ${error.message}`,
@@ -1979,203 +2123,203 @@ export class InsuranceQuotationService {
     //     }
     // }
 
-    async updateQuotatio(reqBody: any): Promise<any> {
-        try {
-            const userEntity = await this.loggedInsUserService.getCurrentUser();
-            if (!userEntity) {
-                return { status: 'error', message: 'Logged user not found', data: null };
-            }
+    // async updateQuotatio(reqBody: any): Promise<any> {
+    //     try {
+    //         const userEntity = await this.loggedInsUserService.getCurrentUser();
+    //         if (!userEntity) {
+    //             return { status: 'error', message: 'Logged user not found', data: null };
+    //         }
 
-            const { quotationId, ticketId, quotes } = reqBody;
-            if (!ticketId || !quotationId || !quotes || !Array.isArray(quotes)) {
-                return { status: 'error', message: 'Invalid request body', data: null };
-            }
-            console.log('here is quotes madharchooo**********', quotes);
+    //         const { quotationId, ticketId, quotes } = reqBody;
+    //         if (!ticketId || !quotationId || !quotes || !Array.isArray(quotes)) {
+    //             return { status: 'error', message: 'Invalid request body', data: null };
+    //         }
+    //         console.log('here is quotes madharchooo**********', quotes);
 
-            const ticket = await this.ticketRepo.findOne({
-                where: { id: ticketId },
-                relations: ['insuranceUserId']
-            });
-            if (!ticket) return { status: 'error', message: 'Ticket not found', data: null };
+    //         const ticket = await this.ticketRepo.findOne({
+    //             where: { id: ticketId },
+    //             relations: ['insuranceUserId']
+    //         });
+    //         if (!ticket) return { status: 'error', message: 'Ticket not found', data: null };
 
-            const quotation = await this.quotationRepository.findOne({
-                where: { id: quotationId },
-                relations: ['ticketId', 'quotes', 'quotes.quoteFeatures']
-            });
-            if (!quotation) return { status: 'error', message: 'Quotation not found', data: null };
+    //         const quotation = await this.quotationRepository.findOne({
+    //             where: { id: quotationId },
+    //             relations: ['ticketId', 'quotes', 'quotes.quoteFeatures']
+    //         });
+    //         if (!quotation) return { status: 'error', message: 'Quotation not found', data: null };
 
-            // Use transaction on ticketRepo.manager
-            await this.ticketRepo.manager.transaction(async (manager) => {
-                // Update quotation status
-                await manager.update(InsuranceQuotation, quotation.id, {
-                    status: Quotation_Status.REVISED_AND_UPDATE,
-                    updatedBy: userEntity,
-                    updatedAt: new Date()
-                });
+    //         // Use transaction on ticketRepo.manager
+    //         await this.ticketRepo.manager.transaction(async (manager) => {
+    //             // Update quotation status
+    //             await manager.update(InsuranceQuotation, quotation.id, {
+    //                 status: Quotation_Status.REVISED_AND_UPDATE,
+    //                 updatedBy: userEntity,
+    //                 updatedAt: new Date()
+    //             });
 
-                const updatedQuotes: QuoteEntity[] = [];
+    //             const updatedQuotes: QuoteEntity[] = [];
 
-                for (const quoteData of quotes) {
-                    const company = await manager.findOne(InsuranceCompanies, {
-                        where: { id: parseInt(quoteData.companyId) }
-                    });
-                    const product = await manager.findOne(InsuranceProduct, { where: { id: quoteData.productId } });
-                    if (!company || !product)
-                        throw new Error(
-                            `Invalid company or product: companyId=${quoteData.companyId}, productId=${quoteData.productId}`
-                        );
+    //             for (const quoteData of quotes) {
+    //                 const company = await manager.findOne(InsuranceCompanies, {
+    //                     where: { id: parseInt(quoteData.companyId) }
+    //                 });
+    //                 const product = await manager.findOne(InsuranceProduct, { where: { id: quoteData.productId } });
+    //                 if (!company || !product)
+    //                     throw new Error(
+    //                         `Invalid company or product: companyId=${quoteData.companyId}, productId=${quoteData.productId}`
+    //                     );
 
-                    // Check if quote exists
-                    let quote = quotation.quotes?.find((q) => q.id === quoteData.id);
+    //                 // Check if quote exists
+    //                 let quote = quotation.quotes?.find((q) => q.id === quoteData.id);
 
-                    if (quote) {
-                        // Update existing quote
-                        await manager.update(QuoteEntity, quote.id, {
-                            company,
-                            product,
-                            coveragedRequired: quoteData.coveragedRequired || null,
-                            Premium: quoteData.Premium || null,
-                            ncb: quoteData.ncb || null,
-                            coverageIncluded: quoteData.coverageIncluded || null,
-                            coverageType: quoteData.coverageType || null,
-                            idv: quoteData.idv || null,
-                            features: quoteData.features || null,
-                            advantages: quoteData.advantages || null,
-                            benefits: quoteData.benefits || null,
-                            shortDescription: quoteData.shortDescription || null,
-                            additionalRemarks: quoteData.additionalRemarks || null,
-                            updatedBy: userEntity,
-                            updatedAt: new Date(),
-                            isActive: true
-                        });
-                        // Reload updated quote
-                        quote = await manager.findOne(QuoteEntity, { where: { id: quote.id } });
-                    } else {
-                        // Create new quote
-                        quote = manager.create(QuoteEntity, {
-                            quotationId: quotation,
-                            company,
-                            product,
-                            coveragedRequired: quoteData.coveragedRequired || null,
-                            Premium: quoteData.Premium || null,
-                            ncb: quoteData.ncb || null,
-                            coverageIncluded: quoteData.coverageIncluded || null,
-                            coverageType: quoteData.coverageType || null,
-                            idv: quoteData.idv || null,
-                            features: quoteData.features || null,
-                            advantages: quoteData.advantages || null,
-                            benefits: quoteData.benefits || null,
-                            shortDescription: quoteData.shortDescription || null,
-                            additionalRemarks: quoteData.additionalRemarks || null,
-                            createdBy: userEntity,
-                            updatedBy: userEntity,
-                            isActive: true
-                        });
-                        quote = await manager.save(QuoteEntity, quote);
-                    }
+    //                 if (quote) {
+    //                     // Update existing quote
+    //                     await manager.update(QuoteEntity, quote.id, {
+    //                         company,
+    //                         product,
+    //                         coveragedRequired: quoteData.coveragedRequired || null,
+    //                         Premium: quoteData.Premium || null,
+    //                         ncb: quoteData.ncb || null,
+    //                         coverageIncluded: quoteData.coverageIncluded || null,
+    //                         coverageType: quoteData.coverageType || null,
+    //                         idv: quoteData.idv || null,
+    //                         features: quoteData.features || null,
+    //                         advantages: quoteData.advantages || null,
+    //                         benefits: quoteData.benefits || null,
+    //                         shortDescription: quoteData.shortDescription || null,
+    //                         additionalRemarks: quoteData.additionalRemarks || null,
+    //                         updatedBy: userEntity,
+    //                         updatedAt: new Date(),
+    //                         isActive: true
+    //                     });
+    //                     // Reload updated quote
+    //                     quote = await manager.findOne(QuoteEntity, { where: { id: quote.id } });
+    //                 } else {
+    //                     // Create new quote
+    //                     quote = manager.create(QuoteEntity, {
+    //                         quotationId: quotation,
+    //                         company,
+    //                         product,
+    //                         coveragedRequired: quoteData.coveragedRequired || null,
+    //                         Premium: quoteData.Premium || null,
+    //                         ncb: quoteData.ncb || null,
+    //                         coverageIncluded: quoteData.coverageIncluded || null,
+    //                         coverageType: quoteData.coverageType || null,
+    //                         idv: quoteData.idv || null,
+    //                         features: quoteData.features || null,
+    //                         advantages: quoteData.advantages || null,
+    //                         benefits: quoteData.benefits || null,
+    //                         shortDescription: quoteData.shortDescription || null,
+    //                         additionalRemarks: quoteData.additionalRemarks || null,
+    //                         createdBy: userEntity,
+    //                         updatedBy: userEntity,
+    //                         isActive: true
+    //                     });
+    //                     quote = await manager.save(QuoteEntity, quote);
+    //                 }
 
-                    updatedQuotes.push(quote);
-                    // till there are no issue
-                    // Handle QuoteFeatures
-                    const existingFeatures = await manager.find(QuoteFeatures, {
-                        where: { quote: { id: quote.id } },
-                        relations: ['insuranceFeatures']
-                    });
+    //                 updatedQuotes.push(quote);
+    //                 // till there are no issue
+    //                 // Handle QuoteFeatures
+    //                 const existingFeatures = await manager.find(QuoteFeatures, {
+    //                     where: { quote: { id: quote.id } },
+    //                     relations: ['insuranceFeatures']
+    //                 });
 
-                    const featureIdsToKeep = (quoteData.productFeatures || []).map((f) => f.featureId);
-                    console.log('features id to keep', featureIdsToKeep);
+    //                 const featureIdsToKeep = (quoteData.productFeatures || []).map((f) => f.featureId);
+    //                 console.log('features id to keep', featureIdsToKeep);
 
-                    // Soft delete removed features
-                    const featuresToDelete = existingFeatures.filter(
-                        (f) => !featureIdsToKeep.includes(f.insuranceFeatures.id)
-                    );
-                    if (featuresToDelete.length > 0) {
-                        await manager.softDelete(
-                            QuoteFeatures,
-                            featuresToDelete.map((f) => f.id)
-                        );
-                    }
-                    console.log('features id to delete ', featuresToDelete);
+    //                 // Soft delete removed features
+    //                 const featuresToDelete = existingFeatures.filter(
+    //                     (f) => !featureIdsToKeep.includes(f.insuranceFeatures.id)
+    //                 );
+    //                 if (featuresToDelete.length > 0) {
+    //                     await manager.softDelete(
+    //                         QuoteFeatures,
+    //                         featuresToDelete.map((f) => f.id)
+    //                     );
+    //                 }
+    //                 console.log('features id to delete ', featuresToDelete);
 
-                    // Update existing or create new features
-                    for (const feat of quoteData.productFeatures || []) {
-                        const featureEntity = await manager.findOne(InsuranceFeatures, {
-                            where: { id: feat.featureId }
-                        });
-                        if (!featureEntity) continue;
+    //                 // Update existing or create new features
+    //                 for (const feat of quoteData.productFeatures || []) {
+    //                     const featureEntity = await manager.findOne(InsuranceFeatures, {
+    //                         where: { id: feat.featureId }
+    //                     });
+    //                     if (!featureEntity) continue;
 
-                        const existing = existingFeatures.find((f) => f.insuranceFeatures.id === feat.featureId);
-                        console.log('existing features', existing);
+    //                     const existing = existingFeatures.find((f) => f.insuranceFeatures.id === feat.featureId);
+    //                     console.log('existing features', existing);
 
-                        if (existing) {
-                            await manager.update(QuoteFeatures, existing.id, {
-                                isActive: feat.status,
-                                updatedBy: userEntity,
-                                updatedAt: new Date()
-                            });
-                        } else if (feat.status) {
-                            const newFeature = manager.create(QuoteFeatures, {
-                                quote,
-                                insuranceFeatures: featureEntity,
-                                isActive: true,
-                                createdBy: userEntity,
-                                updatedBy: userEntity
-                            });
-                            await manager.save(QuoteFeatures, newFeature);
-                        }
-                    }
-                }
-                console.log('updated quotes is here ', updatedQuotes);
-                console.log(
-                    ' quotes is here ',
-                    quotation.quotes.map((d) => d)
-                );
+    //                     if (existing) {
+    //                         await manager.update(QuoteFeatures, existing.id, {
+    //                             isActive: feat.status,
+    //                             updatedBy: userEntity,
+    //                             updatedAt: new Date()
+    //                         });
+    //                     } else if (feat.status) {
+    //                         const newFeature = manager.create(QuoteFeatures, {
+    //                             quote,
+    //                             insuranceFeatures: featureEntity,
+    //                             isActive: true,
+    //                             createdBy: userEntity,
+    //                             updatedBy: userEntity
+    //                         });
+    //                         await manager.save(QuoteFeatures, newFeature);
+    //                     }
+    //                 }
+    //             }
+    //             console.log('updated quotes is here ', updatedQuotes);
+    //             console.log(
+    //                 ' quotes is here ',
+    //                 quotation.quotes.map((d) => d)
+    //             );
 
-                // Soft delete quotes not included in update
-                const quoteIdsToKeep = updatedQuotes.map((q) => q.id);
-                const quotesToDelete = quotation.quotes?.filter((q) => !quoteIdsToKeep.includes(q.id)) || [];
-                for (const q of quotesToDelete) {
-                    // await manager.softDelete(QuoteFeatures, { quote: { id: q.id } });
-                    await manager.softDelete(QuoteEntity, q.id);
-                }
+    //             // Soft delete quotes not included in update
+    //             const quoteIdsToKeep = updatedQuotes.map((q) => q.id);
+    //             const quotesToDelete = quotation.quotes?.filter((q) => !quoteIdsToKeep.includes(q.id)) || [];
+    //             for (const q of quotesToDelete) {
+    //                 // await manager.softDelete(QuoteFeatures, { quote: { id: q.id } });
+    //                 await manager.softDelete(QuoteEntity, q.id);
+    //             }
 
-                // Update ticket status
-                await manager.update(InsuranceTicket, ticket.id, {
-                    currentStepStart: Current_Step.REVISED_AND_UPDATE,
-                    currentStepStartAt: new Date(),
-                    nextStepStart: Current_Step.CUSTOMER_APPROVED,
-                    nextStepDeadline: ticket.nextStepDeadline,
-                    updatedBy: userEntity,
-                    updatedAt: new Date()
-                });
+    //             // Update ticket status
+    //             await manager.update(InsuranceTicket, ticket.id, {
+    //                 currentStepStart: Current_Step.REVISED_AND_UPDATE,
+    //                 currentStepStartAt: new Date(),
+    //                 nextStepStart: Current_Step.CUSTOMER_APPROVED,
+    //                 nextStepDeadline: ticket.nextStepDeadline,
+    //                 updatedBy: userEntity,
+    //                 updatedAt: new Date()
+    //             });
 
-                // Log ticket update
-                const logQuery = 'CALL log_insuranceTicket(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    //             // Log ticket update
+    //             const logQuery = 'CALL log_insuranceTicket(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
-                await manager.query(logQuery, [
-                    ticket.id,
-                    ticket.ticketNumber,
-                    ticket.insuranceUserId.id,
-                    ticket.assignTo || null,
-                    Ticket_Status.IN_PROGRESS,
-                    TICKET_LOG_EVENTS.TICKET_STEP_CHANGED,
-                    Current_Step.REVISED_AND_UPDATE,
-                    new Date(),
-                    Current_Step.CUSTOMER_APPROVED,
-                    ticket.nextStepDeadline,
-                    ticket.insuranceType,
-                    ticket.agentRemarks,
-                    ticket.othersRemarks,
-                    userEntity.id
-                ]);
-            });
+    //             await manager.query(logQuery, [
+    //                 ticket.id,
+    //                 ticket.ticketNumber,
+    //                 ticket.insuranceUserId.id,
+    //                 ticket.assignTo || null,
+    //                 Ticket_Status.IN_PROGRESS,
+    //                 TICKET_LOG_EVENTS.TICKET_STEP_CHANGED,
+    //                 Current_Step.REVISED_AND_UPDATE,
+    //                 new Date(),
+    //                 Current_Step.CUSTOMER_APPROVED,
+    //                 ticket.nextStepDeadline,
+    //                 ticket.insuranceType,
+    //                 ticket.agentRemarks,
+    //                 ticket.othersRemarks,
+    //                 userEntity.id
+    //             ]);
+    //         });
 
-            return { status: 'success', message: 'Quotation updated successfully' };
-        } catch (err) {
-            console.error('updateQuotation Error:', err);
-            return { status: 'error', message: 'Failed to update quotation: ' + err.message, data: null };
-        }
-    }
+    //         return { status: 'success', message: 'Quotation updated successfully' };
+    //     } catch (err) {
+    //         console.error('updateQuotation Error:', err);
+    //         return { status: 'error', message: 'Failed to update quotation: ' + err.message, data: null };
+    //     }
+    // }
 
     async newUpdateQuotation(reqBody: any): Promise<any> {
         try {
@@ -2188,12 +2332,13 @@ export class InsuranceQuotationService {
             if (!ticketId || !quotationId || !quotes || !Array.isArray(quotes)) {
                 return { status: 'error', message: 'Invalid request body', data: null };
             }
-            console.log('here is quotes madharchooo**********', quotes);
+            // console.log('here is quotes **********', quotes);
 
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
                 relations: ['insuranceUserId']
             });
+
             if (!ticket) return { status: 'error', message: 'Ticket not found', data: null };
 
             const quotation = await this.quotationRepository.findOne({
@@ -2211,7 +2356,7 @@ export class InsuranceQuotationService {
                     updatedAt: new Date()
                 });
 
-                const updatedQuotes: QuoteEntity[] = [];
+                // const updatedQuotes: QuoteEntity[] = [];
 
                 for (const quoteData of quotes) {
                     const company = await manager.findOne(InsuranceCompanies, {
@@ -2224,11 +2369,13 @@ export class InsuranceQuotationService {
                         );
 
                     // Check if quote exists
-                    let quote = quotation.quotes?.find((q) => q.id === quoteData.id);
+                    // console.log('line no 2361 quoteData ', quoteData);
 
-                    if (quote) {
+                    const exitstQuote = await manager.findOne(QuoteEntity, { where: { id: quoteData.quoteId } });
+
+                    if (exitstQuote) {
                         // Update existing quote
-                        await manager.update(QuoteEntity, quote.id, {
+                        await manager.update(QuoteEntity, exitstQuote.id, {
                             company,
                             product,
                             coveragedRequired: quoteData.coveragedRequired || null,
@@ -2237,9 +2384,9 @@ export class InsuranceQuotationService {
                             coverageIncluded: quoteData.coverageIncluded || null,
                             coverageType: quoteData.coverageType || null,
                             idv: quoteData.idv || null,
-                            features: quoteData.features || null,
-                            advantages: quoteData.advantages || null,
-                            benefits: quoteData.benefits || null,
+                            // features: quoteData.features || null,
+                            // advantages: quoteData.advantages || null,
+                            // benefits: quoteData.benefits || null,
                             shortDescription: quoteData.shortDescription || null,
                             additionalRemarks: quoteData.additionalRemarks || null,
                             updatedBy: userEntity,
@@ -2247,96 +2394,44 @@ export class InsuranceQuotationService {
                             isActive: true
                         });
                         // Reload updated quote
-                        quote = await manager.findOne(QuoteEntity, { where: { id: quote.id } });
-                    } else {
-                        // Create new quote
-                        quote = manager.create(QuoteEntity, {
-                            quotationId: quotation,
-                            company,
-                            product,
-                            coveragedRequired: quoteData.coveragedRequired || null,
-                            Premium: quoteData.Premium || null,
-                            ncb: quoteData.ncb || null,
-                            coverageIncluded: quoteData.coverageIncluded || null,
-                            coverageType: quoteData.coverageType || null,
-                            idv: quoteData.idv || null,
-                            features: quoteData.features || null,
-                            advantages: quoteData.advantages || null,
-                            benefits: quoteData.benefits || null,
-                            shortDescription: quoteData.shortDescription || null,
-                            additionalRemarks: quoteData.additionalRemarks || null,
-                            createdBy: userEntity,
-                            updatedBy: userEntity,
-                            isActive: true
-                        });
-                        quote = await manager.save(QuoteEntity, quote);
-                    }
+                        // quote = await manager.findOne(QuoteEntity, { where: { id: quote.id } });
 
-                    updatedQuotes.push(quote);
-                    // till there are no issue
-                    // Handle QuoteFeatures
-                    const existingFeatures = await manager.find(QuoteFeatures, {
-                        where: { quote: { id: quote.id } },
-                        relations: ['insuranceFeatures']
-                    });
+                        for (const feat of quoteData.productFeatures) {
+                            // console.log('line no 2390 product feat is ', exitstQuote.id, feat);
 
-                    const featureIdsToKeep = (quoteData.productFeatures || []).map((f) => f.featureId);
-                    console.log('features id to keep', featureIdsToKeep);
-
-                    // Soft delete removed features
-                    const featuresToDelete = existingFeatures.filter(
-                        (f) => !featureIdsToKeep.includes(f.insuranceFeatures.id)
-                    );
-                    if (featuresToDelete.length > 0) {
-                        await manager.softDelete(
-                            QuoteFeatures,
-                            featuresToDelete.map((f) => f.id)
-                        );
-                    }
-                    console.log('features id to delete ', featuresToDelete);
-
-                    // Update existing or create new features
-                    for (const feat of quoteData.productFeatures || []) {
-                        const featureEntity = await manager.findOne(InsuranceFeatures, {
-                            where: { id: feat.featureId }
-                        });
-                        if (!featureEntity) continue;
-
-                        const existing = existingFeatures.find((f) => f.insuranceFeatures.id === feat.featureId);
-                        console.log('existing features', existing);
-
-                        if (existing) {
-                            await manager.update(QuoteFeatures, existing.id, {
-                                isActive: feat.status,
-                                updatedBy: userEntity,
-                                updatedAt: new Date()
+                            const existingFeatures = await manager.findOne(QuoteFeatures, {
+                                where: {
+                                    quote: { id: exitstQuote.id },
+                                    insuranceFeatures: { id: feat.featureId }
+                                },
+                                relations: ['insuranceFeatures']
                             });
-                        } else if (feat.status) {
-                            const newFeature = manager.create(QuoteFeatures, {
-                                quote,
-                                insuranceFeatures: featureEntity,
-                                isActive: true,
-                                createdBy: userEntity,
-                                updatedBy: userEntity
-                            });
-                            await manager.save(QuoteFeatures, newFeature);
+
+                            if (existingFeatures) {
+                                const updatedFeatures = await manager.update(QuoteFeatures, existingFeatures.id, {
+                                    isActive: feat.status,
+                                    updatedAt: new Date(),
+                                    updatedBy: userEntity
+                                });
+                                // console.log('line not 2404 feat is ', feat);
+                            } else {
+                                // console.log('line no 2407 in if feat feat not exist');
+                                if (feat.status) {
+                                    // console.log('line no 2409 in if feat feat not exist and status is true');
+
+                                    const newFeature = await manager.create(QuoteFeatures, {
+                                        quote: { id: quoteData.quoteId },
+                                        insuranceFeatures: { id: feat.featureId },
+                                        isActive: true,
+                                        createdAt: new Date(),
+                                        createdBy: userEntity
+                                    });
+                                    await manager.save(newFeature);
+                                }
+                            }
                         }
                     }
                 }
-                console.log('updated quotes is here ', updatedQuotes);
-                console.log(
-                    ' quotes is here ',
-                    quotation.quotes.map((d) => d)
-                );
-
-                // Soft delete quotes not included in update
-                const quoteIdsToKeep = updatedQuotes.map((q) => q.id);
-                const quotesToDelete = quotation.quotes?.filter((q) => !quoteIdsToKeep.includes(q.id)) || [];
-                for (const q of quotesToDelete) {
-                    // await manager.softDelete(QuoteFeatures, { quote: { id: q.id } });
-                    await manager.softDelete(QuoteEntity, q.id);
-                }
-
                 // Update ticket status
                 await manager.update(InsuranceTicket, ticket.id, {
                     currentStepStart: Current_Step.REVISED_AND_UPDATE,
