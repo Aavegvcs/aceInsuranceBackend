@@ -827,9 +827,9 @@ export class UserService {
         let user: User = await this.findOneByEmailAndCompany(email, existsComany);
 
         if (user) throw new ConflictException(`This user already exists.`);
-        const generatedPass = await generateRandomPassword();
+        // const generatedPass = await generateRandomPassword();
         // console.log('generatedPass', generatedPass);
-        const hashedPassword = await createPasswordHash(generatedPass);
+        const hashedPassword = await createPasswordHash('12345');
         // console.log('hashedPassword', hashedPassword);
 
         user = new User();
@@ -851,7 +851,7 @@ export class UserService {
         await this.userRoleService.create(dbUser.id, roleId);
         // write here email service
         if (dbUser) {
-            let htmlContent = passwordForInsuranceLogin(email, generatedPass, firstName);
+            let htmlContent = passwordForInsuranceLogin(email, '12345', firstName);
             const mailedData = await this.emailService.sendEmail(email, 'Your Acumen Account Credentials', htmlContent);
             if (!mailedData) {
                 throw new InternalServerErrorException('Email not sent');
@@ -879,7 +879,7 @@ export class UserService {
         try {
             const query = 'CALL get_employeeRo()';
             result = await this.userRepository.query(query);
-            console.log(result[0]);
+            // console.log(result[0]);
         } catch (error) {
             console.log('-api: backend/user/getEmployeeRo', error.message);
             throw new InternalServerErrorException(error.message);
@@ -947,7 +947,7 @@ export class UserService {
             });
 
             const existrole = await this.roleRepo.findOne({
-                where: { id: 6 }
+                where: { roleName: reqBody.roles }
             });
 
             // -----------------------------

@@ -421,6 +421,7 @@ export class BranchService {
                 if (!createBranchDto.branchCode || typeof createBranchDto.branchCode !== 'string') {
                     throw new BadRequestException('Branch id is required and must be a valid string');
                 }
+                console.log('reqbody----------', createBranchDto);
 
                 const existingBranch = await transactionalEntityManager.findOne(Branch, {
                     where: { name: createBranchDto.branchCode }
@@ -448,17 +449,34 @@ export class BranchService {
                 });
 
                 let controlBranch = null;
-                const controlBranchId = createBranchDto.controlBranchId?.toUpperCase();
-                const isSelfControlBranch = controlBranchId === branchCode.toUpperCase();
-
-                if (controlBranchId && !isSelfControlBranch) {
+                if (createBranchDto.controlBranchId) {
                     controlBranch = await transactionalEntityManager.findOne(Branch, {
-                        where: { id: controlBranchId }
+                        where: { id: createBranchDto.controlBranchId }
                     });
                     if (!controlBranch) {
-                        throw new NotFoundException(`Control Branch with ID ${controlBranchId} not found`);
+                        throw new NotFoundException(
+                            `Control Branch with ID ${createBranchDto.controlBranchId} not found`
+                        );
                     }
                 }
+
+                const rawControlBranch = controlBranch.branchCode;
+
+                const controlBranchId = rawControlBranch ? String(rawControlBranch).toUpperCase() : null;
+
+                const isSelfControlBranch = controlBranchId && controlBranchId === branchCode.toUpperCase();
+
+                // const controlBranchId = createBranchDto.controlBranchId.toUpperCase();
+                // const isSelfControlBranch = controlBranchId === branchCode.toUpperCase();
+
+                // if (controlBranchId) {
+                //     controlBranch = await transactionalEntityManager.findOne(Branch, {
+                //         where: { branchCode: controlBranchId }
+                //     });
+                //     if (!controlBranch) {
+                //         throw new NotFoundException(`Control Branch with ID ${controlBranchId} not found`);
+                //     }
+                // }
 
                 const newBranch = transactionalEntityManager.create(Branch, {
                     branchCode: branchCode,
@@ -475,12 +493,13 @@ export class BranchService {
                     phone: createBranchDto.phone,
                     contactPerson: createBranchDto.contactPerson,
                     panNumber: createBranchDto.panNumber,
-                    activationDate: createBranchDto.activationDate,
+                    activationDate: new Date(),
                     regionalManager: regionalManager || undefined, // must be User entity
                     mappingStatus: createBranchDto.mappingStatus ?? false,
                     sharing: createBranchDto.sharing,
                     terminals: createBranchDto.terminals || [],
-                    controlBranch: controlBranch || null // must be Branch entity
+                    controlBranch: controlBranch.branchCode || null, // must be Branch entity,
+                    createdBy: userEntity
                 });
 
                 let savedBranch = await transactionalEntityManager.save(Branch, newBranch);
@@ -514,6 +533,87 @@ export class BranchService {
                     throw error;
                 }
                 throw new BadRequestException(`Failed to create branch: ${error.message}`);
+            });
+    }
+
+    // ------------- update branches ---------------------
+
+    async updateBranch(reqBody: any): Promise<any> {
+        const userEntity = await this.loggedInsUserService.getCurrentUser();
+        // console.log("in update branch reqbody", reqBody);
+
+        return this.branchRepository.manager
+            .transaction(async (transactionalEntityManager) => {
+                const existingBranch = await transactionalEntityManager.findOne(Branch, {
+                    where: { branchCode: reqBody.branchCode }
+                });
+
+                if (!existingBranch) {
+                    throw new BadRequestException(`Branch with code ${reqBody.branchCode} does not exist`);
+                }
+
+                let state: State | null = null;
+                state = await transactionalEntityManager.findOne(State, {
+                    where: { id: reqBody.stateId }
+                });
+                if (!state) {
+                    throw new NotFoundException(`State with ID ${reqBody.stateId} not found`);
+                }
+
+                let regionalManager: User | null = null;
+                regionalManager = await transactionalEntityManager.findOne(User, {
+                    where: { id: reqBody.regionalManagerId }
+                });
+                if (!regionalManager) {
+                    throw new NotFoundException(`Regional Manager with ID ${reqBody.regionalManagerId} not found`);
+                }
+
+                let controlBranch: Branch | null = null;
+
+                controlBranch = await transactionalEntityManager.findOne(Branch, {
+                    where: { id: reqBody.controlBranchId }
+                });
+
+                if (!controlBranch) {
+                    throw new NotFoundException(`Control Branch not found`);
+                }
+
+                // 5. Update existing branch entity
+                transactionalEntityManager.merge(Branch, existingBranch, {
+                    name: reqBody.branchName,
+                    state: state || null,
+                    city: reqBody.city,
+                    pincode: reqBody.pincode,
+                    isActive: reqBody.active ?? existingBranch.isActive,
+                    address: reqBody.address,
+                    email: reqBody.email,
+                    phone: reqBody.phone,
+                    contactPerson: reqBody.contactPerson,
+                    panNumber: reqBody.panNumber,
+                    regionalManager: regionalManager || null,
+                    controlBranch: controlBranch.branchCode,
+                    updatedBy: userEntity
+                });
+
+                const updatedBranch = await transactionalEntityManager.save(Branch, existingBranch);
+
+                return standardResponse(
+                    true,
+                    'Branch details updated successfully',
+                    200,
+                    updatedBranch,
+                    null,
+                    'branches/updateBranch'
+                );
+            })
+            .catch((error) => {
+                this.logger.error(`api-branches/updateBranch - Failed to update branch: ${error.message}`);
+
+                if (error instanceof BadRequestException || error instanceof NotFoundException) {
+                    throw error;
+                }
+
+                throw new BadRequestException(`Failed to update branch: ${error.message}`);
             });
     }
 
@@ -665,6 +765,8 @@ export class BranchService {
             const query = 'CALL get_branch()';
 
             const result = await this.branchRepository.query(query);
+            // console.log("this is is contorler branch", result[0]);
+
             return {
                 status: 'success',
                 message: 'success fully data fetch',
@@ -677,15 +779,6 @@ export class BranchService {
     }
 
     async getDetailsBranch(): Promise<any> {
-        console.log('in get details branch api');
-
-        // const branches = await this.branchRepository
-        //     .createQueryBuilder('branch')
-        //      .leftJoinAndSelect('branch.controlBranch', 'controlBranch')
-        //     .leftJoinAndSelect('branch.regionalManager', 'regionalManager')
-        //     .leftJoinAndSelect('branch.state', 'state')
-        //     .where('branch.deletedAt IS NULL')
-        //     .getMany();
         const branches = await this.branchRepository.find({
             relations: {
                 regionalManager: true,
@@ -708,11 +801,6 @@ export class BranchService {
             }
         }
 
-        console.log('branches is here ===================================', branches);
-        // let branches = await this.branchRepository.find({
-        //     relations: ['regionalManager', 'controlBranch', 'state']
-        // });
-        // Transform results
         const items = branches.map((branch: any) => ({
             branchId: branch?.id,
             branchCode: branch?.branchCode,
@@ -725,6 +813,8 @@ export class BranchService {
             activationDate: branch?.activationDate,
             stateId: branch?.state?.id,
             stateName: branch?.state?.name,
+            city: branch?.city,
+            address: branch?.address,
             regionalManagerId: branch?.regionalManager?.id || null,
             regionalManagerName: branch?.regionalManager
                 ? `${branch.regionalManager.firstName || ''}(${branch.regionalManager.employeeCode || ''})`.trim()
@@ -738,7 +828,7 @@ export class BranchService {
             updatedAt: branch?.updatedAt,
             deletedAt: branch?.deletedAt
         }));
-        console.log('after fetching branch here is data', items);
+        // console.log('after fetching branch here is data', items);
 
         return { items };
     }

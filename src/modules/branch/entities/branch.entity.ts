@@ -104,6 +104,14 @@ export class Branch extends BaseEntity {
     @Column({ name: 'contact_person', nullable: true })
     contactPerson: string;
 
+        @ManyToOne(() => User)
+    @JoinColumn({ name: 'created_by' })
+    createdBy: User;
+
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'updated_by' })
+    updatedBy: User;
+
     @CreateDateColumn({
         type: 'timestamp',
         default: () => 'CURRENT_TIMESTAMP(6)'

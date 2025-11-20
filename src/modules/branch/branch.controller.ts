@@ -32,6 +32,12 @@ export class BranchController {
         return this.branchService.create(reqBody);
     }
 
+    @UseGuards(JwtInsAuthGuard)
+    @Patch('updateBranch')
+    async updateBranch(@Body() reqBody:any) {
+        return this.branchService.updateBranch(reqBody);
+    }
+
     // @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get all branches' })
     @Post('list')

@@ -40,9 +40,9 @@ export class StatesService {
             .select(['state.id AS stateId', 'state.name AS stateName'])
             .getRawMany();
 
-        console.log('this is state printing here ------------------', result);
+        // console.log('this is state printing here ------------------', result);
 
-        return standardResponse(true, 'state successfully fetched', 200, result, null, 'insurance-claim/updatedClaim');
+        return standardResponse(true, 'state successfully fetched', 200, result, null, 'state/findAll');
     }
 
     async findOne(id: number) {
