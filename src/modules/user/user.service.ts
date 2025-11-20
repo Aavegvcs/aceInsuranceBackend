@@ -44,6 +44,9 @@ import { Branch } from '@modules/branch/entities/branch.entity';
 import { EmailService } from '@modules/email/email.service';
 import { passwordForInsuranceLogin } from 'src/utils/email-templates/otp/login';
 import { Company } from '@modules/company/entities/company.entity';
+import { standardResponse } from 'src/utils/helper/response.helper';
+import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
+import { UserRole } from '@modules/user-role/entities/user-role.entity';
 
 @Injectable()
 export class UserService {
@@ -54,10 +57,18 @@ export class UserService {
         private mediaService: MediaService,
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        @InjectRepository(Branch)
+        private branchRepository: Repository<Branch>,
         private userRoleService: UserRoleService,
         private roleService: RoleService,
         private companyService: CompanyService,
-        private emailService: EmailService
+        private emailService: EmailService,
+        private readonly loggedInsUserService: LoggedInsUserService,
+
+        @InjectRepository(Company)
+        private readonly companyRepo: Repository<Company>,
+        @InjectRepository(Role)
+        private readonly roleRepo: Repository<Role>
     ) {}
 
     // async getUserListOfSingleType(data: UsersListOfTypeDto, req: any) {
@@ -768,7 +779,7 @@ export class UserService {
         try {
             const query = 'CALL get_userByCompanyId(?)';
             result = await this.userRepository.query(query, [reqBody.companyId]);
-            // console.log(result[0]);
+            //  console.log("user finding api---------------",result[0]);
         } catch (error) {
             console.log('-api: backend/user/getUserByCompanyId', error.message);
             throw new InternalServerErrorException(error.message);
@@ -781,7 +792,7 @@ export class UserService {
         const query = 'CALL get_userForFilter()';
         const result = await this.userRepository.query(query);
         // console.log(result[0]);
-        
+
         return result[0];
     }
 
@@ -829,8 +840,7 @@ export class UserService {
         user.dateOfBirth = dateOfBirth;
         user.gender = gender;
         user.company = existsComany;
-        user.branch = branch,
-        user.department = department;
+        (user.branch = branch), (user.department = department);
         user.userType = userType;
         // user.userType = (await this.roleService.findOne(roleId)).roleName;
         user.reportingOfficer = reportingOfficer;
@@ -876,5 +886,148 @@ export class UserService {
         }
 
         return result[0];
+    }
+
+    async employeeBulkUpload(reqBody: any): Promise<any> {
+        const failed: { index: number; name: string; reason: string }[] = [];
+        const data = reqBody.data || [];
+        const startIndex = reqBody.startIndex;
+        const userEntity = await this.loggedInsUserService.getCurrentUser();
+
+        if (!userEntity) {
+            return standardResponse(false, 'Logged user not found', 404, null, null, 'users/employeeBulkUpload');
+        }
+
+        try {
+            if (!Array.isArray(data) || data.length === 0) {
+                return standardResponse(
+                    true,
+                    'No data provided for bulk upload',
+                    404,
+                    {
+                        successCount: 0,
+                        failedCount: 0,
+                        failed: []
+                    },
+                    null,
+                    'users/employeeBulkUpload'
+                );
+            }
+
+            const incomingEmployeeCodes = data.map((item) => item['Staff Code']);
+            // console.log('incoming branch codes', incomingBranchCodes);
+
+            const existingEmployees = await this.userRepository.find({
+                where: { employeeCode: In(incomingEmployeeCodes) }
+            });
+
+            const existingSet = new Set(existingEmployees.map((b) => b.employeeCode));
+            // console.log('existing branch set', existingSet);
+
+            const uniqueData = [];
+            const headerOffset = 1;
+
+            data.forEach((item, index) => {
+                const rowIndex = startIndex + index + headerOffset;
+
+                if (existingSet.has(item['Staff Code'])) {
+                    failed.push({
+                        index: rowIndex,
+                        name: item.Code,
+                        reason: `Employee '${item.Code}' already exists`
+                    });
+                } else {
+                    uniqueData.push(item);
+                }
+            });
+            // console.log('failed data', failed);
+            // console.log('unique data is here', uniqueData);
+            const existcompany = await this.companyRepo.findOne({
+                where: { id: 1 }
+            });
+
+            const existrole = await this.roleRepo.findOne({
+                where: { id: 6 }
+            });
+
+            // -----------------------------
+            // INSERTING CLEAN DATA
+            // -----------------------------
+            for (let i = 0; i < uniqueData.length; i++) {
+                const item = uniqueData[i];
+                const rowIndex = startIndex + i + headerOffset;
+
+                try {
+                    const branch = await this.branchRepository.findOne({
+                        where: { branchCode: item['Branch Code'] }
+                    });
+                    const hashedPassword = await createPasswordHash('12345');
+
+                    const user = new User();
+
+                    (user.employeeCode = item['Staff Code']),
+                        (user.firstName = item['Staff name']),
+                        (user.phoneNumber = item.Mobile),
+                        (user.email = item.Email),
+                        (user.password = hashedPassword),
+                        (user.userType = existrole),
+                        (user.status = 'active'),
+                        (user.company = existcompany),
+                        (user.branch = branch),
+                        (user.createdAt = new Date()),
+                        (user.panNumber = item['Pan NO']),
+                        (user.isActive = true),
+                        (user.createdBy = userEntity);
+
+                    //  console.log('finally inserting data', user);
+
+                    const dbUser = await this.userRepository.save(user);
+                    await this.userRoleService.create(dbUser.id, existrole.id);
+                } catch (error) {
+                    failed.push({
+                        index: rowIndex,
+                        name: item.Code,
+                        reason: error.message || 'Database error'
+                    });
+                }
+            }
+
+            const successCount = uniqueData.length - failed.length;
+            const failedCount = failed.length;
+
+            let message = 'Data inserted successfully.';
+            if (successCount > 0 && failedCount > 0) message = 'Data partially inserted!';
+            if (successCount === 0) message = 'Failed to insert data!';
+
+            return standardResponse(
+                true,
+                message,
+                200,
+                {
+                    successCount,
+                    failedCount,
+                    failed
+                },
+                null,
+                'users/employeeBulkUpload'
+            );
+        } catch (error) {
+            return standardResponse(
+                false,
+                'Failed! to insert data',
+                500,
+                {
+                    successCount: 0,
+                    failedCount: data.length,
+                    failed: data.map((item, index) => ({
+                        index: startIndex + index,
+                        name: item.Code,
+                        reason: error.message
+                    }))
+                },
+                null,
+                'users/employeeBulkUpload'
+            );
+        }
     }
 }

@@ -8,6 +8,6 @@ export class Country extends BaseEntity {
     @Column()
     name: string;
 
-    @OneToMany(() => State, (state) => state.country)
-    states: State[];
+    // @OneToMany(() => State, (state) => state.country)
+    // states: State[];
 }

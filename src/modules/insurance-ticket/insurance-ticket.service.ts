@@ -529,6 +529,15 @@ export class InsuranceTicketService {
         // console.log(result[0]);
         return result[0];
     }
+
+
+        async getEmployee(): Promise<any> {
+        const query = 'CALL get_acumenEmployee()';
+
+        const result = await this.userRepo.query(query);
+        // console.log(result[0]);
+        return result[0];
+    }
     // ============================ api for get ticket details ============================
 
     async getTicketDetails(ticketId: number): Promise<TicketResponse> {

@@ -79,7 +79,7 @@ export class CreateEmployeeDto {
     @ApiProperty({ example: 'ABC1', description: 'Branch ID the employee belongs to' })
     @IsNotEmpty()
     @IsString()
-    branchId: string;
+    branchId: number;
 
     @ApiProperty({ example: '2024-01-01T12:00:00.000Z', description: 'Date of joining' })
     @IsOptional()

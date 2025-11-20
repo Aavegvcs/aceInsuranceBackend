@@ -6,6 +6,7 @@ import { UpdateStateDto } from './dto/request/update-state.dto';
 import { CreateStateDto } from './dto/request/create-state.dto';
 import { CountriesService } from '../countries/countries.service';
 import { Country } from '../countries/entities/country.entity';
+import { standardResponse } from 'src/utils/helper/response.helper';
 
 @Injectable()
 export class StatesService {
@@ -28,13 +29,20 @@ export class StatesService {
 
         state = new State();
         state.name = body?.stateName;
-        state.country = country;
+        // state.country = country;
 
         return await this.stateRepo.save(state);
     }
 
-    async findAll() {
-        return await this.stateRepo.find();
+    async findAll(): Promise<any> {
+        const result = await this.stateRepo
+            .createQueryBuilder('state')
+            .select(['state.id AS stateId', 'state.name AS stateName'])
+            .getRawMany();
+
+        console.log('this is state printing here ------------------', result);
+
+        return standardResponse(true, 'state successfully fetched', 200, result, null, 'insurance-claim/updatedClaim');
     }
 
     async findOne(id: number) {

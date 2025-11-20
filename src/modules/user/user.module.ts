@@ -18,6 +18,9 @@ import { BranchModule } from '@modules/branch/branch.module';
 import { EmailService } from '@modules/email/email.service';
 import { HttpModule } from '@nestjs/axios';
 import { EmailModule } from '@modules/email/email.module';
+import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
+import { UserRole } from '@modules/user-role/entities/user-role.entity';
+import { Company } from '@modules/company/entities/company.entity';
 
 @Module({
     imports: [
@@ -27,7 +30,7 @@ import { EmailModule } from '@modules/email/email.module';
         NotificationModule,
         AddressModule,
         ReferenceModule,
-        TypeOrmModule.forFeature([User, Role, Branch]),
+        TypeOrmModule.forFeature([User, Role, Branch, Company]),
         forwardRef(() => MediaModule),
         HttpModule,
         forwardRef(() => EmailModule),
@@ -35,7 +38,7 @@ import { EmailModule } from '@modules/email/email.module';
         forwardRef(() => BranchModule),
 
     ],
-    providers: [UserService, EmailService],
+    providers: [UserService, EmailService, LoggedInsUserService],
     controllers: [UserController],
     exports: [UserService]
 })

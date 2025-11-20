@@ -25,7 +25,7 @@ export class StatesController {
         return { message: 'States created successfully' };
     }
 
-    @Get()
+    @Get('getAllState')
     async findAll() {
         return await this.statesService.findAll();
     }

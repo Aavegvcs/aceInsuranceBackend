@@ -19,9 +19,9 @@ export class State extends BaseEntity {
     @Column({ nullable: false })
     name: string;
 
-    @ManyToOne(() => Country, (country) => country.states, { nullable: false })
-    @JoinColumn({ name: 'country' })
-    country: Country;
+    // @ManyToOne(() => Country, (country) => country.states, { nullable: false })
+    // @JoinColumn({ name: 'country' })
+    // country: Country;
 
     @OneToMany(() => City, (city) => city.state)
     cities: City[];

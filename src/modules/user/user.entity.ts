@@ -88,6 +88,8 @@ export class User extends BaseEntity {
     @JoinColumn({ name: 'userType' })
     userType: Role;
 
+    @Column({ nullable: true })
+    panNumber: string;
     // Standalone clientId column for lookup during upserts
     @Column({ nullable: true, unique: true })
     clientId: string;
@@ -123,7 +125,7 @@ export class User extends BaseEntity {
     @JoinColumn({ name: 'branch_id' })
     branch: Branch;
 
-    @ManyToOne(() => Department)
+    @ManyToOne(() => Department, {nullable: true})
     @JoinColumn({ name: 'department_id' })
     department: Department;
 
@@ -152,7 +154,7 @@ export class User extends BaseEntity {
     @Column({ type: 'simple-array', nullable: true })
     addresses: string[];
 
-    @ManyToOne(() => Country)
+    @ManyToOne((nullable:true) => Country)
     @JoinColumn({ name: 'country' })
     country: Country;
 
@@ -210,4 +212,7 @@ export class User extends BaseEntity {
 
     @Column({ name: 'otpCreatedAt', type: 'timestamp', default: null, nullable: true })
     otpCreatedAt: Date;
+
+    @OneToMany(() => Branch, (branch) => branch.regionalManager, { nullable: true })
+    managedBranches: Branch[];
 }

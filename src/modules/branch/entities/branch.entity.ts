@@ -11,7 +11,8 @@ import {
     PrimaryColumn,
     OneToOne,
     ManyToMany,
-    JoinTable
+    JoinTable,
+    PrimaryGeneratedColumn
 } from 'typeorm';
 // import { Client } from '@modules/client/entities/client.entity';
 import { Employee } from '@modules/employee/entities/employee.entity';
@@ -25,8 +26,8 @@ import { Department } from '@modules/department/entities/department.entity';
 
 @Entity()
 export class Branch extends BaseEntity {
-    @PrimaryColumn({ unique: true, type: 'varchar', length: 50, nullable: false })
-    id: string;
+    @PrimaryGeneratedColumn()
+    id: number;
 
     
     @Column({
@@ -50,16 +51,16 @@ export class Branch extends BaseEntity {
     @JoinColumn({ name: 'state_id' })
     state: State;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     city: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: true })
     pincode: number;
 
     @Column({name:'is_active', default: true })
     isActive: boolean;
 
-    @Column()
+    @Column({nullable:true})
     address: string;
 
     @Column({ type: 'simple-array', nullable: true })
@@ -68,12 +69,19 @@ export class Branch extends BaseEntity {
     @Column({ nullable: true })
     email: string;
 
-    @ManyToOne(() => Employee, (Employee) => Employee.managedBranches, { nullable: true })
-    regionalManager: Employee;
+    @ManyToOne(() => User, (User) => User.managedBranches, { nullable: true })
+    @JoinColumn({ name: 'regional_manager_id' })
+    regionalManager: User;
 
-    @ManyToOne(() => Employee, (employee) => employee.rmBranches, { nullable: true })
-    @JoinColumn({ name: 'rmId' })
-    rm: Employee;
+    @Column({ nullable: true })
+    region: string;
+
+    // @ManyToOne(() => Employee, (Employee) => Employee.managedBranches, { nullable: true })
+    // regionalManager: Employee;
+
+    // @ManyToOne(() => Employee, (employee) => employee.rmBranches, { nullable: true })
+    // @JoinColumn({ name: 'rmId' })
+    // rm: Employee;
 
     @Column({ nullable: true })
     phone: string;
@@ -112,22 +120,9 @@ export class Branch extends BaseEntity {
     @DeleteDateColumn({ type: 'timestamp', nullable: true })
     deletedAt: Date;
 
-    // One-to-Many with Clients
-    // @OneToMany(() => Client, (client) => client.branch)
-    // clients: Client[];
 
-    // // One-to-Many with Clients
-    // @OneToMany(() => Client, (client) => client.regionBranch)
-    // onlineClients: Client[];
-
-    // Self-referencing Many-to-One (Each branch can have one control branch)
-    @ManyToOne(() => Branch, (branch) => branch.subBranches, { nullable: true })
-    @JoinColumn({ name: 'control_branch_id' })
-    controlBranch: Branch;
-
-    // Self-referencing One-to-Many (Each branch can be a control branch for many)
-    @OneToMany(() => Branch, (branch) => branch.controlBranch)
-    subBranches: Branch[];
+    @Column({ nullable: true })
+    controlBranch: string;
 
     @OneToMany(() => Employee, (employee) => employee.branch)
     employees: Employee[];

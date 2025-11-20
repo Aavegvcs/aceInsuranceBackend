@@ -78,8 +78,8 @@ export class Employee extends BaseEntity {
     managedBranches: Branch[];
 
     // New one-to-many relationship for branches where the employee is an RM
-    @OneToMany(() => Branch, (branch) => branch.rm, { nullable: true })
-    rmBranches: Branch[];
+    // @OneToMany(() => Branch, (branch) => branch.rm, { nullable: true })
+    // rmBranches: Branch[];
 
     // @OneToMany(() => Client, (client) => client.rm)
     // rmClients: Client[];

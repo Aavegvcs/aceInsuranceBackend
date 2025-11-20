@@ -18,18 +18,19 @@ import { UpdateBranchDto } from './dto/update-branch.dto';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@modules/auth/jwt-auth.guard';
 import { EmployeeService } from '@modules/employee/employee.service';
+import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
 
 @ApiTags('Branches')
 @Controller('branches')
 export class BranchController {
     constructor(private readonly branchService: BranchService, private readonly employeeService: EmployeeService) { }
 
-    // @UseGuards(JwtAuthGuard)
-    // @Post('create')
-    // @ApiOperation({ summary: 'Create a new branch' })
-    // async create(@Body() createBranchDto: CreateBranchDto) {
-    //     return this.branchService.create(createBranchDto);
-    // }
+    @UseGuards(JwtInsAuthGuard)
+    @Post('create')
+    @ApiOperation({ summary: 'Create a new branch' })
+    async create(@Body() reqBody: any) {
+        return this.branchService.create(reqBody);
+    }
 
     // @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get all branches' })
@@ -42,21 +43,21 @@ export class BranchController {
     @UseGuards(JwtAuthGuard)
     @Get(':id')
     @ApiOperation({ summary: 'Get a branch by ID' })
-    async findOne(@Param('id') id: string) {
+    async findOne(@Param('id') id: any) {
         return this.branchService.findById(id);
     }
 
     @UseGuards(JwtAuthGuard)
     @Patch(':id')
     @ApiOperation({ summary: 'Update a branch' })
-    async update(@Param('id') id: string, @Body() updateBranchDto: UpdateBranchDto) {
+    async update(@Param('id') id: any, @Body() updateBranchDto: UpdateBranchDto) {
         return this.branchService.update(id, updateBranchDto);
     }
 
     @UseGuards(JwtAuthGuard)
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a branch' })
-    async remove(@Param('id') id: string) {
+    async remove(@Param('id') id: any) {
         return this.branchService.remove(id);
     }
 
@@ -91,6 +92,25 @@ export class BranchController {
             Logger.error(`Error fetching control branch and regional managers: ${error.message}`);
             throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+ 
+
+    
+    @Post('getDetailsBranch')
+    async getDetailsBranch(@Body() body:any) {
+    
+        
+        const response = await this.branchService.getDetailsBranch();
+        return response;
+       
+    }
+
+
+    @UseGuards(JwtInsAuthGuard)
+    @Post('branchBulkUpload')
+    @ApiOperation({ summary: 'bulk upload of product' })
+    async productBulkUpbranchBulkUploadload(@Body() reqBody: any) {
+        return this.branchService.branchBulkUpload(reqBody);
     }
 
 

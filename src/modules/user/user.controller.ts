@@ -38,4 +38,10 @@ export class UserController {
         return await this.userService.getEmployeeRo(reqBody);
     }
 
+    @UseGuards(JwtInsAuthGuard)
+     @Post('employeeBulkUpload')
+    async employeeBulkUpload(@Body() reqBody: any) {
+        return await this.userService.employeeBulkUpload(reqBody);
+    }
+
 }

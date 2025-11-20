@@ -94,7 +94,7 @@ export class EmployeeService {
             throw new BadRequestException('Invalid Department ID');
         }
 
-        const empId = generateUUID('EMP', branch.id);
+        const empId = generateUUID('EMP', branch.id.toString());
         const newEmployee = this.employeeRepo.create({
             user: newUser,
             id: empId,
@@ -215,7 +215,7 @@ export class EmployeeService {
                 salary,
                 status
             } = body;
-            console.log("body---------->", body);
+            // console.log("body---------->", body);
             // Validation: Check required fields
             if (!branchId) {
                 throw new BadRequestException('Branch ID is required');
@@ -390,149 +390,5 @@ export class EmployeeService {
                 data: null
             };
         }
-    }
-
-    // async calculateDealerRevenue(employeeId?: string, terminalId?: string, cocd?: string): Promise<void> {
-    //     const segmentRevenues = await this.dataSource
-    //         .getRepository(SegmentRevenue)
-    //         .createQueryBuilder('sr')
-    //         .where((qb) => {
-    //             const subQuery = qb
-    //                 .subQuery()
-    //                 .select('MAX(DATE(sub.tradeDate))')
-    //                 .from(SegmentRevenue, 'sub')
-    //                 .getQuery();
-    //             return `DATE(sr.tradeDate) = ${subQuery}`;
-    //         })
-    //         .getMany();
-
-    //     if (!segmentRevenues.length) {
-    //         this.logger.warn('No segment revenue records found for latest trade date');
-    //         return;
-    //     }
-
-    //     const clientIds = [...new Set(segmentRevenues.map((sr) => sr.clientId))];
-    //     const clients = await this.dataSource.getRepository(Client).find({
-    //         where: { id: In(clientIds) },
-    //         relations: [
-    //             'equityDealer',
-    //             'equityDealer.employee',
-    //             'commodityDealer1',
-    //             'commodityDealer1.employee',
-    //             'commodityDealer2',
-    //             'commodityDealer2.employee',
-    //             'rm'
-    //         ]
-    //     });
-    //     const clientMap = new Map(clients.map((c) => [c.id, c]));
-
-    //     const filteredRevenues = segmentRevenues.filter((sr) => {
-    //         const client = clientMap.get(sr.clientId);
-    //         const matchEmp =
-    //             !employeeId ||
-    //             (client &&
-    //                 (client.equityDealer?.employee?.id === employeeId ||
-    //                     client.commodityDealer1?.employee?.id === employeeId ||
-    //                     client.commodityDealer2?.employee?.id === employeeId ||
-    //                     client.rm?.id === employeeId));
-    //         const matchTerm = !terminalId || sr.terminalId === terminalId;
-    //         const matchCocd = !cocd || sr.cocd === cocd;
-    //         return matchEmp && matchTerm && matchCocd;
-    //     });
-
-    //     if (!filteredRevenues.length) {
-    //         this.logger.warn('No segment revenues matched the provided filters');
-    //         return;
-    //     }
-
-    //     const grouped = this.groupAndAggregateSegmentRevenues(filteredRevenues);
-    //     const upsertData: Partial<DealerRMRevenue>[] = [];
-
-    //     for (const group of Object.values(grouped)) {
-    //         const client = clientMap.get(group.clientId);
-    //         if (!client) continue;
-    //         const periodStart = new Date(group.tradeDate);
-    //         periodStart.setHours(0, 0, 0, 0);
-
-    //         const entities = [
-    //             { emp: client.equityDealer?.employee, role: RevenueRole.DEALER },
-    //             { emp: client.commodityDealer1?.employee, role: RevenueRole.DEALER },
-    //             { emp: client.commodityDealer2?.employee, role: RevenueRole.DEALER },
-    //             { emp: client.rm, role: RevenueRole.RM }
-    //         ];
-
-    //         for (const { emp, role } of entities) {
-    //             if (!emp) continue;
-
-    //             const id = `${emp.id}_${role}_${group.terminalId || 'no-terminal'}_${
-    //                 periodStart.toISOString().split('T')[0]
-    //             }_${group.cocd || 'no-cocd'}`;
-
-    //             upsertData.push({
-    //                 id,
-    //                 employee: emp,
-    //                 role,
-    //                 terminalId: group.terminalId,
-    //                 cocd: group.cocd,
-    //                 periodStart,
-    //                 netBrokerage:
-    //                     typeof group.netBrokerage === 'string'
-    //                         ? parseFloat(group.netBrokerage) || 0
-    //                         : group.netBrokerage || 0,
-    //                 tradeAmount: group.tradeAmount,
-    //                 clients: [client]
-    //             });
-    //         }
-    //     }
-
-    //     if (upsertData.length) {
-    //         await this.dataSource.getRepository(DealerRMRevenue).upsert(upsertData, {
-    //             conflictPaths: ['id'],
-    //             skipUpdateIfNoValuesChanged: true,
-    //             upsertType: 'on-conflict-do-update'
-    //         });
-    //     } else {
-    //         this.logger.warn('No DealerRMRevenue records to upsert');
-    //     }
-    // }
-
-    // private groupAndAggregateSegmentRevenues(revenues: SegmentRevenue[]): {
-    //     [key: string]: {
-    //         clientId: string;
-    //         terminalId: string | null;
-    //         cocd: string | null;
-    //         tradeDate: Date;
-    //         netBrokerage: number;
-    //         tradeAmount: number;
-    //     };
-    // } {
-    //     return revenues.reduce((acc, revenue) => {
-    //         const key = `${revenue.clientId}_${revenue.terminalId}_${revenue.cocd}_${
-    //             new Date(revenue.tradeDate).toISOString().split('T')[0]
-    //         }`;
-
-    //         if (!acc[key]) {
-    //             acc[key] = {
-    //                 clientId: revenue.clientId,
-    //                 terminalId: revenue.terminalId,
-    //                 cocd: revenue.cocd,
-    //                 tradeDate: new Date(revenue.tradeDate),
-    //                 netBrokerage: 0,
-    //                 tradeAmount: 0
-    //             };
-    //         }
-
-    //         acc[key].netBrokerage +=
-    //             typeof revenue.netBrokerage === 'string'
-    //                 ? parseFloat(revenue.netBrokerage) || 0
-    //                 : revenue.netBrokerage || 0;
-
-    //         acc[key].tradeAmount +=
-    //             typeof revenue.tradeAmount === 'string'
-    //                 ? parseFloat(revenue.tradeAmount) || 0
-    //                 : revenue.tradeAmount || 0;
-
-    //         return acc;
-    //     }, {});
-    // }
+    } 
 }

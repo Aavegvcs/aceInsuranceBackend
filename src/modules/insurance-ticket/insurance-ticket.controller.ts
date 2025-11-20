@@ -62,9 +62,14 @@ export class InsuranceTicketController {
     }
 
     @Get('getAllAgent')
-    @ApiOperation({ summary: 'Get all insurance tickets' })
+    @ApiOperation({ summary: 'Get all insurance agent' })
     async getAllAgent() {
         return this._ticketService.getAllAgent();
+    }
+    @Get('getEmployee')
+    @ApiOperation({ summary: 'Get all insurance employee' })
+    async getEmployee() {
+        return this._ticketService.getEmployee();
     }
 
     @Get('getTicketStatus')

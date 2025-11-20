@@ -247,8 +247,6 @@ export class AuthService {
         });
     }
 
-
-
     async loginBypassOTP(req: any): Promise<any> {
         const user = req.user;
         Logger.log(user);
@@ -276,8 +274,6 @@ export class AuthService {
             expiresIn: '1d' // Set the token expiration time
         });
     }
-
-
 
     async verifyForgotPass(params: any, res: any): Promise<any> {
         const user = await this.userService.findOneById(parseInt(params.id));
@@ -314,8 +310,6 @@ export class AuthService {
 
         return rest;
     }
-
-
 
     async delete(email: string): Promise<any> {
         if (email === 'tahir@insighttherapy.us') {
@@ -406,13 +400,23 @@ export class AuthService {
     }
 
     async loginInsuranceUser(reqBody: any, req: any): Promise<any> {
-        let user = await this.userRepository.findOne({
-            where: {
-                email: reqBody.email,
-                company: {
-                    id: 1
-                }
-            },
+        // let user = await this.userRepository.findOne({
+        //     where: {
+        //         email: reqBody.email,
+        //         company: {
+        //             id: 1
+        //         }
+        //     },
+        //     relations: ['company']
+        // });
+
+        const username = reqBody.username;
+
+        const user = await this.userRepository.findOne({
+            where: [
+                { email: username, company: { id: 1 } },
+                { employeeCode: username, company: { id: 1 } }
+            ],
             relations: ['company']
         });
 
@@ -426,15 +430,6 @@ export class AuthService {
         if (!isMatch) {
             throw new BadRequestException('wrong password');
         }
-
-        // let query = this.userRepository
-        //     .createQueryBuilder('user')
-        //     .leftJoinAndSelect('user.company', 'company')
-        //     .leftJoinAndSelect('user.state', 'state')
-        //     .leftJoinAndSelect('user.employee', 'employee')
-        //     .leftJoinAndSelect('employee.branch', 'branch');
-        // const detailedUser = await query.where('user.id = :id', { id: user.id }).getOne();
-
         const detailedUser = await this.userRepository.findOne({
             where: {
                 id: user.id,
@@ -505,7 +500,6 @@ export class AuthService {
         }
     }
 
-   
     async changeInsuranceUserPassword(reqBody: any, req: any): Promise<any> {
         try {
             const { email, oldPassword, newPassword } = reqBody;
