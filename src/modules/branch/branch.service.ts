@@ -1,4 +1,4 @@
-import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { Branch } from './entities/branch.entity';
@@ -616,6 +616,36 @@ export class BranchService {
                 throw new BadRequestException(`Failed to update branch: ${error.message}`);
             });
     }
+
+      async deleteBranch(reqBody: any): Promise<any> {
+            let result = {};
+            try {
+                   const loggedInUser = this.loggedInsUserService.getCurrentUser();
+                        if (!loggedInUser) {
+                            throw new UnauthorizedException('Branch not logged in');
+                        }
+        
+                const { branchId } = reqBody;
+                if (!branchId) {
+                    throw new BadRequestException('Branch ID is required.');
+                }
+    
+                result = await this.branchRepository.update(branchId, {
+                    isActive: false,
+                    deletedAt: new Date(),
+                    updatedAt: new Date(),
+                    updatedBy: loggedInUser
+                });
+            } catch (error) {
+                console.log('api- branches/deleteBranch', error.message);
+    
+                result = {
+                    status: 'error',
+                    message: 'Error deleting branch',
+                    data: null
+                };
+            }
+        } 
 
     async findAll(req: any): Promise<any> {
         Logger.log('QUERY_String', req?.QUERY_STRING);

@@ -38,6 +38,13 @@ export class BranchController {
         return this.branchService.updateBranch(reqBody);
     }
 
+    @UseGuards(JwtInsAuthGuard)
+     @Post('deleteBranch')
+    @ApiOperation({ summary: 'delete branch' })
+    async deleteBranch(@Body() reqBody: any) {
+        return this.branchService.deleteBranch(reqBody);
+    }
+
     // @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get all branches' })
     @Post('list')
