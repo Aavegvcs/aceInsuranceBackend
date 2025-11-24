@@ -1030,4 +1030,116 @@ export class UserService {
             );
         }
     }
+
+    async updateEmployeeBranchBulk(reqBody: any): Promise<any> {
+    const failed: { index: number; employeeCode: string; reason: string }[] = [];
+    const success: { index: number; employeeCode: string; updatedBranch: string }[] = [];
+
+    const data = reqBody.data || [];
+    const startIndex = reqBody.startIndex || 0;
+
+    if (!Array.isArray(data) || data.length === 0) {
+        return standardResponse(
+            false,
+            'No data provided',
+            400,
+            null,
+            null,
+            'users/updateEmployeeBranchBulk'
+        );
+    }
+
+    try {
+        for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+            const rowIndex = startIndex + i + 1;
+
+            const employeeCode = row['Staff Code'];
+            const branchCode = row['Branch Code'];
+
+            try {
+                // 1. Find employee
+                const employee = await this.userRepository.findOne({
+                    where: { employeeCode },
+                    relations: ['branch']
+                });
+
+                if (!employee) {
+                    failed.push({
+                        index: rowIndex,
+                        employeeCode,
+                        reason: 'Employee not found'
+                    });
+                    continue;
+                }
+
+                // 2. If branch already assigned → skip
+                if (employee.branch) {
+                    failed.push({
+                        index: rowIndex,
+                        employeeCode,
+                        reason: 'Branch already assigned. Skipped.'
+                    });
+                    continue;
+                }
+
+                // 3. Find Branch
+                const branch = await this.branchRepository.findOne({
+                    where: { branchCode }
+                });
+
+                if (!branch) {
+                    failed.push({
+                        index: rowIndex,
+                        employeeCode,
+                        reason: `Branch '${branchCode}' not found. Kept NULL`
+                    });
+                    continue;
+                }
+
+                // 4. Update branch
+                employee.branch = branch;
+                await this.userRepository.save(employee);
+
+                success.push({
+                    index: rowIndex,
+                    employeeCode,
+                    updatedBranch: branchCode
+                });
+
+            } catch (error) {
+                failed.push({
+                    index: rowIndex,
+                    employeeCode,
+                    reason: error.message || 'Unknown error'
+                });
+            }
+        }
+
+        return standardResponse(
+            true,
+            'Bulk Branch Update Completed',
+            200,
+            {
+                successCount: success.length,
+                failedCount: failed.length,
+                success,
+                failed
+            },
+            null,
+            'users/updateEmployeeBranchBulk'
+        );
+
+    } catch (error) {
+        return standardResponse(
+            false,
+            'Bulk update failed',
+            500,
+            { error: error.message },
+            null,
+            'users/updateEmployeeBranchBulk'
+        );
+    }
+}
+
 }

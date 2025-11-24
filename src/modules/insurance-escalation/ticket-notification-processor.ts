@@ -6,7 +6,7 @@ import { LessThan, Repository } from 'typeorm';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceTicketNotification } from './entities/insurance-ticket-notification.entity';
-import { addDays, addHours, Current_Step, formatToCamelCase, RoleId, Roles } from 'src/utils/app.utils';
+import { addDays, addHours, Current_Step, formatToCamelCase, RoleId, Roles, Ticket_Status } from 'src/utils/app.utils';
 import { InsuranceTicketDeviation } from './entities/insurance-notification-deviation.entity';
 import { insuranceTicketNotification } from 'src/utils/email-templates/insurance-notification/insurance-ticket-notification';
 import { InternalServerErrorException } from '@nestjs/common';
@@ -45,7 +45,7 @@ export class TicketNotificationProcessor {
             });
             if (!ticket) throw new Error('Ticket not found');
 
-            if (ticket && ticket.currentStepStart !== Current_Step.CLOSED && ticket.nextStepDeadline <= now) {
+            if (ticket && (ticket.currentStepStart !== Current_Step.CLOSED) && (ticket.nextStepDeadline <= now) && (ticket.ticketStatus !== Ticket_Status.CANCELLED)) {
                 const managers = await this.userRepo.find({
                     where: {
                         isActive: true,
@@ -109,7 +109,7 @@ export class TicketNotificationProcessor {
         const { ticketId } = job.data;
         const ticket = await this.ticketRepo.findOne({ where: { id: ticketId }, relations: ['branch'] });
         const now = new Date();
-        if (ticket && ticket.currentStepStart !== Current_Step.CLOSED) {
+        if (ticket && (ticket.currentStepStart !== Current_Step.CLOSED) && (ticket.ticketStatus !== Ticket_Status.CANCELLED)) {
             const deviation = await this._deviationRepo.findOne({
                 where: {
                     ticket: { id: ticketId },

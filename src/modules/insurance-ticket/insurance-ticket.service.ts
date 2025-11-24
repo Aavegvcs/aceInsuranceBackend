@@ -290,8 +290,48 @@ export class InsuranceTicketService {
                 data: null
             };
         }
+
         let { userDetails, ticketDetails } = reqBody;
-        let assignPerson = await this.userRepo.findOne({ where: { id: ticketDetails.assignedTo } });
+         // Check if required sections exist
+        if (!userDetails || !ticketDetails) {
+            return {
+                status: 'error',
+                message: 'Missing userDetails or ticketDetails',
+                data: null
+            };
+        }
+        // console.log("before branch details",ticketDetails.assignedTo,  userEntity, ticketDetails.branchId);
+         
+        let assignPerson = await this.userRepo.findOne({ where: { id: ticketDetails.assignedTo }, relations:['branch'] });
+    //    console.log("here is assign person details", assignPerson);
+       
+        let tempBranchId = null;
+        if(ticketDetails.branchId){
+                tempBranchId = ticketDetails.branchId;
+                console.log("console 1", tempBranchId);
+                
+        }else if(userEntity?.branch?.id){
+            tempBranchId = userEntity?.branch?.id;
+             console.log("console 2", tempBranchId);
+        }else{
+            tempBranchId = assignPerson?.branch?.id;
+             console.log("console 3", tempBranchId);
+        }
+        // console.log("here is temp branch id", tempBranchId);
+        
+           const branch = await this.branchRepo.findOne({ where: { id: tempBranchId } });
+            if (!branch) {
+                return {
+                    status: 'error',
+                    message: 'Invalid branch ID provided',
+                    data: {
+                        insuranceUserId: null,
+                        ticketId: null
+                    }
+                };
+            }
+            // console.log("here is branch data ", branch);
+
         // console.log("in ticket createion assigen person is-",ticketDetails.assigned, assignPerson)
         // Initial response object
         const response = {
@@ -302,15 +342,6 @@ export class InsuranceTicketService {
                 ticketId: null
             }
         };
-
-        // Check if required sections exist
-        if (!userDetails || !ticketDetails) {
-            return {
-                status: 'error',
-                message: 'Missing userDetails or ticketDetails',
-                data: null
-            };
-        }
 
         const {
             name,
@@ -332,9 +363,6 @@ export class InsuranceTicketService {
             documents
         } = userDetails;
 
-        //  console.log('in api ticket details is ', ticketDetails);
-
-        // Validate required fields
         if (!name || !gender || !primaryContactNumber || !emailId) {
             return {
                 status: 'error',
@@ -381,7 +409,7 @@ export class InsuranceTicketService {
                     permanentCity,
                     permanentState,
                     permanentPinCode,
-                    branch: userEntity.branch,
+                    branch: branch,
                     documents: userDocuments,
                     createdBy: userEntity
                 });
@@ -420,17 +448,6 @@ export class InsuranceTicketService {
             }
 
             // Step 2: Create Ticket
-            const branch = await this.branchRepo.findOne({ where: { id: ticketDetails.branchId } });
-            if (!branch) {
-                return {
-                    status: 'error',
-                    message: 'Invalid branch ID provided',
-                    data: {
-                        insuranceUserId: userId,
-                        ticketId: null
-                    }
-                };
-            }
 
             let currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
             const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(@ticket_count)');
@@ -1257,6 +1274,14 @@ export class InsuranceTicketService {
                 return {
                     status: 'error',
                     message: `Ticket is already closed`,
+                    data: { ticketId }
+                };
+            }
+
+            if (ticket.ticketStatus === Ticket_Status.CANCELLED && ticketStatus=== Ticket_Status.CANCELLED) {
+                return {
+                    status: 'error',
+                    message: `Ticket is already cancelled`,
                     data: { ticketId }
                 };
             }

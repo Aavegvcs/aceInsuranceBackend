@@ -269,9 +269,9 @@ export class CommonQuotationService {
                 ticketStatus: ticket.ticketStatus,
                 insuranceUser: ticket.insuranceUserId,
                 branch: {
-                    contactPerson: ticket.branch?.contactPerson,
-                    phone: ticket.branch?.phone,
-                    address: ticket.branch?.address
+                    contactPerson: ticket.branch?.contactPerson || 'N/A',
+                    phone: ticket.branch?.phone || 'N/A',
+                    address: ticket.branch?.address || 'N/A'
                 }
             };
 

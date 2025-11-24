@@ -156,19 +156,7 @@ export class InsuranceQuotationService {
                 doc.on('end', () => resolve(Buffer.concat(buffers)));
                 doc.on('error', reject);
 
-                // const quotation = await this.quotationRepository.findOneOrFail({
-                //     where: {
-                //         id: parseInt(quotationId),
-                //         ticketId: { id: parseInt(ticket.id) }
-                //     },
-                //     relations: [
-                //         'quotes',
-                //         'quotes.company',
-                //         'quotes.product',
-                //         'quotes.quoteFeatures',
-                //         'quotes.quoteFeatures.insuranceFeatures'
-                //     ]
-                // });
+               
                 const quotation = await this.quotationRepository
                     .createQueryBuilder('quotation')
                     .leftJoinAndSelect('quotation.quotes', 'quote')
@@ -724,14 +712,14 @@ export class InsuranceQuotationService {
 
                 // === Quotes Table code start from here ===
                 const tableTop = doc.y + 10;
-                // const quoteWidth = 130;
-                // const labelWidth = 100;
                 const labelWidth = 130; // Increased from 100 → wider "Details" column
                 const quoteWidth = 120; // Slightly reduced to balance table width if needed
 
                 let fields = [];
                 if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
                     fields = ['Company', 'Product', 'Coverage', 'Premium', 'Benefits', 'Advantages', 'Remarks'];
+                    // fields = ['Company', 'Product', 'Coverage', 'Benefits', 'Advantages', 'Remarks', 'Premium'];
+
                 }
                 if (data.insuranceType === Insurance_Type.Motor) {
                     fields = ['Company', 'IDV', 'Cover Type', 'NCB(%)', 'Premium', 'Coverage Included', 'Remarks'];
@@ -740,7 +728,7 @@ export class InsuranceQuotationService {
                 let fieldsBeforePremium = fields;
                 let fieldsAfterPremium = [];
                 if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
-                    const premiumIndex = fields.indexOf('Premium');
+                    const premiumIndex = fields.indexOf('Premium'); // is premium ke jagah coverage rakhna hai.
                     fieldsBeforePremium = fields.slice(0, premiumIndex + 1);
                     fieldsAfterPremium = fields.slice(premiumIndex + 1);
                 }
@@ -995,15 +983,6 @@ export class InsuranceQuotationService {
                 doc.text(`${data.branch.contact}`, footerX + 12, footerY);
 
                 footerY += phoneHeight + spacing;
-
-                // --- Branch Address ---
-                // doc.fontSize(10).fillColor(colors.primary).font('DejaVuSans-Bold');
-                // doc.text('◉ ', footerX, footerY, { continued: true });
-                // doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
-                // doc.text(data.branch.address);
-
-                // --- Location Icon + Address ---
-                // const locationIconPath = path.resolve(__dirname, 'assets/images/placeholder.png'); // your uploaded icon path
                 doc.image(locationPath, footerX, footerY, { width: 10, height: 10 }); // adjust y offset if needed
                 doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
                 doc.text(data.branch.address, footerX + 12, footerY); // text starts a bit right of icon
