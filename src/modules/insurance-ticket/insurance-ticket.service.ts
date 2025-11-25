@@ -231,6 +231,8 @@ export class InsuranceTicketService {
 
     //this api is for getting all ticket card on dashboard
     async getTicket(reqObj: any): Promise<InsuranceTicket[]> {
+        console.log("this is req body in get ticket", reqObj);
+        
         const loggedInUser = this.loggedInsUserService.getCurrentUser();
         if (!loggedInUser) {
             throw new UnauthorizedException('User not logged in');
@@ -256,17 +258,19 @@ export class InsuranceTicketService {
         // }
         // console.log("in get ticket call", agentId, reqObj.userId).
         const query = 'CALL get_InsuranceTicket(?, ?, ?, ?, ?, ?)';
-        // console.log('getTicket reqBody', reqObj.userId, agentId, reqObj.fromDate, reqObj.toDate, reqObj.ticketStatus);
+        //  console.log('getTicket reqBody',  loggedInUser?.id, agentId, reqObj.fromDate, reqObj.toDate, loggedInUser.userType.id, reqObj.ticketStatus);
         const result = await this.ticketRepo.query(query, [
             // reqObj.userId,
             loggedInUser?.id,
             agentId,
             reqObj.fromDate,
             reqObj.toDate,
-            loggedInUser.userType.id,
+            loggedInUser.userType.roleName,
             reqObj.ticketStatus
         ]);
         const tickets = result[0];
+        console.log("here is result", result[0]);
+        
         // await this.redisClient.set(cacheKey, JSON.stringify(tickets), 'EX', 300);
 
         return tickets;
@@ -452,7 +456,7 @@ export class InsuranceTicketService {
             // Step 2: Create Ticket
 
             let currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
-            console.log("ticket details ticket type", ticketDetails.insuranceType)
+            // console.log("ticket details ticket type", ticketDetails.insuranceType)
             const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(?)',[ticketDetails.insuranceType]  );
              const newTicketNumber = ticketNumberResult[0][0].ticketNumber;
             console.log('newTicketNumber', newTicketNumber);
