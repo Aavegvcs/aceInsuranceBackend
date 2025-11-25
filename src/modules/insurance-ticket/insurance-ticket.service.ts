@@ -254,10 +254,12 @@ export class InsuranceTicketService {
         // if (cached) {
         //     return JSON.parse(cached);
         // }
+        // console.log("in get ticket call", agentId, reqObj.userId).
         const query = 'CALL get_InsuranceTicket(?, ?, ?, ?, ?, ?)';
         // console.log('getTicket reqBody', reqObj.userId, agentId, reqObj.fromDate, reqObj.toDate, reqObj.ticketStatus);
         const result = await this.ticketRepo.query(query, [
-            reqObj.userId,
+            // reqObj.userId,
+            loggedInUser?.id,
             agentId,
             reqObj.fromDate,
             reqObj.toDate,
