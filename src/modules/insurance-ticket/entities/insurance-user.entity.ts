@@ -56,6 +56,12 @@ export class InsuranceUser extends BaseEntity {
     @Column({ name: 'highest_edu_qualification', nullable: true })
     highestEduQualification: string;
 
+    @Column({ name: 'adhar_number', nullable: true })
+    adharNumber: string;
+
+    @Column({ name: 'pan_number', nullable: true })
+    panNumber: string;
+
     @Column({ type: 'json', name: 'documents', nullable: true })
     documents: any;
 

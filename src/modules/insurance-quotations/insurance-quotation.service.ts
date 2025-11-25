@@ -222,7 +222,7 @@ export class InsuranceQuotationService {
                               weight: ticketDetails.data.insuredPersons?.weight || 0
                           }
                         : null,
-                    pinCode: ticketDetails.data.insuranceUser.pinCode || 'N/A',
+                    pinCode: ticketDetails.data.insuranceUser.permanentPinCode || 'N/A',
                     mobileNo: ticketDetails.data.insuranceUser.primaryContactNumber || 'N/A',
                     emailId: ticketDetails.data.insuranceUser.emailId || 'N/A',
                     pedDeclared: ticketDetails.data.medicalDetails

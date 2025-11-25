@@ -26,7 +26,7 @@ export class InsuranceNominee extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ name: 'name' })
+    @Column({ name: 'name', nullable: true })
     name: string;
 
     @Column({ type: 'enum', enum: Gender, name: 'gender', nullable:true })
@@ -35,7 +35,7 @@ export class InsuranceNominee extends BaseEntity {
     @Column({ name: 'date_of_birth', nullable: true })
     dateOfBirth: string;
 
-    @Column({ name: 'primary_contact_number', nullable: false })
+    @Column({ name: 'primary_contact_number', nullable: true })
     primaryContactNumber: string;
 
     @Column({ type: 'enum', enum: Family_Member_Type, name: 'relation', nullable: true })

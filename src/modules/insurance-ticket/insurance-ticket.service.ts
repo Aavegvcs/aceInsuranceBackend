@@ -308,14 +308,14 @@ export class InsuranceTicketService {
         let tempBranchId = null;
         if(ticketDetails.branchId){
                 tempBranchId = ticketDetails.branchId;
-                console.log("console 1", tempBranchId);
+                // console.log("console 1", tempBranchId);
                 
         }else if(userEntity?.branch?.id){
             tempBranchId = userEntity?.branch?.id;
-             console.log("console 2", tempBranchId);
+            //  console.log("console 2", tempBranchId);
         }else{
             tempBranchId = assignPerson?.branch?.id;
-             console.log("console 3", tempBranchId);
+            //  console.log("console 3", tempBranchId);
         }
         // console.log("here is temp branch id", tempBranchId);
         
@@ -450,15 +450,17 @@ export class InsuranceTicketService {
             // Step 2: Create Ticket
 
             let currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
-            const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(@ticket_count)');
-            // console.log('ticketNumber2', ticketNumberResult[0][0].ticketcode);
+            console.log("ticket details ticket type", ticketDetails.insuranceType)
+            const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(?)',[ticketDetails.insuranceType]  );
+             const newTicketNumber = ticketNumberResult[0][0].ticketNumber;
+            console.log('newTicketNumber', newTicketNumber);
             let ticketDocuments = [];
             if (ticketDetails.ticketType === Ticket_Type.PORT) {
                 ticketDocuments = [{ name: 'portDocument', url: ticketDetails.portDocument }];
             }
             const ticket = await this.ticketRepo.save({
                 insuranceUserId: savedInsuranceUser,
-                ticketNumber: ticketNumberResult[0][0].ticketcode,
+                ticketNumber: newTicketNumber,
                 ticketType: ticketDetails.ticketType,
                 insuranceType: ticketDetails.insuranceType,
                 policyHolderType: ticketDetails.policyHolderType,
@@ -501,7 +503,7 @@ export class InsuranceTicketService {
                 const query = 'CALL log_insuranceTicket(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
                 await this.ticketRepo.query(query, [
                     ticketId,
-                    ticketNumberResult[0][0].ticketcode,
+                    newTicketNumber,
                     userId,
                     ticketDetails.assignedTo || null,
                     Ticket_Status.OPEN,
@@ -682,6 +684,10 @@ export class InsuranceTicketService {
                         emailId: ticket.insuranceUserId.emailId,
                         employmentType: ticket.insuranceUserId.employmentType,
                         dateOfBirth: ticket.insuranceUserId.dateOfBirth ?? null,
+                        address: ticket.insuranceUserId.permanentAddress ?? null,
+                        pinCode: ticket.insuranceUserId.permanentPinCode ?? null,
+                        adharNumber: ticket.insuranceUserId.adharNumber ?? null,
+                        panNumber: ticket.insuranceUserId.panNumber ?? null,
                         // nomineeName: ticket.nomineeName ?? null,
                         // nomineeRelation: ticket.nomineeRelation ?? null,
                         // nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
@@ -798,7 +804,7 @@ export class InsuranceTicketService {
             insuredMedicalDetails,
             nomineeDetails
         } = reqBody;
-        console.log("nomineeDetails details is here", nomineeDetails);
+        console.log("insuranceUser details is here", insuranceUser);
 
         const response = {
             status: 'success',
@@ -836,6 +842,10 @@ export class InsuranceTicketService {
                     employmentType: insuranceUser.employmentType,
                     gender: insuranceUser.gender,
                     emailId: insuranceUser.emailId,
+                    permanentAddress: insuranceUser.address,
+                    permanentPinCode: insuranceUser.pinCode,
+                    adharNumber: insuranceUser.adharNumber,
+                    panNumber: insuranceUser.panNumber,
                     documents: insuranceUser.documents,
                     updatedBy: userEntity,
                     updatedAt: new Date()
