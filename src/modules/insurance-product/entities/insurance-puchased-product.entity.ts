@@ -17,6 +17,7 @@ import { InsuranceIncentives } from '@modules/insurance-product/entities/insuran
 import { InsuranceAgent } from '@modules/insurance-ticket/entities/insurance-agent.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceUser } from '@modules/insurance-ticket/entities/insurance-user.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
 @Entity({ name: 'insurance_purchased_product' })
 export class InsurancePurchasedProduct {
@@ -78,6 +79,10 @@ export class InsurancePurchasedProduct {
         nullable: false
     })
     insuranceType: Insurance_Product_Status;
+
+    @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+    @JoinColumn({ name: 'insurance_type_master' })
+    insuranceTypeMaster: InsuranceTypeMaster;
 
     @Column({ name: 'any_remarks', nullable: true })
     anyRemarks: string;

@@ -26,10 +26,10 @@ export class InsuranceVehicleDetails extends BaseEntity {
     @JoinColumn({ name: 'ticket_id' })
     ticketId: InsuranceTicket;
 
-    @Column({ type: 'enum', enum: Vehicle_Type, name: 'vehicle_type', nullable: false })
+    @Column({ type: 'enum', enum: Vehicle_Type, name: 'vehicle_type', nullable: true })
     vehicleType: Vehicle_Type;
 
-    @Column({ name: 'vehicle_number', nullable: false })
+    @Column({ name: 'vehicle_number', nullable: true })
     vehicleNumber: string;
 
     @Column({ name: 'rc_owner_name', nullable: true })
@@ -59,10 +59,10 @@ export class InsuranceVehicleDetails extends BaseEntity {
     @Column({type: 'decimal', name: 'gross_vehicle_weight',precision: 10, scale: 2, nullable: true })
     grossVehicleWeight: number;
 
-    @Column({type: 'boolean', name: 'over_turning', default: false })
+    @Column({type: 'boolean', name: 'over_turning', default: false, nullable:true })
     overTurning: boolean;
 
-    @Column({type: 'boolean', name: 'no_claim_bonus', default : false })
+    @Column({type: 'boolean', name: 'no_claim_bonus', nullable:true })
     noClaimBonus: boolean;
 
     @Column({ name: 'no_claim_bonus_on_prePolicy', nullable: true })

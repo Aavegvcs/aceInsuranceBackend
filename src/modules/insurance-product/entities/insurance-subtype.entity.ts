@@ -12,6 +12,7 @@ import {
 import { Insurance_Type } from 'src/utils/app.utils';
 import { InsuranceProduct } from './insurance-product.entity';
 import { User } from '@modules/user/user.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
 @Entity({ name: 'insurance_sub_type' })
 export class InsuranceSubType {
@@ -28,6 +29,10 @@ export class InsuranceSubType {
         nullable: false
     })
     insuranceType: Insurance_Type;
+
+        @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+        @JoinColumn({ name: 'insurance_type_master' })
+        insuranceTypeMaster: InsuranceTypeMaster;
 
     @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;

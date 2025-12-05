@@ -19,6 +19,7 @@ import { InsurancePurchasedProduct } from '@modules/insurance-product/entities/i
 import { InsuranceProductSuggestions } from '@modules/insurance-escalation/entities/insurance-product-suggestions.entity';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
 @Entity({ name: 'insurance_product' })
 export class InsuranceProduct {
@@ -36,9 +37,15 @@ export class InsuranceProduct {
     })
     insuranceType: Insurance_Type;
 
+    @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+    @JoinColumn({ name: 'insurance_types' })
+    insuranceTypes: InsuranceTypeMaster;
+
     @ManyToOne(() => InsuranceSubType, (subtype) => subtype.product, { nullable: true })
     @JoinColumn({ name: 'insurance_subtype' })
     insuranceSubType: InsuranceSubType;
+
+
 
     // @ManyToOne(() => Branch, (branch) => branch.product, { nullable: false })
     // @JoinColumn({ name: 'branch_id' })
@@ -55,7 +62,7 @@ export class InsuranceProduct {
         type: 'decimal',
         precision: 10,
         scale: 2,
-        nullable: false
+        nullable: true
     })
     insurancePrice: number;
 

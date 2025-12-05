@@ -603,12 +603,28 @@ export const INSURANCE_TYPES = {
     SECONDARY: 'secondary',
     TERTIARY: 'tertiary'
 };
+// export enum Insurance_Type {
+//     Health = 'HEALTH',
+//     Life = 'LIFE',
+//     Motor = 'MOTOR',
+//     Other = 'OTHER'
+// }
 export enum Insurance_Type {
-    Health = 'HEALTH',
-    Life = 'LIFE',
-    Motor = 'MOTOR',
-    Other = 'OTHER'
+  Health = 'HEALTH',
+  Motor = 'MOTOR',
+  Life = 'LIFE',
+  TopUp = 'TOPUP',
+  Home = 'HOME',
+  PersonalAccident = 'PA',
+  CriticalIllness = 'CI',
+  Ulip = 'ULIP',
+  Term = 'TERM',
+  Pension = 'PENSION',
+  Gmc = 'GMC',
+  Gpa = 'GPA',
+  Travel = 'TRAVEL',
 }
+
 export enum Policy_Status {
     Active = 'ACTIVE',
     Lapsed = 'LAPSED',

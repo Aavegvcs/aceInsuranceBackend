@@ -9,11 +9,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Insurance_Type, MedicalDetails, Pre_Existing_Diseases } from 'src/utils/app.utils';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 @Injectable()
 export class CommonQuotationService {
     constructor(
         @InjectRepository(InsuranceTicket)
-        private readonly ticketRepo: Repository<InsuranceTicket>
+        private readonly ticketRepo: Repository<InsuranceTicket>,
     ) {}
 
     // async getTicketDetails(ticket: any): Promise<any> {
@@ -199,6 +200,7 @@ export class CommonQuotationService {
                 .leftJoinAndSelect('ticket.insuranceUserId', 'insuranceUserId')
                 .leftJoinAndSelect('ticket.branch', 'branch')
                 .leftJoinAndSelect('ticket.nominee', 'nominee')
+                .leftJoinAndSelect('ticketTypes', 'ticketTypes')
                 .where('ticket.id = :ticketId', { ticketId: reqTicket.id });
 
             // Conditional joins based on insuranceType
@@ -265,7 +267,8 @@ export class CommonQuotationService {
             const data: any = {
                 ticketId: ticket.id,
                 ticketNumber: ticket.ticketNumber,
-                insuranceType: ticket.insuranceType,
+                // insuranceType: ticket.insuranceType,
+                insuranceType: ticket.insuranceTypes.code,
                 ticketStatus: ticket.ticketStatus,
                 insuranceUser: ticket.insuranceUserId,
                 branch: {

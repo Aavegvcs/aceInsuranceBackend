@@ -49,6 +49,9 @@ import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-
 import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
 import { InsurancePolicyService } from '@modules/insurance-policy/insurance-policy.service';
 import { InsuranceNominee } from './entities/insurance-nominee-details.entity';
+import { InsuranceTypeMaster } from './entities/insurance-type-master.entity';
+import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
+import { InsuranceType } from './entities/insurance-type.entity';
 @Injectable()
 export class InsuranceTicketService {
     constructor(
@@ -93,6 +96,8 @@ export class InsuranceTicketService {
 
         @InjectRepository(QuoteEntity)
         private readonly quoteRepo: Repository<QuoteEntity>,
+        @InjectRepository(InsuranceTypeMaster)
+        private readonly insuranceTypeRepo: Repository<InsuranceTypeMaster>,
 
         @InjectRepository(InsuranceProduct)
         private readonly productRepo: Repository<InsuranceProduct>,
@@ -100,10 +105,21 @@ export class InsuranceTicketService {
         private readonly loggedInsUserService: LoggedInsUserService,
         private readonly policyService: InsurancePolicyService,
 
+
         @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
         private readonly roleService: RoleService
     ) {}
 
+        async getInsuranceType(reqObj: any): Promise<InsuranceTypeMaster | null> {
+        try {
+            const insuranceType = await this.insuranceTypeRepo.findOne({ where: { code: reqObj.insuranceType } });
+            return insuranceType;
+        } catch (error) {
+            console.log('error in service- getInsuranceType', error.message);
+            return null;
+        }
+    }
+  
     async createTicket(requestParam: CreateInsuranceTicketDto, req: any): Promise<InsuranceTicket> {
         let createdBy = null;
         let agentId = null;
@@ -231,8 +247,8 @@ export class InsuranceTicketService {
 
     //this api is for getting all ticket card on dashboard
     async getTicket(reqObj: any): Promise<InsuranceTicket[]> {
-        console.log("this is req body in get ticket", reqObj);
-        
+        console.log('this is req body in get ticket', reqObj);
+
         const loggedInUser = this.loggedInsUserService.getCurrentUser();
         if (!loggedInUser) {
             throw new UnauthorizedException('User not logged in');
@@ -269,8 +285,8 @@ export class InsuranceTicketService {
             reqObj.ticketStatus
         ]);
         const tickets = result[0];
-        console.log("here is result", result[0]);
-        
+        // console.log('here is result', result[0]);
+
         // await this.redisClient.set(cacheKey, JSON.stringify(tickets), 'EX', 300);
 
         return tickets;
@@ -279,6 +295,7 @@ export class InsuranceTicketService {
     async getAllTicketsByTicketNumber(ticketNumber: number): Promise<InsuranceTicket[]> {
         return await this.ticketRepo
             .createQueryBuilder('ticket')
+            .leftJoinAndSelect('insuranceTypes', 'insuranceTypes')
             .where('ticket.ticketNumber = :ticketNumber', { ticketNumber })
             .getMany();
     }
@@ -298,7 +315,7 @@ export class InsuranceTicketService {
         }
 
         let { userDetails, ticketDetails } = reqBody;
-         // Check if required sections exist
+        // Check if required sections exist
         if (!userDetails || !ticketDetails) {
             return {
                 status: 'error',
@@ -307,36 +324,38 @@ export class InsuranceTicketService {
             };
         }
         // console.log("before branch details",ticketDetails.assignedTo,  userEntity, ticketDetails.branchId);
-         
-        let assignPerson = await this.userRepo.findOne({ where: { id: ticketDetails.assignedTo }, relations:['branch'] });
-    //    console.log("here is assign person details", assignPerson);
-       
+
+        let assignPerson = await this.userRepo.findOne({
+            where: { id: ticketDetails.assignedTo },
+            relations: ['branch']
+        });
+        //    console.log("here is assign person details", assignPerson);
+
         let tempBranchId = null;
-        if(ticketDetails.branchId){
-                tempBranchId = ticketDetails.branchId;
-                // console.log("console 1", tempBranchId);
-                
-        }else if(userEntity?.branch?.id){
+        if (ticketDetails.branchId) {
+            tempBranchId = ticketDetails.branchId;
+            // console.log("console 1", tempBranchId);
+        } else if (userEntity?.branch?.id) {
             tempBranchId = userEntity?.branch?.id;
             //  console.log("console 2", tempBranchId);
-        }else{
+        } else {
             tempBranchId = assignPerson?.branch?.id;
             //  console.log("console 3", tempBranchId);
         }
         // console.log("here is temp branch id", tempBranchId);
-        
-           const branch = await this.branchRepo.findOne({ where: { id: tempBranchId } });
-            if (!branch) {
-                return {
-                    status: 'error',
-                    message: 'Invalid branch ID provided',
-                    data: {
-                        insuranceUserId: null,
-                        ticketId: null
-                    }
-                };
-            }
-            // console.log("here is branch data ", branch);
+
+        const branch = await this.branchRepo.findOne({ where: { id: tempBranchId } });
+        if (!branch) {
+            return {
+                status: 'error',
+                message: 'Invalid branch ID provided',
+                data: {
+                    insuranceUserId: null,
+                    ticketId: null
+                }
+            };
+        }
+        // console.log("here is branch data ", branch);
 
         // console.log("in ticket createion assigen person is-",ticketDetails.assigned, assignPerson)
         // Initial response object
@@ -457,9 +476,12 @@ export class InsuranceTicketService {
 
             let currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
             // console.log("ticket details ticket type", ticketDetails.insuranceType)
-            const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(?)',[ticketDetails.insuranceType]  );
-             const newTicketNumber = ticketNumberResult[0][0].ticketNumber;
+            const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(?)', [
+                ticketDetails.insuranceType
+            ]);
+            const newTicketNumber = ticketNumberResult[0][0].ticketNumber;
             console.log('newTicketNumber', newTicketNumber);
+            const insuranceTypes = await this.getInsuranceType(ticketDetails.ticketType);
             let ticketDocuments = [];
             if (ticketDetails.ticketType === Ticket_Type.PORT) {
                 ticketDocuments = [{ name: 'portDocument', url: ticketDetails.portDocument }];
@@ -469,6 +491,7 @@ export class InsuranceTicketService {
                 ticketNumber: newTicketNumber,
                 ticketType: ticketDetails.ticketType,
                 insuranceType: ticketDetails.insuranceType,
+                insuranceTicketMaster: insuranceTypes,
                 policyHolderType: ticketDetails.policyHolderType,
                 familyMemberType: ticketDetails.familyMemberType,
                 agentRemarks: ticketDetails.agentRemarks,
@@ -518,7 +541,7 @@ export class InsuranceTicketService {
                     new Date(),
                     Current_Step.DOCUMENT_COLLECTED,
                     addDays(3),
-                    ticketDetails.insuranceType,
+                    insuranceTypes.code,
                     ticketDetails.agentRemarks,
                     ticketDetails.othersRemarks,
                     userEntity.id
@@ -555,8 +578,7 @@ export class InsuranceTicketService {
         return result[0];
     }
 
-
-        async getEmployee(): Promise<any> {
+    async getEmployee(): Promise<any> {
         const query = 'CALL get_acumenEmployee()';
 
         const result = await this.userRepo.query(query);
@@ -567,12 +589,15 @@ export class InsuranceTicketService {
 
     async getTicketDetails(ticketId: number): Promise<TicketResponse> {
         try {
+            console.log("api is calling in get ticket details");
+            
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
             if (!loggedInUser) {
                 throw new UnauthorizedException('User not logged in');
             }
             const userRole = loggedInUser.userType.roleName;
             // Optimized query with specific relations
+              console.log("api is calling in get ticket details222");
             const ticket = await this.ticketRepo
                 .createQueryBuilder('ticket')
                 .leftJoinAndSelect('ticket.insuranceUserId', 'insuranceUserId')
@@ -587,9 +612,10 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('ticket.createdBy', 'createdBy')
                 .leftJoinAndSelect('createdBy.branch', 'branch')
                 .leftJoinAndSelect('ticket.nominee', 'nominee')
+                .leftJoinAndSelect('ticket.insuranceTypes', 'insuranceTypes')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
-            //  console.log("toicket detailslskjdkfjdk", ticket);
+              console.log("toicket detailslskjdkfjdk", ticket);
 
             if (!ticket) {
                 return {
@@ -647,13 +673,10 @@ export class InsuranceTicketService {
             const insuredMedicalDetails = getLatestMedical(ticket.insuredMedical);
 
             // console.log('medical details of insuredMedicalDetails', insuredMedicalDetails);
-            return {
-                status: 'success',
-                message: 'Ticket details fetched successfully',
-                data: {
+            const  data = {
                     ticketId: ticket.id,
                     ticketNumber: ticket.ticketNumber,
-                    insuranceType: ticket.insuranceType,
+                    insuranceType: ticket.insuranceTypes.code,
                     ticketStatus: ticket.ticketStatus,
                     includeSelfAsDependent: ticket.includeSelfAsDependent ?? false,
                     preferredCompany: ticket.preferredCompany ?? null,
@@ -694,6 +717,7 @@ export class InsuranceTicketService {
                         pinCode: ticket.insuranceUserId.permanentPinCode ?? null,
                         adharNumber: ticket.insuranceUserId.adharNumber ?? null,
                         panNumber: ticket.insuranceUserId.panNumber ?? null,
+                        highestEduQualification: ticket.insuranceUserId.highestEduQualification ?? null,
                         // nomineeName: ticket.nomineeName ?? null,
                         // nomineeRelation: ticket.nomineeRelation ?? null,
                         // nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
@@ -703,12 +727,12 @@ export class InsuranceTicketService {
                         documents: ticket.insuranceUserId.documents ?? null
                     },
                     nomineeDetails: {
-                        id:ticket?.nominee?.id ?? null,
+                        id: ticket?.nominee?.id ?? null,
                         name: ticket?.nominee?.name ?? null,
                         gender: ticket?.nominee?.gender ?? null,
                         relation: ticket?.nominee?.relation ?? null,
                         contactNumber: ticket?.nominee?.primaryContactNumber ?? null,
-                        dateOfBirth: ticket?.nominee?.dateOfBirth ?? null,
+                        dateOfBirth: ticket?.nominee?.dateOfBirth ?? null
                     },
                     medicalDetails: formatMedicalDetails(medicalDetails),
                     // ticket.insuranceDependent?.map((dep) => {
@@ -781,6 +805,12 @@ export class InsuranceTicketService {
                         : null,
                     insuredMedicalDetails: formatMedicalDetails(insuredMedicalDetails)
                 }
+                 console.log("in get ticket details data is", data);
+                
+            return {
+                status: 'success',
+                message: 'Ticket details fetched successfully',
+                data:data
             };
         } catch (error) {
             return {
@@ -810,7 +840,7 @@ export class InsuranceTicketService {
             insuredMedicalDetails,
             nomineeDetails
         } = reqBody;
-        console.log("insuranceUser details is here", insuranceUser);
+        // console.log("insuranceUser details is here", insuranceUser);
 
         const response = {
             status: 'success',
@@ -822,7 +852,7 @@ export class InsuranceTicketService {
         try {
             ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId']
+                relations: ['insuranceUserId', 'insuranceTypes']
             });
 
             if (!ticket) {
@@ -846,6 +876,7 @@ export class InsuranceTicketService {
                     dateOfBirth: insuranceUser.dateOfBirth,
                     secondaryContactNumber: insuranceUser.secondaryContactNumber,
                     employmentType: insuranceUser.employmentType,
+                    highestEduQualification: insuranceUser.highestEduQualification,
                     gender: insuranceUser.gender,
                     emailId: insuranceUser.emailId,
                     permanentAddress: insuranceUser.address,
@@ -912,7 +943,7 @@ export class InsuranceTicketService {
                         new Date(),
                         Current_Step.QUOTATION_GENERATED,
                         addHours(1),
-                        ticket.insuranceType,
+                        ticket.insuranceTypes.code,
                         reqBody.agentRemarks,
                         reqBody.othersRemarks,
                         userEntity.id
@@ -939,7 +970,7 @@ export class InsuranceTicketService {
                     });
                 } else {
                     await manager.save(InsuranceNominee, {
-                        name: nomineeDetails.name  || null,
+                        name: nomineeDetails.name || null,
                         gender: nomineeDetails.gender || null,
                         dateOfBirth: nomineeDetails.dateOfBirth || null,
                         primaryContactNumber: nomineeDetails.contactNumber || null,
@@ -1100,6 +1131,8 @@ export class InsuranceTicketService {
                 }
 
                 // Update Vehicle Details (MOTOR)
+                console.log("vehicle details is", vehicleDetails);
+                
                 if (ticket.insuranceType === Insurance_Type.Motor && vehicleDetails) {
                     const existingVehicle = await manager.findOne(InsuranceVehicleDetails, {
                         where: { ticketId: { id: ticketId } }
@@ -1107,49 +1140,51 @@ export class InsuranceTicketService {
 
                     if (existingVehicle) {
                         await manager.update(InsuranceVehicleDetails, existingVehicle.id, {
-                            vehicleType: vehicleDetails.vehicleType || null,
-                            vehicleNumber: vehicleDetails.vehicleNumber || null,
-                            makingYear: vehicleDetails.makingYear || null,
-                            vehicleName: vehicleDetails.vehicleName || null,
-                            modelNumber: vehicleDetails.modelNumber || null,
-                            rcOwnerName: vehicleDetails.rcOwnerName || null,
-                            engineNumber: vehicleDetails.engineNumber || null,
-                            chassisNumber: vehicleDetails.chassisNumber || null,
-                            dateOfReg: vehicleDetails.dateOfReg || null,
-                            madeBy: vehicleDetails.madeBy || null,
-                            vehicleCategory: vehicleDetails.vehicleCategory || null,
-                            othersVehicleCategory: vehicleDetails.othersVehicleCategory || null,
-                            seatingCapacity: vehicleDetails.seatingCapacity || null,
-                            grossVehicleWeight: vehicleDetails.grossVehicleWeight || null,
-                            overTurning: vehicleDetails.overTurning || null,
-                            noClaimBonus: vehicleDetails.noClaimBonus || null,
-                            noClaimBonusOnPrePolicy: vehicleDetails.noClaimBonusOnPrePolicy || null,
+                            vehicleType: vehicleDetails.vehicleType ?? null,
+                            vehicleNumber: vehicleDetails.vehicleNumber ?? null,
+                            makingYear: vehicleDetails.makingYear ?? null,
+                            vehicleName: vehicleDetails.vehicleName ?? null,
+                            modelNumber: vehicleDetails.modelNumber ?? null,
+                            rcOwnerName: vehicleDetails.rcOwnerName ?? null,
+                            engineNumber: vehicleDetails.engineNumber ?? null,
+                            chassisNumber: vehicleDetails.chassisNumber ?? null,
+                            dateOfReg: vehicleDetails.dateOfReg ?? null,
+                            madeBy: vehicleDetails.madeBy ?? null,
+                            vehicleCategory: vehicleDetails.vehicleCategory ?? null,
+                            othersVehicleCategory: vehicleDetails.othersVehicleCategory ?? null,
+                            seatingCapacity: vehicleDetails.seatingCapacity ?? null,
+                            grossVehicleWeight: vehicleDetails.grossVehicleWeight ?? null,
+                            overTurning: vehicleDetails?.overTurning ?? null,
+                            noClaimBonus: vehicleDetails?.noClaimBonus ?? null,
+                            noClaimBonusOnPrePolicy: vehicleDetails.noClaimBonusOnPrePolicy ?? null,
 
                             //documents: JSON.stringify(documents), // Store as JSON string
                             updatedBy: userEntity,
                             updatedAt: new Date()
                         });
                     } else {
+                        console.log("en else part vehicleDetails is", vehicleDetails, vehicleDetails?.noClaimBonus, vehicleDetails.noClaimBonus);
+                        
                         await manager.save(InsuranceVehicleDetails, {
                             insuranceUserId: ticket.insuranceUserId,
                             ticketId: ticket,
-                            vehicleType: vehicleDetails.vehicleType || null,
-                            vehicleNumber: vehicleDetails.vehicleNumber || null,
-                            makingYear: vehicleDetails.makingYear || null,
-                            vehicleName: vehicleDetails.vehicleName || null,
-                            modelNumber: vehicleDetails.modelNumber || null,
-                            rcOwnerName: vehicleDetails.rcOwnerName || null,
-                            engineNumber: vehicleDetails.engineNumber || null,
-                            chassisNumber: vehicleDetails.chassisNumber || null,
-                            dateOfReg: vehicleDetails.dateOfReg || null,
-                            madeBy: vehicleDetails.madeBy || null,
-                            vehicleCategory: vehicleDetails.vehicleCategory || null,
-                            othersVehicleCategory: vehicleDetails.othersVehicleCategory || null,
-                            seatingCapacity: vehicleDetails.seatingCapacity || null,
-                            grossVehicleWeight: vehicleDetails.grossVehicleWeight || null,
-                            overTurning: vehicleDetails.overTurning || null,
-                            noClaimBonus: vehicleDetails.noClaimBonus || null,
-                            noClaimBonusOnPrePolicy: vehicleDetails.noClaimBonusOnPrePolicy || null,
+                            vehicleType: vehicleDetails.vehicleType ?? null,
+                            vehicleNumber: vehicleDetails.vehicleNumber ?? null,
+                            makingYear: vehicleDetails.makingYear ?? null,
+                            vehicleName: vehicleDetails.vehicleName ?? null,
+                            modelNumber: vehicleDetails.modelNumber ?? null,
+                            rcOwnerName: vehicleDetails.rcOwnerName ?? null,
+                            engineNumber: vehicleDetails.engineNumber ?? null,
+                            chassisNumber: vehicleDetails.chassisNumber ?? null,
+                            dateOfReg: vehicleDetails.dateOfReg ?? null,
+                            madeBy: vehicleDetails.madeBy ?? null,
+                            vehicleCategory: vehicleDetails.vehicleCategory ?? null,
+                            othersVehicleCategory: vehicleDetails.othersVehicleCategory ?? null,
+                            seatingCapacity: vehicleDetails.seatingCapacity ?? null,
+                            grossVehicleWeight: vehicleDetails.grossVehicleWeight ?? null,
+                            overTurning: vehicleDetails?.overTurning ?? null,
+                            noClaimBonus: vehicleDetails?.noClaimBonus ?? null,
+                            noClaimBonusOnPrePolicy: vehicleDetails?.noClaimBonusOnPrePolicy ?? null,
 
                             //documents: JSON.stringify(documents), // Store as JSON string
                             createdBy: userEntity
@@ -1276,7 +1311,7 @@ export class InsuranceTicketService {
             const { ticketStatus, isActive } = reqBody;
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId']
+                relations: ['insuranceUserId', 'insuranceTypes']
             });
             if (!ticket) {
                 return {
@@ -1294,7 +1329,7 @@ export class InsuranceTicketService {
                 };
             }
 
-            if (ticket.ticketStatus === Ticket_Status.CANCELLED && ticketStatus=== Ticket_Status.CANCELLED) {
+            if (ticket.ticketStatus === Ticket_Status.CANCELLED && ticketStatus === Ticket_Status.CANCELLED) {
                 return {
                     status: 'error',
                     message: `Ticket is already cancelled`,
@@ -1342,7 +1377,7 @@ export class InsuranceTicketService {
                 ticketStatus === Ticket_Status.CLOSED ? new Date() : ticket.currentStepStartAt,
                 ticketStatus === Ticket_Status.CLOSED ? Current_Step.CLOSED : ticket.nextStepStart,
                 ticketStatus === Ticket_Status.CLOSED ? addHours(1) : ticket.nextStepDeadline,
-                ticket.insuranceType,
+                ticket.insuranceTypes.code,
                 ticket.agentRemarks,
                 ticket.othersRemarks,
                 userEntity.id
@@ -1385,7 +1420,7 @@ export class InsuranceTicketService {
                 where: {
                     id: ticketId
                 },
-                relations: ['insuranceUserId', 'assignTo', 'selectedProduct']
+                relations: ['insuranceUserId', 'assignTo', 'selectedProduct', 'insuranceTypes']
             });
 
             if (!ticket) {
@@ -1531,7 +1566,7 @@ export class InsuranceTicketService {
                 ticket.currentStepStartAt,
                 ticket.nextStepStart,
                 ticket.nextStepDeadline,
-                ticket.insuranceType,
+                ticket.insuranceTypes.code,
                 ticket.agentRemarks,
                 ticket.othersRemarks,
                 userEntity.id

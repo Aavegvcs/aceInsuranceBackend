@@ -7,11 +7,12 @@ import { InsuranceFeaturesService } from "./insurance-features.service";
 import { InsuranceFeaturesController } from "./insurance-features.controller";
 import { InsuranceFeatures } from "./entities/insurance-features.entity";
 import { ProductFeatures } from "./entities/product-features.entity";
+import { InsuranceTypeMaster } from "@modules/insurance-ticket/entities/insurance-type-master.entity";
 
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([InsuranceFeatures, ProductFeatures]),
+        TypeOrmModule.forFeature([InsuranceFeatures, ProductFeatures, InsuranceTypeMaster]),
         forwardRef(() => UserModule),
         forwardRef(() => AuthModule)
     ],

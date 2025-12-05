@@ -257,7 +257,8 @@ export class InsuranceQuotationService {
         //  console.log("testing line no 268");
          
                 const insuranceFeatures = await this.insurncetFeaturesRepo.find({
-                    where: { isActive: true, insuranceType: ticket.insuranceType }
+                    where: { isActive: true, insuranceTypes: ticket.insuranceType },
+                    relations:['insuranceTypes']
                 });
 // console.log("line no 272 insurance features", insuranceFeatures);
 
@@ -717,7 +718,7 @@ export class InsuranceQuotationService {
 
                 let fields = [];
                 if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
-                    fields = ['Company', 'Product', 'Coverage', 'Premium', 'Benefits', 'Advantages', 'Remarks'];
+                    fields = ['Company', 'Product', 'Coverage', 'Premium', 'Remarks'];
                     // fields = ['Company', 'Product', 'Coverage', 'Benefits', 'Advantages', 'Remarks', 'Premium'];
 
                 }
@@ -738,8 +739,8 @@ export class InsuranceQuotationService {
                     Product: 'productName',
                     Coverage: 'coverage',
                     Premium: 'premium',
-                    Benefits: 'benefits',
-                    Advantages: 'advantages',
+                    // Benefits: 'benefits',
+                    // Advantages: 'advantages',
                     Remarks: 'remarks',
                     IDV: 'idv',
                     'Cover Type': 'coverType',
@@ -1014,6 +1015,8 @@ export class InsuranceQuotationService {
 
     async sendQuotation(ticket: any, quotationId: string): Promise<any> {
         try {
+            console.log("in send quote ", ticket);
+            
             const pdfBuffer = await this.generateQuotationPDF(ticket, quotationId);
             // const ticketData = await this.ticketRepo
             //     .createQueryBuilder('ticket')
@@ -1021,7 +1024,7 @@ export class InsuranceQuotationService {
             //     .leftJoinAndSelect('ticket.branch', 'branch')
             //     .where('ticket.id = :ticketId', { ticketId })
             //     .getOne();
-            // console.log('in send quoatation function ticket is', ticket);
+             console.log('in send quoatation function ticket is', ticket);
 
             const customerEmail = ticket.insuranceUserId.emailId;
             const customerName = ticket.insuranceUserId.name;
@@ -1108,7 +1111,7 @@ export class InsuranceQuotationService {
             // Fetch the ticket with relations
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId', 'branch']
+                relations: ['insuranceUserId', 'branch', 'insuranceTypes']
             });
             if (!ticket) {
                 return {
@@ -1144,7 +1147,7 @@ export class InsuranceQuotationService {
             for (const quoteData of quotes) {
                 // Fetch company and product
                 const company = await this.insCompanyRepo.findOne({ where: { id: parseInt(quoteData.companyId) } });
-                const product = await this.productRepo.findOne({ where: { id: quoteData.productId } });
+                const product = await this.productRepo.findOne({ where: { id: quoteData.productId }, relations:['insuranceTypes'] });
                 if (!company || !product) {
                     return {
                         status: 'error',
@@ -1180,10 +1183,11 @@ export class InsuranceQuotationService {
                 const productFeatures = await this.productFeaturesRepo
                     .createQueryBuilder('pf')
                     .leftJoinAndSelect('pf.insuranceFeatures', 'if')
+                    .leftJoinAndSelect('pf.insuranceTypes', 'itm')
                     .where('pf.product_id = :productId', { productId: product.id }) // use _id column
                     .andWhere('pf.is_active = true')
                     .andWhere('if.is_standard = true')
-                    .andWhere('if.insurance_type = :insuranceType', { insuranceType: product.insuranceType })
+                    .andWhere('itm.code = :code', { code: product.insuranceTypes.code })
                     .getMany();
 
                 // console.log('in create quotation product features is', productFeatures);
@@ -1325,7 +1329,7 @@ export class InsuranceQuotationService {
                 };
             }
             const { ticketId, quotationId } = reqBody;
-            // console.log('formQuoteData:', isSendMail, quotes);
+            //  console.log('formQuoteData:',reqBody);
             if (!ticketId || !quotationId) {
                 return {
                     status: 'error',
@@ -1336,7 +1340,7 @@ export class InsuranceQuotationService {
             // Fetch the ticket with relations
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId']
+                relations: ['insuranceUserId', 'insuranceTypes']
             });
             if (!ticket) {
                 return {
@@ -1346,7 +1350,7 @@ export class InsuranceQuotationService {
                 };
             }
 
-            const responsemsz = await this.sendQuotation(ticketId, String(quotationId));
+            const responsemsz = await this.sendQuotation(ticket, String(quotationId));
             if (responsemsz.status === 'success') {
                 await this.quotationRepository.update(quotationId, {
                     status: Quotation_Status.QUOTATION_SENT,
@@ -1374,7 +1378,7 @@ export class InsuranceQuotationService {
                     Current_Step.SUBMITTED_FOR_REVISION,
                     ticket.nextStepDeadline,
 
-                    ticket.insuranceType,
+                    ticket.insuranceTypes.code,
                     ticket.agentRemarks,
                     ticket.othersRemarks,
                     userEntity.id
@@ -1424,7 +1428,7 @@ export class InsuranceQuotationService {
             }
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId', 'branch']
+                relations: ['insuranceUserId', 'branch', 'insuranceTypes']
             });
             if (!ticket) {
                 return {
@@ -2315,7 +2319,7 @@ export class InsuranceQuotationService {
 
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId']
+                relations: ['insuranceUserId', 'insuranceTypes']
             });
 
             if (!ticket) return { status: 'error', message: 'Ticket not found', data: null };
@@ -2435,7 +2439,7 @@ export class InsuranceQuotationService {
                     new Date(),
                     Current_Step.CUSTOMER_APPROVED,
                     ticket.nextStepDeadline,
-                    ticket.insuranceType,
+                    ticket.insuranceTypes.code,
                     ticket.agentRemarks,
                     ticket.othersRemarks,
                     userEntity.id

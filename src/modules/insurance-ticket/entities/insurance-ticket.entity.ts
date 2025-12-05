@@ -17,7 +17,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
     ManyToOne,
-    JoinColumn,
+    JoinColumn, 
     OneToMany,
     OneToOne
 } from 'typeorm';
@@ -43,7 +43,7 @@ import { InsuranceTicketDeviation } from '@modules/insurance-escalation/entities
 import { EscalationCase } from '@modules/insurance-escalation/entities/escalation-case.entity';
 import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
 import { InsuranceNominee } from './insurance-nominee-details.entity';
-
+import { InsuranceTypeMaster } from './insurance-type-master.entity';
 @Entity({ name: 'insurance_ticket' })
 export class InsuranceTicket {
     @PrimaryGeneratedColumn()
@@ -61,6 +61,10 @@ export class InsuranceTicket {
 
     @Column({ type: 'enum', enum: Insurance_Type, name: 'insurance_type', nullable: true })
     insuranceType: Insurance_Type;
+
+    @ManyToOne(() => InsuranceTypeMaster,(data)=> data.insuranceTicket, { nullable: true })
+    @JoinColumn({ name: 'insurance_types' })
+    insuranceTypes: InsuranceTypeMaster;
 
     @Column({ type: 'enum', enum: Policy_Holerder_Type, name: 'policy_holder_type', nullable: true })
     policyHolderType: Policy_Holerder_Type;

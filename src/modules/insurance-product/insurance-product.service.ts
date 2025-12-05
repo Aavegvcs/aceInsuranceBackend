@@ -24,6 +24,10 @@ import { response } from 'express';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { standardResponse } from 'src/utils/helper/response.helper';
 import { log } from 'winston';
+import { InsuranceTicketService } from '@modules/insurance-ticket/insurance-ticket.service';
+import { CommonConnectionOptions } from 'tls';
+import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
 @Injectable()
 export class InsuranceProductService {
@@ -51,13 +55,16 @@ export class InsuranceProductService {
 
         @InjectRepository(InsurancePurchasedProduct)
         private readonly purchasedRepo: Repository<InsurancePurchasedProduct>,
+        @InjectRepository(InsuranceTypeMaster)
+        private readonly insuranceTypeRepo: Repository<InsuranceTypeMaster>,
 
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
-        private readonly loggedInsUserService: LoggedInsUserService
+        private readonly loggedInsUserService: LoggedInsUserService,
     ) {}
 
     //------------------------------- company services ------------------------------//
+
     async createCompany(requestParam: CreateInsuranceCompanyDto): Promise<InsuranceCompanies> {
         const company = await this.insuranceCompanyRepo.findOne({ where: { companyName: requestParam.companyName } });
 
@@ -355,10 +362,12 @@ export class InsuranceProductService {
             if (!product || !insuranceCompany) {
                 throw new Error(`product or insurance company not found`);
             }
+            const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({ where: { code: reqBody.insuranceType } });
 
             const result = await this.productRepo.update(reqBody.id, {
                 name: reqBody.name,
                 insuranceType: reqBody.insuranceType,
+                insuranceTypes:insuranceTypeMaster,
                 insuranceCompanyId: reqBody.insuranceCompanyId,
                 insurancePrice: reqBody.insurancePrice,
                 incentivePercentage: reqBody.incentivePercentage,
@@ -419,6 +428,9 @@ export class InsuranceProductService {
     }
 
     async getAllProductByType(reqBody: any): Promise<any> {
+       try{
+        console.log("reqBody", reqBody);
+        
         const query = 'CALL get_ProductByType(?, ?)';
         const result = await this.companyRepo.query(query, [reqBody.insuranceCompanyId, reqBody.insuranceType]);
 
@@ -427,131 +439,11 @@ export class InsuranceProductService {
         }
 
         return result[0];
+    }catch(err){
+        console.log("error in getAllProductByType", err.message);
+        
     }
-
-    // async productBulkUpload(reqBody: any): Promise<any> {
-    //     const failed: { index: number; name: string; reason: string }[] = [];
-    //     const data = reqBody.data || [];
-    //     const insuranceCompanyId  = reqBody.insuranceCompanyId;
-    //     const startIndex = reqBody.startIndex || 1;
-    //     const userEntity = await this.loggedInsUserService.getCurrentUser();
-
-    //     if (!userEntity) {
-    //         return standardResponse(false, 'Logged user not found', 404, null, null, 'insurance-product/productBulkUpload');
-    //     }
-
-    //     try {
-    //         // Step 1: Validate incoming data
-    //         if (!Array.isArray(data) || data.length === 0) {
-    //             return standardResponse(
-    //                 true,
-    //                 'No data provided for bulk upload',
-    //                 404,
-    //                 { successCount: 0, failedCount: 0, failed: [] },
-    //                 null,
-    //                 'insurance-product/productBulkUpload'
-    //             );
-    //         }
-    //         const insuranceCompany = await this.companyRepo.findOne({id:reqBody.insuranceCompanyId})
-
-    //         // Step 2: Extract names & companies
-    //         const incomingNames = data.map((item) => item.name);
-    //         // const incomingCompanies = data.map((item) => item.insuranceCompanyId); // company IDs assumed
-
-    //         // Step 3: Find existing products by name & company
-    //         const existingProducts = await this.productRepo.find({
-    //             where: {
-    //                 name: In(incomingNames),
-    //                 insuranceCompanyId: insuranceCompany
-    //             },
-    //             select: ['name', 'insuranceCompanyId']
-    //         });
-
-    //         const existingSet = new Set(
-    //             existingProducts.map((p) => `${p.name}-${p.insuranceCompanyId}`)
-    //         );
-
-    //         // Step 4: Filter unique data
-    //         const uniqueData = [];
-    //         data.forEach((item, index) => {
-    //             const rowIndex = startIndex + index;
-    //             const key = `${item.name}-${item.insuranceCompanyId}`;
-    //             if (existingSet.has(key)) {
-    //                 failed.push({
-    //                     index: rowIndex,
-    //                     name: item.name,
-    //                     reason: `Product '${item.name}' for company ${item.insuranceCompanyId} already exists`
-    //                 });
-    //             } else {
-    //                 uniqueData.push(item);
-    //             }
-    //         });
-
-    //         // Step 5: Bulk insert only unique data
-    //         if (uniqueData.length > 0) {
-    //             try {
-    //                 const insertData = uniqueData.map((item) => ({
-    //                     ...item,
-    //                     createdBy: userEntity.id,
-    //                     createdAt: new Date()
-    //                 }));
-    //                 await this.productRepo
-    //                     .createQueryBuilder()
-    //                     .insert()
-    //                     .into(this.productRepo.metadata.tableName)
-    //                     .values(insertData)
-    //                     .execute();
-    //             } catch (error) {
-    //                 uniqueData.forEach((item, index) => {
-    //                     failed.push({
-    //                         index: startIndex + data.indexOf(item),
-    //                         name: item.name,
-    //                         reason: error.message || 'Database insert error'
-    //                     });
-    //                 });
-    //             }
-    //         }
-
-    //         // Step 6: Prepare response
-    //         const successCount = uniqueData.length - failed.length >= 0 ? uniqueData.length : 0;
-    //         const failedCount = failed.length;
-    //         let message = 'Data inserted successfully.';
-
-    //         if (successCount > 0 && failedCount > 0) {
-    //             message = 'Data partially inserted!';
-    //         } else if (successCount === 0 && failedCount > 0) {
-    //             message = 'Failed to insert data!';
-    //         }
-
-    //         return standardResponse(
-    //             true,
-    //             message,
-    //             202,
-    //             { successCount, failedCount, failed },
-    //             null,
-    //             'insurance-product/productBulkUpload'
-    //         );
-    //     } catch (error) {
-    //         return standardResponse(
-    //             false,
-    //             'Failed! to insert data',
-    //             500,
-    //             {
-    //                 successCount: 0,
-    //                 failedCount: data.length,
-    //                 failed: data.map((item, index) => ({
-    //                     index: startIndex + index,
-    //                     name: item.name || 'Unknown',
-    //                     reason: error.message || 'Unexpected server error'
-    //                 }))
-    //             },
-    //             null,
-    //             'insurance-product/productBulkUpload'
-    //         );
-    //     }
-    // }
-
-    //------------------------------- sub type services ------------------------------//
+    }
 
     async productBulkUpload(reqBody: any): Promise<any> {
         const failed: { index: number; name: string; reason: string }[] = [];

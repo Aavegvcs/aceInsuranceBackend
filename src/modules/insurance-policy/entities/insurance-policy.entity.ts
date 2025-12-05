@@ -19,6 +19,7 @@ import { InsuranceCompanies } from '@modules/insurance-product/entities/insuranc
 import { Insurance_Type, Policy_Status } from 'src/utils/app.utils';
 import { InsurancePolicyRenewalHistory } from './insurance-policy-renewal-history.entity';
 import { InsuranceClaim } from '@modules/insurance-claim/entities/insurance-claim.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
 @Entity({ name: 'insurance_policy' })
 export class InsurancePolicy {
@@ -53,8 +54,13 @@ export class InsurancePolicy {
     previousPolicyNumber: string;
 
 
-    @Column({ type: 'enum', enum: Insurance_Type, name: 'policy_type', nullable: true })
-    policyType: Insurance_Type; // e.g. Health, Motor, Life
+    // @Column({ type: 'enum', enum: Insurance_Type, name: 'policy_type', nullable: true })
+    // policyType: Insurance_Type; // e.g. Health, Motor, Life
+
+    @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+    @JoinColumn({ name: 'policy_type' })
+    policyType: InsuranceTypeMaster; // e.g. Health, Motor, Life
+
 
     @Column({ type: 'decimal', precision: 12, scale: 2, name: 'sum_assured', nullable: true })
     sumAssured: number; // basically it is the coverage amount

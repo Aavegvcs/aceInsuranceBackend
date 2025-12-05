@@ -14,7 +14,11 @@ import { UserService } from '@modules/user/user.service';
 import { UserModule } from '@modules/user/user.module';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { AuthModule } from '@modules/auth/auth.module';
-
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
+import { InsuranceTicketService } from '@modules/insurance-ticket/insurance-ticket.service';
+import { InsuranceQuotationService } from '@modules/insurance-quotations/insurance-quotation.service';
+import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
 
 @Module({
     imports: [
@@ -27,13 +31,14 @@ import { AuthModule } from '@modules/auth/auth.module';
             InsuranceUser,
             InsuranceAgent,
             InsurancePurchasedProduct,
-            User
+            User,
+            InsuranceTypeMaster
         ]),
         forwardRef(() => UserModule),
         forwardRef(() => AuthModule)
     ],
     controllers: [InsuranceProductController],
-    providers: [InsuranceProductService],
+    providers: [InsuranceProductService, LoggedInsUserService],
     exports: [InsuranceProductService]
 })
 export class InsuranceProductModule {}

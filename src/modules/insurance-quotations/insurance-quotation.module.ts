@@ -18,6 +18,7 @@ import { UserModule } from '@modules/user/user.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { QuoteFeatures } from '@modules/insurance-features/entities/quote-features.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
 @Module({
     imports: [
@@ -30,7 +31,8 @@ import { QuoteFeatures } from '@modules/insurance-features/entities/quote-featur
             User,
             ProductFeatures,
             InsuranceFeatures,
-            QuoteFeatures
+            QuoteFeatures,
+            InsuranceTypeMaster
         ]),
         EmailModule,
         InsuranceEscalationModule,

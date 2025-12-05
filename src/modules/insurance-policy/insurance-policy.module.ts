@@ -9,10 +9,11 @@ import { InsurancePolicy } from './entities/insurance-policy.entity';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { UserModule } from '@modules/user/user.module';
 import { AuthModule } from '@modules/auth/auth.module';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([InsurancePolicy, User, InsuranceTicket, InsurancePolicyRenewalHistory]),
+        TypeOrmModule.forFeature([InsurancePolicy, User, InsuranceTicket, InsurancePolicyRenewalHistory, InsuranceTypeMaster]),
         forwardRef(() => UserModule),
         forwardRef(() => AuthModule)
     ],

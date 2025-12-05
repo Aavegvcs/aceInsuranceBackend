@@ -32,6 +32,7 @@ import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-po
 import { InsurancePolicyService } from '@modules/insurance-policy/insurance-policy.service';
 import { InsurancePolicyRenewalHistory } from '@modules/insurance-policy/entities/insurance-policy-renewal-history.entity';
 import { InsuranceNominee } from './entities/insurance-nominee-details.entity';
+import { InsuranceTypeMaster } from './entities/insurance-type-master.entity';
 
 @Module({
     imports: [
@@ -57,7 +58,8 @@ import { InsuranceNominee } from './entities/insurance-nominee-details.entity';
             InsuranceProduct,
             InsurancePolicy,
             InsurancePolicyRenewalHistory,
-            InsuranceNominee
+            InsuranceNominee,
+            InsuranceTypeMaster
         ]),
         InsuranceEscalationModule,
         ScheduleModule.forRoot(),
