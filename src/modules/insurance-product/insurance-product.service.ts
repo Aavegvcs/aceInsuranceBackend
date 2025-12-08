@@ -23,11 +23,12 @@ import { CreateInsurancePurchasedDto } from './dto/insurance-purchased.dto';
 import { response } from 'express';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { standardResponse } from 'src/utils/helper/response.helper';
-import { log } from 'winston';
+import { exceptions, log } from 'winston';
 import { InsuranceTicketService } from '@modules/insurance-ticket/insurance-ticket.service';
 import { CommonConnectionOptions } from 'tls';
 import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
 
 @Injectable()
 export class InsuranceProductService {
@@ -57,10 +58,12 @@ export class InsuranceProductService {
         private readonly purchasedRepo: Repository<InsurancePurchasedProduct>,
         @InjectRepository(InsuranceTypeMaster)
         private readonly insuranceTypeRepo: Repository<InsuranceTypeMaster>,
+        @InjectRepository(InsuranceFeatures)
+        private readonly insuranceFeaturesRepo: Repository<InsuranceFeatures>,
 
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
-        private readonly loggedInsUserService: LoggedInsUserService,
+        private readonly loggedInsUserService: LoggedInsUserService
     ) {}
 
     //------------------------------- company services ------------------------------//
@@ -362,12 +365,14 @@ export class InsuranceProductService {
             if (!product || !insuranceCompany) {
                 throw new Error(`product or insurance company not found`);
             }
-            const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({ where: { code: reqBody.insuranceType } });
+            const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({
+                where: { code: reqBody.insuranceType }
+            });
 
             const result = await this.productRepo.update(reqBody.id, {
                 name: reqBody.name,
                 insuranceType: reqBody.insuranceType,
-                insuranceTypes:insuranceTypeMaster,
+                insuranceTypes: insuranceTypeMaster,
                 insuranceCompanyId: reqBody.insuranceCompanyId,
                 insurancePrice: reqBody.insurancePrice,
                 incentivePercentage: reqBody.incentivePercentage,
@@ -428,21 +433,20 @@ export class InsuranceProductService {
     }
 
     async getAllProductByType(reqBody: any): Promise<any> {
-       try{
-        console.log("reqBody", reqBody);
-        
-        const query = 'CALL get_ProductByType(?, ?)';
-        const result = await this.companyRepo.query(query, [reqBody.insuranceCompanyId, reqBody.insuranceType]);
+        try {
+            console.log('reqBody', reqBody);
 
-        if (!result || result.length === 0) {
-            throw new Error(`No products found for company with ID ${reqBody.insuranceCompanyId}`);
+            const query = 'CALL get_ProductByType(?, ?)';
+            const result = await this.companyRepo.query(query, [reqBody.insuranceCompanyId, reqBody.insuranceType]);
+
+            if (!result || result.length === 0) {
+                throw new Error(`No products found for company with ID ${reqBody.insuranceCompanyId}`);
+            }
+
+            return result[0];
+        } catch (err) {
+            console.log('error in getAllProductByType', err.message);
         }
-
-        return result[0];
-    }catch(err){
-        console.log("error in getAllProductByType", err.message);
-        
-    }
     }
 
     async productBulkUpload(reqBody: any): Promise<any> {
@@ -742,4 +746,6 @@ export class InsuranceProductService {
 
         return response;
     }
+
+
 }

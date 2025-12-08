@@ -22,6 +22,9 @@ export class InsuranceFeatures {
     @Column({ name: 'features_name', nullable: false })
     featuresName: string;
 
+      @Column({ name: 'coverage', nullable: true })
+    coverage: string;
+
     @Column({ name: 'description', type: 'text', nullable: true })
     description: string;
 

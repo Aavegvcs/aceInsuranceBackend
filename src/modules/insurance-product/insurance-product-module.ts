@@ -19,6 +19,7 @@ import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ti
 import { InsuranceTicketService } from '@modules/insurance-ticket/insurance-ticket.service';
 import { InsuranceQuotationService } from '@modules/insurance-quotations/insurance-quotation.service';
 import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
+import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
 
 @Module({
     imports: [
@@ -32,7 +33,8 @@ import { CommonQuotationService } from '@modules/insurance-quotations/common-quo
             InsuranceAgent,
             InsurancePurchasedProduct,
             User,
-            InsuranceTypeMaster
+            InsuranceTypeMaster,
+            InsuranceFeatures
         ]),
         forwardRef(() => UserModule),
         forwardRef(() => AuthModule)
