@@ -19,6 +19,8 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { QuoteFeatures } from '@modules/insurance-features/entities/quote-features.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
+import { QuoteWaitingPeriod } from '@modules/insurance-features/entities/quote-waiting-period.entity';
 
 @Module({
     imports: [
@@ -32,7 +34,9 @@ import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insuranc
             ProductFeatures,
             InsuranceFeatures,
             QuoteFeatures,
-            InsuranceTypeMaster
+            InsuranceTypeMaster,
+            ProductWaitingPeriod,
+            QuoteWaitingPeriod
         ]),
         EmailModule,
         InsuranceEscalationModule,

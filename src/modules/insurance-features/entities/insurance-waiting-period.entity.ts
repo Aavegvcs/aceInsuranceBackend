@@ -1,4 +1,4 @@
-import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 import { User } from '@modules/user/user.entity';
 import { Insurance_Type } from 'src/utils/app.utils';
 import {
@@ -9,25 +9,27 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
     ManyToOne,
-    JoinColumn
+    JoinColumn,
+    Unique
 } from 'typeorm';
-import { InsuranceFeatures } from './insurance-features.entity';
 
-@Entity({ name: 'product_features' })
-export class ProductFeatures {
+@Entity({ name: 'insurance_waiting_period' })
+export class InsuranceWaitingPeriod {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => InsuranceProduct, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'product_id' })
-    product: InsuranceProduct;
+    @Column({ name: 'name', nullable: false })
+    name: string;
 
-    @ManyToOne(() => InsuranceFeatures, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'insurance_features_id' })
-    insuranceFeatures: InsuranceFeatures;
+    @Column({type:'int', name: 'waiting_time', nullable: true })
+    waitingTime: number;
 
-    @Column({ name: 'price', type: 'decimal', precision: 10, scale: 2, nullable: true })
-    price: number;
+    @Column({ name: 'time_type', nullable: true })
+    timeType: string; // year, month, day
+
+    @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+    @JoinColumn({ name: 'insurance_types' })
+    insuranceTypes: InsuranceTypeMaster;
 
     @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;

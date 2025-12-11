@@ -20,6 +20,7 @@ import { InsuranceProductSuggestions } from '@modules/insurance-escalation/entit
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
 
 @Entity({ name: 'insurance_product' })
 export class InsuranceProduct {
@@ -160,4 +161,7 @@ export class InsuranceProduct {
     
     @OneToMany(() => ProductFeatures, productFeature => productFeature.product)
     productFeatures: ProductFeatures[];
+
+    @OneToMany(() => ProductWaitingPeriod, (productWaiting) => productWaiting.product)
+    productWaitingPeriod: ProductWaitingPeriod[];
 }

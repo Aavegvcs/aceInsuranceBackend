@@ -1,4 +1,16 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    HttpException,
+    HttpStatus,
+    Param,
+    Post,
+    Put,
+    Req,
+    Res,
+    UseGuards
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { InsuranceQuotationService } from './insurance-quotation.service';
 import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
@@ -84,7 +96,7 @@ export class InsuranceQuotationController {
         }
     }
 
-     @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Post('changedQuotatinSatus')
     async changedQuotatinSatus(@Body() reqBody: any, @Req() req: any) {
         try {
@@ -103,13 +115,32 @@ export class InsuranceQuotationController {
             throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
- @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Put('updateQuotation')
     async updateQuotation(@Body() reqBody: any) {
         try {
             return await this.quotationService.newUpdateQuotation(reqBody);
         } catch (error) {
             throw new HttpException('Failed to update quotation', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('getProductFeatures/:productId')
+    async getProductFeatures(@Param('productId') productId: any) {
+        try {
+            console.log('in get product api', productId);
+
+            return await this.quotationService.getProductFeatures(productId);
+        } catch (error) {
+            throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @Get('getProductWaitingPeriods/:productId')
+    async getProductWaitingPeriod(@Param('productId') productId: any) {
+        try {
+            return await this.quotationService.getProductWaitingPeriods(productId);
+        } catch (error) {
+            throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

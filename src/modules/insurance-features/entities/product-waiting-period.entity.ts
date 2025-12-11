@@ -12,22 +12,28 @@ import {
     JoinColumn
 } from 'typeorm';
 import { InsuranceFeatures } from './insurance-features.entity';
-
-@Entity({ name: 'product_features' })
-export class ProductFeatures {
+import { InsuranceWaitingPeriod } from './insurance-waiting-period.entity';
+/*
+** this table is maaped product and their waiting period
+*/
+@Entity({ name: 'product_waiting_period' })
+export class ProductWaitingPeriod{
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => InsuranceProduct, { onDelete: 'CASCADE' })
+    @ManyToOne(() => InsuranceProduct)
     @JoinColumn({ name: 'product_id' })
     product: InsuranceProduct;
 
-    @ManyToOne(() => InsuranceFeatures, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'insurance_features_id' })
-    insuranceFeatures: InsuranceFeatures;
+    @ManyToOne(() => InsuranceWaitingPeriod)
+    @JoinColumn({ name: 'insurance_waiting_period_id' })
+    insuranceWaitingPeriod: InsuranceWaitingPeriod;
 
-    @Column({ name: 'price', type: 'decimal', precision: 10, scale: 2, nullable: true })
-    price: number;
+    @Column({type:'int', name: 'waiting_time', nullable: true })
+    waitingTime: number;
+
+    @Column({ name: 'time_type', nullable: true })
+    timeType: string; // years, months, days
 
     @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;

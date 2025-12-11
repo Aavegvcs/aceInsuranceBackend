@@ -1,6 +1,5 @@
-import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
+import { QuoteEntity } from '@modules/insurance-quotations/entities/quote.entity';
 import { User } from '@modules/user/user.entity';
-import { Insurance_Type } from 'src/utils/app.utils';
 import {
     Column,
     CreateDateColumn,
@@ -9,25 +8,32 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
     ManyToOne,
-    JoinColumn
+    JoinColumn,
+    Unique
 } from 'typeorm';
 import { InsuranceFeatures } from './insurance-features.entity';
+import { InsuranceWaitingPeriod } from './insurance-waiting-period.entity';
 
-@Entity({ name: 'product_features' })
-export class ProductFeatures {
+// throug this table features will show on quotations
+@Entity({ name: 'quote_waiting_period' })
+@Unique(['quote', 'insuranceWaitingPeriod'])
+export class QuoteWaitingPeriod {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => InsuranceProduct, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'product_id' })
-    product: InsuranceProduct;
+    @ManyToOne(() => QuoteEntity)
+    @JoinColumn({ name: 'quote_id' })
+    quote: QuoteEntity;
 
-    @ManyToOne(() => InsuranceFeatures, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'insurance_features_id' })
-    insuranceFeatures: InsuranceFeatures;
+    @ManyToOne(() => InsuranceWaitingPeriod)
+    @JoinColumn({ name: 'insurance_waiting_period_id' })
+    insuranceWaitingPeriod: InsuranceWaitingPeriod;
 
-    @Column({ name: 'price', type: 'decimal', precision: 10, scale: 2, nullable: true })
-    price: number;
+    @Column({type:'int', name: 'waiting_time', nullable: true })
+    waitingTime: number;
+
+    @Column({ name: 'time_type', nullable: true })
+    timeType: string; // years, months, days
 
     @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;

@@ -9,10 +9,19 @@ import { InsuranceFeatures } from './entities/insurance-features.entity';
 import { ProductFeatures } from './entities/product-features.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 import { User } from '@modules/user/user.entity';
+import { InsuranceWaitingPeriod } from './entities/insurance-waiting-period.entity';
+import { ProductWaitingPeriod } from './entities/product-waiting-period.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([InsuranceFeatures, ProductFeatures, InsuranceTypeMaster, User]),
+        TypeOrmModule.forFeature([
+            InsuranceFeatures,
+            ProductFeatures,
+            InsuranceTypeMaster,
+            User,
+            InsuranceWaitingPeriod,
+            ProductWaitingPeriod
+        ]),
         forwardRef(() => UserModule),
         forwardRef(() => AuthModule)
     ],

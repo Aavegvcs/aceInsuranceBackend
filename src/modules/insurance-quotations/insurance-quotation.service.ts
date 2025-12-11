@@ -36,6 +36,9 @@ import { getAssetPath } from 'src/utils/images-path-utils';
 import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { QuoteFeatures } from '@modules/insurance-features/entities/quote-features.entity';
+import { QuoteWaitingPeriod } from '@modules/insurance-features/entities/quote-waiting-period.entity';
+import { standardResponse } from 'src/utils/helper/response.helper';
+import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
 const today = new Date();
 
 const formattedDate = today.toLocaleString('en-GB', {
@@ -67,11 +70,17 @@ export class InsuranceQuotationService {
         @InjectRepository(ProductFeatures)
         private productFeaturesRepo: Repository<ProductFeatures>,
 
+        @InjectRepository(ProductWaitingPeriod)
+        private productWaitingRepo: Repository<ProductWaitingPeriod>,
+
         @InjectRepository(InsuranceFeatures)
         private insurncetFeaturesRepo: Repository<InsuranceFeatures>,
 
         @InjectRepository(QuoteFeatures)
         private quoteFeaturesRepo: Repository<QuoteFeatures>,
+
+        @InjectRepository(QuoteWaitingPeriod)
+        private quoteWaitingRepo: Repository<QuoteWaitingPeriod>,
 
         private readonly emailService: EmailService,
         private readonly quotationService: CommonQuotationService,
@@ -156,7 +165,6 @@ export class InsuranceQuotationService {
                 doc.on('end', () => resolve(Buffer.concat(buffers)));
                 doc.on('error', reject);
 
-               
                 const quotation = await this.quotationRepository
                     .createQueryBuilder('quotation')
                     .leftJoinAndSelect('quotation.quotes', 'quote')
@@ -175,7 +183,7 @@ export class InsuranceQuotationService {
                 // console.log('line no 172 quotation details, ', quotation);
 
                 const ticketDetails = await this.quotationService.getTicketDetails(ticket);
-// console.log("ticket details line no 190", ticketDetails);
+                // console.log("ticket details line no 190", ticketDetails);
 
                 const data = {
                     customerName: ticketDetails.data.insuranceUser.name,
@@ -188,7 +196,9 @@ export class InsuranceQuotationService {
                         height: ticketDetails.data?.medicalDetails
                             ? ticketDetails.data.medicalDetails?.height || 0
                             : null,
-                        weight: ticketDetails.data.medicalDetails ? ticketDetails.data?.medicalDetails?.weight || 0 : null
+                        weight: ticketDetails.data.medicalDetails
+                            ? ticketDetails.data?.medicalDetails?.weight || 0
+                            : null
                     },
 
                     vehicleDetails: ticketDetails?.data?.vehicleDetails
@@ -254,13 +264,13 @@ export class InsuranceQuotationService {
                 // console.log('line no 250 data is here', data);
 
                 // Step 1: Collect all features across products
-        //  console.log("testing line no 268");
-         
+                //  console.log("testing line no 268");
+
                 const insuranceFeatures = await this.insurncetFeaturesRepo.find({
                     where: { isActive: true, insuranceTypes: ticket.insuranceType },
-                    relations:['insuranceTypes']
+                    relations: ['insuranceTypes']
                 });
-// console.log("line no 272 insurance features", insuranceFeatures);
+                // console.log("line no 272 insurance features", insuranceFeatures);
 
                 const basicFeatures: InsuranceFeatures[] = [];
                 const addOnFeatures: InsuranceFeatures[] = [];
@@ -296,7 +306,6 @@ export class InsuranceQuotationService {
                         })
                     };
                 });
-
 
                 function ensureSpace(doc: any, neededHeight: number, startY: number) {
                     const bottomMargin = 50;
@@ -720,7 +729,6 @@ export class InsuranceQuotationService {
                 if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
                     fields = ['Company', 'Product', 'Coverage', 'Premium', 'Remarks'];
                     // fields = ['Company', 'Product', 'Coverage', 'Benefits', 'Advantages', 'Remarks', 'Premium'];
-
                 }
                 if (data.insuranceType === Insurance_Type.Motor) {
                     fields = ['Company', 'IDV', 'Cover Type', 'NCB(%)', 'Premium', 'Coverage Included', 'Remarks'];
@@ -1015,8 +1023,8 @@ export class InsuranceQuotationService {
 
     async sendQuotation(ticket: any, quotationId: string): Promise<any> {
         try {
-            console.log("in send quote ", ticket);
-            
+            console.log('in send quote ', ticket);
+
             const pdfBuffer = await this.generateQuotationPDF(ticket, quotationId);
             // const ticketData = await this.ticketRepo
             //     .createQueryBuilder('ticket')
@@ -1024,7 +1032,7 @@ export class InsuranceQuotationService {
             //     .leftJoinAndSelect('ticket.branch', 'branch')
             //     .where('ticket.id = :ticketId', { ticketId })
             //     .getOne();
-             console.log('in send quoatation function ticket is', ticket);
+            console.log('in send quoatation function ticket is', ticket);
 
             const customerEmail = ticket.insuranceUserId.emailId;
             const customerName = ticket.insuranceUserId.name;
@@ -1147,7 +1155,12 @@ export class InsuranceQuotationService {
             for (const quoteData of quotes) {
                 // Fetch company and product
                 const company = await this.insCompanyRepo.findOne({ where: { id: parseInt(quoteData.companyId) } });
-                const product = await this.productRepo.findOne({ where: { id: quoteData.productId }, relations:['insuranceTypes'] });
+                const product = await this.productRepo.findOne({
+                    where: { id: quoteData.productId },
+                    relations: ['insuranceTypes']
+                });
+                // console.log("here is product in generation qutoatin", product);
+
                 if (!company || !product) {
                     return {
                         status: 'error',
@@ -1183,16 +1196,16 @@ export class InsuranceQuotationService {
                 const productFeatures = await this.productFeaturesRepo
                     .createQueryBuilder('pf')
                     .leftJoinAndSelect('pf.insuranceFeatures', 'if')
-                    .leftJoinAndSelect('pf.insuranceTypes', 'itm')
                     .where('pf.product_id = :productId', { productId: product.id }) // use _id column
                     .andWhere('pf.is_active = true')
                     .andWhere('if.is_standard = true')
-                    .andWhere('itm.code = :code', { code: product.insuranceTypes.code })
+                    // .andWhere('itm.code = :code', { code: product.insuranceTypes.code })
                     .getMany();
+                // console.log("in generateion quotation product features", productFeatures);
 
                 // console.log('in create quotation product features is', productFeatures);
 
-                const quoteFeaturesToSave = productFeatures.map((pf) => {
+                const basicQuoteFeatures = productFeatures.map((pf) => {
                     return this.quoteFeaturesRepo.create({
                         quote: savedQuote,
                         insuranceFeatures: pf.insuranceFeatures,
@@ -1202,8 +1215,53 @@ export class InsuranceQuotationService {
                     });
                 });
 
-                // Save all quote features in bulk
-                await this.quoteFeaturesRepo.save(quoteFeaturesToSave);
+                await this.quoteFeaturesRepo.save(basicQuoteFeatures);
+
+                if (quoteData.productFeatures && Array.isArray(quoteData.productFeatures)) {
+                    const selectedAddons = quoteData.productFeatures.filter((f) => f.status === true);
+
+                    for (const addon of selectedAddons) {
+                        if (addon.featureId) {
+                            const addonQuoteFeature = this.quoteFeaturesRepo.create({
+                                quote: savedQuote,
+                                insuranceFeatures: { id: addon.featureId },
+                                isActive: true,
+                                createdBy: userEntity
+                            });
+                            await this.quoteFeaturesRepo.save(addonQuoteFeature);
+                        }
+                    }
+                }
+
+                if (quoteData.productWaitingPeriod && Array.isArray(quoteData.productWaitingPeriod)) {
+                    const selectedWaiting = quoteData.productWaitingPeriod.filter((w) => w.status === true);
+
+                    for (const waiting of selectedWaiting) {
+                        if (waiting.insuranceWaitingPeriodId) {
+                            const waitEntity = this.quoteWaitingRepo.create({
+                                quote: savedQuote,
+                                insuranceWaitingPeriod: { id: waiting.insuranceWaitingPeriodId },
+                                waitingTime: waiting.insuranceWaitingTime,
+                                timeType: waiting.insuranceWaitingTimeType,
+                                isActive: true,
+                                createdBy: userEntity
+                            });
+
+                            console.log(
+                                'before here is data after save waiting',
+                                savedQuote.id,
+                                waiting.insuranceWaitingPeriodId
+                            );
+
+                            await this.quoteWaitingRepo.save(waitEntity);
+                            console.log(
+                                'aftab here is data after save waiting',
+                                savedQuote.id,
+                                waiting.insuranceWaitingPeriodId
+                            );
+                        }
+                    }
+                }
             }
 
             // Update ticket status to QUOTATION_GENERATED
@@ -1805,139 +1863,173 @@ export class InsuranceQuotationService {
     //     }
     // }
 
-    async newGetQuotationById(quotationId: number): Promise<any> {
-        try {
-            if (!quotationId) {
-                return {
-                    status: 'error',
-                    message: 'Quotation ID is required',
-                    data: null
-                };
-            }
+    // async newGetQuotationById(quotationId: number): Promise<any> {
+    //     try {
+    //         if (!quotationId) {
+    //             return {
+    //                 status: 'error',
+    //                 message: 'Quotation ID is required',
+    //                 data: null
+    //             };
+    //         }
 
-            const rawData = await this.quotationRepository
-                .createQueryBuilder('quotation')
-                .leftJoin('quotation.ticketId', 'ticket')
-                .leftJoin('quotation.quotes', 'quote')
-                .leftJoin('quote.company', 'insuranceCompany')
-                .leftJoin('quote.product', 'product')
-                .leftJoin('product.productFeatures', 'productFeature')
-                .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature')
-                // join quote features (but keep product features even if quote feature missing)
-                .leftJoin(
-                    'quote.quoteFeatures',
-                    'quoteFeature',
-                    'quoteFeature.insuranceFeatures = insuranceFeature.id AND quoteFeature.quote = quote.id'
-                )
-                .select([
-                    'quotation.id AS quotationId',
-                    'quotation.status AS quotationStatus',
-                    'quotation.createdAt AS quotationCreatedAt',
-                    'quotation.updatedAt AS quotationUpdatedAt',
+    //         const rawData = await this.quotationRepository
+    //             .createQueryBuilder('quotation')
+    //             .leftJoin('quotation.ticketId', 'ticket')
+    //             .leftJoin('quotation.quotes', 'quote')
+    //             .leftJoin('quote.company', 'insuranceCompany')
+    //             .leftJoin('quote.product', 'product')
+    //             .leftJoin('product.productFeatures', 'productFeature')
+    //             .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature')
+    //             .leftJoin('product.productWaitingPeriod', 'productWaitingPeriod')
+    //             .leftJoin('productWaitingPeriod.insuranceWaitingPeriod', 'insuranceWaitingPeriod')
+    //             // join quote features (but keep product features even if quote feature missing)
+    //             .leftJoin(
+    //                 'quote.quoteFeatures',
+    //                 'quoteFeature',
+    //                 'quoteFeature.insuranceFeatures = insuranceFeature.id AND quoteFeature.quote = quote.id'
+    //             )
+    //             .leftJoin(
+    //                 'quote.quoteWaitingPeriod',
+    //                 'quoteWaitingPeriod',
+    //                 'quoteWaitingPeriod.insuranceWaitingPeriod = insuranceWaitingPeriod.id AND quoteWaitingPeriod.quote = quote.id'
+    //             )
+    //             .select([
+    //                 'quotation.id AS quotationId',
+    //                 'quotation.status AS quotationStatus',
+    //                 'quotation.createdAt AS quotationCreatedAt',
+    //                 'quotation.updatedAt AS quotationUpdatedAt',
 
-                    'ticket.id AS ticketId',
+    //                 'ticket.id AS ticketId',
 
-                    'quote.id AS quoteId',
-                    'quote.premium AS quotePremium',
-                    'quote.coveragedRequired AS quoteCoverageRequired',
-                    'quote.ncb AS quoteNcb',
-                    'quote.idv AS quoteIdv',
-                    'quote.coverageIncluded AS quoteCoverageIncluded',
-                    'quote.coverageType AS quoteCoverageType',
-                    'quote.shortDescription AS shortDescription',
-                    'quote.additionalRemarks AS additionalRemarks',
+    //                 'quote.id AS quoteId',
+    //                 'quote.premium AS quotePremium',
+    //                 'quote.coveragedRequired AS quoteCoverageRequired',
+    //                 'quote.ncb AS quoteNcb',
+    //                 'quote.idv AS quoteIdv',
+    //                 'quote.coverageIncluded AS quoteCoverageIncluded',
+    //                 'quote.coverageType AS quoteCoverageType',
+    //                 'quote.shortDescription AS shortDescription',
+    //                 'quote.additionalRemarks AS additionalRemarks',
 
-                    'insuranceCompany.id AS companyId',
-                    'insuranceCompany.companyName AS companyName',
+    //                 'insuranceCompany.id AS companyId',
+    //                 'insuranceCompany.companyName AS companyName',
 
-                    'product.id AS productId',
-                    'product.name AS productName',
+    //                 'product.id AS productId',
+    //                 'product.name AS productName',
 
-                    'insuranceFeature.id AS featureId',
-                    'insuranceFeature.featuresName AS featureName',
-                    'insuranceFeature.description AS featureDescription',
-                    'quoteFeature.id AS quoteFeatureId',
-                    'quoteFeature.isActive AS quoteFeatureIsActive'
-                ])
-                .where('quotation.id = :quotationId', { quotationId })
-                .andWhere('insuranceFeature.isStandard = false')
-                .andWhere('productFeature.isActive = true')
-                .andWhere('insuranceFeature.isActive = true')
-                .getRawMany();
+    //                 'insuranceFeature.id AS featureId',
+    //                 'insuranceFeature.featuresName AS featureName',
+    //                 'insuranceFeature.description AS featureDescription',
+    //                 'quoteFeature.id AS quoteFeatureId',
+    //                 'quoteFeature.isActive AS quoteFeatureIsActive',
 
-            if (!rawData.length) {
-                throw new Error('Quotation not found');
-            }
-            // console.log('line no 1876 rawData ', rawData);
+    //                 'insuranceWaitingPeriod.id AS insuranceWaitingPeriodId',
+    //                 'insuranceWaitingPeriod.name AS insuranceWaitingPeriodName',
+    //                 'productWaitingPeriod.waitingTime AS waitingTime',
+    //                 'productWaitingPeriod.timeType AS timeType',
 
-            // ---------- Group and structure ----------
-            const first = rawData[0];
-            const quotationData = {
-                quotationId: first.quotationId,
-                ticketId: first.ticketId,
-                status: first.quotationStatus,
-                createdAt: first.quotationCreatedAt,
-                updatedAt: first.quotationUpdatedAt,
-                quotes: []
-            };
+    //                 'quoteWaitingPeriod.id AS quoteWaitingPeriodId',
+    //                 'quoteWaitingPeriod.waitingTime AS quoteWaitingTime',
+    //                 'quoteWaitingPeriod.timeType AS quoteTimeType',
+    //                 'quoteWaitingPeriod.isActive AS quoteWaitingIsActive'
+    //             ])
+    //             .where('quotation.id = :quotationId', { quotationId })
+    //             .andWhere('insuranceFeature.isStandard = false')
+    //             .andWhere('productFeature.isActive = true')
+    //             .andWhere('insuranceFeature.isActive = true')
+    //             .andWhere('productWaitingPeriod.isActive = true')
+    //             .getRawMany();
 
-            // console.log('line no 1889 rawDataFirst ', first);
+    //         if (!rawData.length) {
+    //             throw new Error('Quotation not found');
+    //         }
+    //         // console.log('line no 1876 rawData ', rawData);
+    //         console.log('raw data', rawData);
 
-            const quotesMap = new Map();
+    //         // ---------- Group and structure ----------
+    //         const first = rawData[0];
+    //         const quotationData = {
+    //             quotationId: first.quotationId,
+    //             ticketId: first.ticketId,
+    //             status: first.quotationStatus,
+    //             createdAt: first.quotationCreatedAt,
+    //             updatedAt: first.quotationUpdatedAt,
+    //             quotes: []
+    //         };
 
-            for (const row of rawData) {
-                if (!quotesMap.has(row.quoteId)) {
-                    quotesMap.set(row.quoteId, {
-                        id: row.quoteId,
-                        companyId: row.companyId,
-                        companyName: row.companyName,
-                        productId: row.productId,
-                        productName: row.productName,
-                        premium: row.quotePremium,
-                        coveragedRequired: row.quoteCoverageRequired,
-                        ncb: row.quoteNcb,
-                        idv: row.quoteIdv,
-                        coverageIncluded: row.quoteCoverageIncluded,
-                        additionalRemarks: row.additionalRemarks,
-                        shortDescription: row.shortDescription,
-                        productFeatures: []
-                    });
-                }
+    //         // console.log('line no 1889 rawDataFirst ', first);
 
-                const quote = quotesMap.get(row.quoteId);
-                // console.log('line no 1912 quote ', quote);
+    //         const quotesMap = new Map();
 
-                if (row.featureId) {
-                    // ✅ Conditional logic for status
-                    const status = row.quoteFeatureId && row.quoteFeatureIsActive ? true : false;
+    //         for (const row of rawData) {
+    //             if (!quotesMap.has(row.quoteId)) {
+    //                 quotesMap.set(row.quoteId, {
+    //                     id: row.quoteId,
+    //                     companyId: row.companyId,
+    //                     companyName: row.companyName,
+    //                     productId: row.productId,
+    //                     productName: row.productName,
+    //                     premium: row.quotePremium,
+    //                     coveragedRequired: row.quoteCoverageRequired,
+    //                     ncb: row.quoteNcb,
+    //                     idv: row.quoteIdv,
+    //                     coverageIncluded: row.quoteCoverageIncluded,
+    //                     additionalRemarks: row.additionalRemarks,
+    //                     shortDescription: row.shortDescription,
+    //                     productFeatures: [],
+    //                     productWaitingPeriod: []
+    //                 });
+    //             }
 
-                    quote.productFeatures.push({
-                        featureId: row.featureId,
-                        featureName: row.featureName,
-                        description: row.featureDescription,
-                        status
-                    });
-                }
-            }
+    //             const quote = quotesMap.get(row.quoteId);
+    //             // console.log('line no 1912 quote ', quote);
 
-            quotationData.quotes = Array.from(quotesMap.values());
+    //             if (row.featureId) {
+    //                 // ✅ Conditional logic for status
+    //                 const status = row.quoteFeatureId && row.quoteFeatureIsActive ? true : false;
 
-            // console.log('line no 1930 findal quotation data ', quotationData);
+    //                 quote.productFeatures.push({
+    //                     featureId: row.featureId,
+    //                     featureName: row.featureName,
+    //                     description: row.featureDescription,
+    //                     status
+    //                 });
+    //             }
 
-            return {
-                status: 'success',
-                message: 'Quotation fetched successfully',
-                data: quotationData
-            };
-        } catch (error) {
-            console.error('Error in getQuotationById:', error.message);
-            return {
-                status: 'error',
-                message: `Internal server error: ${error.message}`,
-                data: null
-            };
-        }
-    }
+    //             if (row.insurancePeriodId) {
+    //                 // ✅ Conditional logic for status
+    //                 const status = row.quoteWaitingPeriodId && row.quoteWaitingIsActive ? true : false;
+
+    //                 quote.productWaitingPeriod.push({
+    //                     insuranceWaitingPeriodId: row.insuranceWaitingPeriodId,
+    //                     insuranceWaitingPeriodName: row.insuranceWaitingPeriodName,
+    //                     insuranceWaitingTime: row.quoteWaitingTime || row.waitingTime,
+    //                     insuranceWaitingTimeType: row.quoteTimeType || row.timeType,
+    //                     status
+    //                 });
+    //                 console.log('waitng period', quote.productWaitingPeriod);
+    //             }
+    //         }
+
+    //         quotationData.quotes = Array.from(quotesMap.values());
+
+    //         // console.log('line no 1930 findal quotation data ', quotationData);
+
+    //         return {
+    //             status: 'success',
+    //             message: 'Quotation fetched successfully',
+    //             data: quotationData
+    //         };
+    //     } catch (error) {
+    //         console.error('Error in getQuotationById:', error.message);
+    //         return {
+    //             status: 'error',
+    //             message: `Internal server error: ${error.message}`,
+    //             data: null
+    //         };
+    //     }
+    // }
 
     // async updateQuotation(reqBody: any): Promise<any> {
     //     try {
@@ -2413,6 +2505,50 @@ export class InsuranceQuotationService {
                                 }
                             }
                         }
+
+                        for (const feat of quoteData.productWaitingPeriod) {
+                            // console.log('line no 2390 product feat is ', exitstQuote.id, feat);
+
+                            const existingWaitingPeriod = await manager.findOne(QuoteWaitingPeriod, {
+                                where: {
+                                    quote: { id: exitstQuote.id },
+                                    insuranceWaitingPeriod: { id: feat.insuranceWaitingPeriodId }
+                                },
+                                relations: ['insuranceWaitingPeriod']
+                            });
+
+                            if (existingWaitingPeriod) {
+                                const updatedWaitingPeriod = await manager.update(
+                                    QuoteWaitingPeriod,
+                                    existingWaitingPeriod.id,
+                                    {
+                                        insuranceWaitingPeriod: { id: feat.insuranceWaitingPeriodId },
+                                        waitingTime: feat.insuranceWaitingTime,
+                                        timeType: feat.insuranceWaitingTimeType,
+                                        isActive: feat.status,
+                                        updatedAt: new Date(),
+                                        updatedBy: userEntity
+                                    }
+                                );
+                                // console.log('line not 2404 feat is ', feat);
+                            } else {
+                                // console.log('line no 2407 in if feat feat not exist');
+                                if (feat.status) {
+                                    // console.log('line no 2409 in if feat feat not exist and status is true');
+
+                                    const newWaitingPeriod = await manager.create(QuoteWaitingPeriod, {
+                                        quote: { id: quoteData.quoteId },
+                                        insuranceWaitingPeriod: { id: feat.insuranceWaitingPeriodId },
+                                        waitingTime: feat.insuranceWaitingTime,
+                                        timeType: feat.insuranceWaitingTimeType,
+                                        isActive: true,
+                                        createdAt: new Date(),
+                                        createdBy: userEntity
+                                    });
+                                    await manager.save(newWaitingPeriod);
+                                }
+                            }
+                        }
                     }
                 }
                 // Update ticket status
@@ -2450,6 +2586,234 @@ export class InsuranceQuotationService {
         } catch (err) {
             console.error('updateQuotation Error:', err);
             return { status: 'error', message: 'Failed to update quotation: ' + err.message, data: null };
+        }
+    }
+
+    async newGetQuotationById(quotationId: number): Promise<any> {
+        try {
+            if (!quotationId) {
+                return {
+                    status: 'error',
+                    message: 'Quotation ID is required',
+                    data: null
+                };
+            }
+
+            // ---------------------------------------------------------
+            // 1️⃣ FETCH QUOTATION + QUOTES (FAST)
+            // ---------------------------------------------------------
+            const quotation = await this.quotationRepository
+                .createQueryBuilder('quotation')
+                .leftJoinAndSelect('quotation.ticketId', 'ticket')
+                .leftJoinAndSelect('quotation.quotes', 'quote')
+                .leftJoinAndSelect('quote.company', 'company')
+                .leftJoinAndSelect('quote.product', 'product')
+                .where('quotation.id = :quotationId', { quotationId })
+                .getOne();
+
+            if (!quotation) {
+                throw new Error('Quotation not found');
+            }
+
+            const quotes = quotation.quotes;
+
+            // ---------------------------------------------------------
+            // 2️⃣ FETCH ALL PRODUCT FEATURES WITH QUOTE-OVERRIDE STATUS
+            // ---------------------------------------------------------
+            const featureRows = await this.quotationRepository
+                .createQueryBuilder('quotation')
+                .leftJoin('quotation.quotes', 'quote')
+                .leftJoin('quote.product', 'product')
+                .leftJoin('product.productFeatures', 'productFeature')
+                .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature')
+                .leftJoin(
+                    'quote.quoteFeatures',
+                    'quoteFeature',
+                    'quoteFeature.insuranceFeatures = insuranceFeature.id AND quoteFeature.quote = quote.id'
+                )
+                .select([
+                    'quote.id AS quoteId',
+                    'insuranceFeature.id AS featureId',
+                    'insuranceFeature.featuresName AS featureName',
+                    'insuranceFeature.description AS featureDescription',
+                    'quoteFeature.id AS quoteFeatureId',
+                    'quoteFeature.isActive AS quoteFeatureIsActive'
+                ])
+                .where('quotation.id = :quotationId', { quotationId })
+                .andWhere('productFeature.isActive = true')
+                .andWhere('insuranceFeature.isActive = true')
+                .andWhere('insuranceFeature.isStandard = false')
+                .getRawMany();
+
+            // ---------------------------------------------------------
+            // 3️⃣ FETCH WAITING PERIODS WITH QUOTE-OVERRIDE STATUS
+            // ---------------------------------------------------------
+            const waitingRows = await this.quotationRepository
+                .createQueryBuilder('quotation')
+                .leftJoin('quotation.quotes', 'quote')
+                .leftJoin('quote.product', 'product')
+                .leftJoin('product.productWaitingPeriod', 'productWaiting')
+                .leftJoin('productWaiting.insuranceWaitingPeriod', 'waitingMaster')
+                .leftJoin(
+                    'quote.quoteWaitingPeriod',
+                    'quoteWaiting',
+                    'quoteWaiting.insuranceWaitingPeriod = waitingMaster.id AND quoteWaiting.quote = quote.id'
+                )
+                .select([
+                    'quote.id AS quoteId',
+                    'waitingMaster.id AS waitingId',
+                    'waitingMaster.name AS waitingName',
+                    'productWaiting.waitingTime AS productWaitingTime',
+                    'productWaiting.timeType AS productTimeType',
+                    'quoteWaiting.id AS quoteWaitingId',
+                    'quoteWaiting.waitingTime AS quoteWaitingTime',
+                    'quoteWaiting.timeType AS quoteTimeType',
+                    'quoteWaiting.isActive AS quoteWaitingIsActive'
+                ])
+                .where('quotation.id = :quotationId', { quotationId })
+                .andWhere('productWaiting.isActive = true')
+                .getRawMany();
+
+            // ---------------------------------------------------------
+            // 4️⃣ MAP FEATURES + WAITING PERIOD TO EACH QUOTE
+            // ---------------------------------------------------------
+            const finalQuotes = quotes.map((q) => {
+                const qFeatures = featureRows
+                    .filter((r) => r.quoteId === q.id)
+                    .map((f) => ({
+                        featureId: f.featureId,
+                        featureName: f.featureName,
+                        description: f.featureDescription,
+                        status: f.quoteFeatureId && f.quoteFeatureIsActive ? true : false
+                    }));
+
+                const qWaiting = waitingRows
+                    .filter((r) => r.quoteId === q.id)
+                    .map((w) => ({
+                        insuranceWaitingPeriodId: w.waitingId,
+                        insuranceWaitingPeriodName: w.waitingName,
+                        insuranceWaitingTime: w.quoteWaitingTime || w.productWaitingTime,
+                        insuranceWaitingTimeType: w.quoteTimeType || w.productTimeType,
+                        status: w.quoteWaitingId && w.quoteWaitingIsActive ? true : false
+                    }));
+
+                return {
+                    id: q.id,
+                    companyId: q.company?.id,
+                    companyName: q.company?.companyName,
+                    productId: q.product?.id,
+                    productName: q.product?.name,
+                    premium: q.Premium,
+                    coveragedRequired: q.coveragedRequired,
+                    ncb: q.ncb,
+                    idv: q.idv,
+                    coverageIncluded: q.coverageIncluded,
+                    coverageType: q.coverageType,
+                    shortDescription: q.shortDescription,
+                    additionalRemarks: q.additionalRemarks,
+
+                    productFeatures: qFeatures,
+                    productWaitingPeriod: qWaiting
+                };
+            });
+
+            // ---------------------------------------------------------
+            // 5️⃣ FINAL RESPONSE
+            // ---------------------------------------------------------
+            return {
+                status: 'success',
+                message: 'Quotation fetched successfully',
+                data: {
+                    quotationId: quotation.id,
+                    ticketId: quotation.ticketId?.id,
+                    status: quotation.status,
+                    createdAt: quotation.createdAt,
+                    updatedAt: quotation.updatedAt,
+                    quotes: finalQuotes
+                }
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message,
+                data: null
+            };
+        }
+    }
+
+    async getProductFeatures(productId: number) {
+        try {
+            const query = this.productFeaturesRepo
+                .createQueryBuilder('productFeature')
+                .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature')
+                .select([
+                    'insuranceFeature.id AS featureId',
+                    'insuranceFeature.featuresName AS featureName',
+                    'insuranceFeature.description AS featureDescription'
+                ])
+                .where('productFeature.product = :product', { product: productId })
+                .andWhere('productFeature.isActive = true')
+                .andWhere('insuranceFeature.isActive = true')
+                .andWhere('insuranceFeature.isStandard = false');
+
+            const features = await query.getRawMany();
+            console.log('product features', features);
+
+            return standardResponse(
+                true,
+                'Features get successfully',
+                200,
+                features,
+                null,
+                'insurance-quotation/getProductFeatures'
+            );
+        } catch (error) {
+            console.log('error: api -insurance-quotation/getProductFeatures');
+            return standardResponse(
+                false,
+                'Error fetching insurance features',
+                500,
+                null,
+                'insurance-quotation/getProductFeatures'
+            );
+        }
+    }
+
+    async getProductWaitingPeriods(productId: any) {
+        try {
+            const query = this.productWaitingRepo
+                .createQueryBuilder('productWaiting')
+                .leftJoin('productWaiting.insuranceWaitingPeriod', 'waitingMaster')
+                .select([
+                    'waitingMaster.id AS insuranceWaitingPeriodId',
+                    'waitingMaster.name AS insuranceWaitingPeriodName',
+                    'productWaiting.waitingTime AS insuranceWaitingTime',
+                    'productWaiting.timeType AS insuranceWaitingTimeType'
+                ])
+                .where('productWaiting.product = :productId', { productId: productId })
+                .andWhere('productWaiting.isActive = true');
+
+            const periods = await query.getRawMany();
+            console.log('waiting peried is here', periods);
+
+            return standardResponse(
+                true,
+                'data get successfully',
+                200,
+                periods,
+                null,
+                'insurance-quotation/getProductWaitingPeriods'
+            );
+        } catch (error) {
+            console.log('error: api -insurance-quotation/getProductWaitingPeriods');
+            return standardResponse(
+                false,
+                'Error fetching insurance waiting period',
+                500,
+                null,
+                null,
+                'insurance-quotation/getProductWaitingPeriods'
+            );
         }
     }
 }

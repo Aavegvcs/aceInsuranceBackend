@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { InsuranceFeaturesService } from './insurance-features.service';
 import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
@@ -41,4 +41,21 @@ export class InsuranceFeaturesController {
         const response = await this._featuresService.deleteInsuranceFeatures(reqBody);
         return response;
     }
+
+     @Get('getInsuranceFeatures/:insuranceType')
+        async getInsuranceFeatures(@Param('insuranceType') insuranceType: any) {
+            try {
+                return await this._featuresService.getInsuranceFeatures(insuranceType);
+            } catch (error) {
+                throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+         @Get('getInsuranceWaitingPeriods/:insuranceType')
+        async getInsuranceWaitingPeriods(@Param('insuranceType') insuranceType: any) {
+            try {
+                return await this._featuresService.getInsuranceWaitingPeriods(insuranceType);
+            } catch (error) {
+                throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
 }

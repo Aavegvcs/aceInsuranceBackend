@@ -16,6 +16,7 @@ import { InsuranceQuotation } from './insurance-quotation.entity';
 import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-product.entity';
 import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
 import { QuoteFeatures } from '@modules/insurance-features/entities/quote-features.entity';
+import { QuoteWaitingPeriod } from '@modules/insurance-features/entities/quote-waiting-period.entity';
 
 @Entity({ name: 'quote_entity' })
 export class QuoteEntity {
@@ -99,6 +100,10 @@ export class QuoteEntity {
 
     @DeleteDateColumn({ type: 'timestamp', nullable: true })
     deletedAt: Date;
+
     @OneToMany(() => QuoteFeatures, (quoteFeature) => quoteFeature.quote)
     quoteFeatures: QuoteFeatures[];
+
+    @OneToMany(() => QuoteWaitingPeriod, (quoteWaiting) => quoteWaiting.quote)
+    quoteWaitingPeriod: QuoteWaitingPeriod[];
 }
