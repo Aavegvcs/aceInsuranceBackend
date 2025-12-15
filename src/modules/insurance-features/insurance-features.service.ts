@@ -219,22 +219,23 @@ export class InsuranceFeaturesService {
         }
     }
 
-    async getInsuranceFeatures(reqBody: any) {
+    async getInsuranceFeatures(insuranceType: any) {
         try {
-            const query = this.insuranceFeaturesRepo
+            const typeData = await this.insuranceTypeRepo.findOne({ where: { code: insuranceType } });
+            // console.log('insurae type data', typeData.id);
+
+            const features = await this.insuranceFeaturesRepo
                 .createQueryBuilder('features')
-                .leftJoin('features.insuranceTypes', 'insuranceTypes')
                 .select([
                     'features.id AS featureId',
                     'features.featuresName AS featureName',
                     'features.description AS featureDescription',
+                    'features.isStandard AS isStandard',
                     'features.coverage AS coverage'
                 ])
-                .where('insuranceTypes.code = :code', { code: reqBody.insuranceType })
-                .andWhere('features.isActive = true');
-
-            const features = await query.getRawMany();
-            console.log('insurance features', features);
+                .where('features.insuranceTypes = :id', { id: typeData.id })
+                .andWhere('features.isActive = true')
+                .getRawMany();
 
             return standardResponse(
                 true,
@@ -258,20 +259,21 @@ export class InsuranceFeaturesService {
 
     async getInsuranceWaitingPeriods(insuranceType: any) {
         try {
-            const query = this.insuranceWaitingRepo
+            const typeData = await this.insuranceTypeRepo.findOne({ where: { code: insuranceType } });
+
+            const periods = await this.insuranceWaitingRepo
                 .createQueryBuilder('insuranceWaiting')
-                .leftJoin('insuranceWaiting.insuranceTypes', 'insuranceTypes')
                 .select([
                     'insuranceWaiting.id AS insuranceWaitingPeriodId',
                     'insuranceWaiting.name AS insuranceWaitingPeriodName',
                     'insuranceWaiting.waitingTime AS insuranceWaitingTime',
                     'insuranceWaiting.timeType AS insuranceWaitingTimeType'
                 ])
-                .where('insuranceTypes.code = :code', { code: insuranceType })
-                .andWhere('insuranceWaiting.isActive = true');
+                .where('insuranceWaiting.insuranceTypes = :id', { id: typeData.id })
+                .andWhere('insuranceWaiting.isActive = true')
+                .getRawMany();
 
-            const periods = await query.getRawMany();
-            console.log('waiting peried is here', periods);
+            //  console.log('waiting peried is here', periods);
 
             return standardResponse(
                 true,

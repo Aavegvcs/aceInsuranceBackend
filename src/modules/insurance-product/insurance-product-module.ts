@@ -3,7 +3,7 @@ import { InsuranceProduct } from './entities/insurance-product.entity';
 import { InsuranceProductService } from './insurance-product.service';
 import { forwardRef, Module } from '@nestjs/common';
 import { Branch } from '@modules/branch/entities/branch.entity';
-import { InsuranceSubType } from './entities/insurance-subtype.entity';
+import { InsuranceSubType } from '../insurance-ticket/entities/insurance-subtype.entity';
 import { InsuranceProductController } from './insurance-product-controller';
 import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
 import { InsuranceUser } from '@modules/insurance-ticket/entities/insurance-user.entity';
@@ -20,6 +20,8 @@ import { InsuranceTicketService } from '@modules/insurance-ticket/insurance-tick
 import { InsuranceQuotationService } from '@modules/insurance-quotations/insurance-quotation.service';
 import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
 import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
+import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
+import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
 
 @Module({
     imports: [
@@ -34,7 +36,9 @@ import { InsuranceFeatures } from '@modules/insurance-features/entities/insuranc
             InsurancePurchasedProduct,
             User,
             InsuranceTypeMaster,
-            InsuranceFeatures
+            InsuranceFeatures,
+            ProductFeatures,
+            ProductWaitingPeriod
         ]),
         forwardRef(() => UserModule),
         forwardRef(() => AuthModule)

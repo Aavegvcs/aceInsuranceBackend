@@ -107,5 +107,10 @@ export class InsuranceTicketController {
     async getStepStatusByRole(@Body() reqObj: any, @Req() req: any) {
         return this._ticketService.getStepStatusByRole(reqObj, req);
     }
+    @Post('getInsuranceSubType')
+    @ApiOperation({ summary: 'getInsuranceSubType' })
+    async getInsuranceSubType(@Body() reqObj: any) {
+        return this._ticketService.getInsuranceSubType(reqObj);
+    }
     
 }

@@ -12,7 +12,7 @@ import {
     JoinColumn
 } from 'typeorm';
 import { InsuranceIncentives } from './insurance-incentives.entity';
-import { InsuranceSubType } from './insurance-subtype.entity';
+import { InsuranceSubType } from '../../insurance-ticket/entities/insurance-subtype.entity';
 import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
 import { User } from '@modules/user/user.entity';
 import { InsurancePurchasedProduct } from '@modules/insurance-product/entities/insurance-puchased-product.entity';

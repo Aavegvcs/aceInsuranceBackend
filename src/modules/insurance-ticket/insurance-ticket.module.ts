@@ -33,6 +33,7 @@ import { InsurancePolicyService } from '@modules/insurance-policy/insurance-poli
 import { InsurancePolicyRenewalHistory } from '@modules/insurance-policy/entities/insurance-policy-renewal-history.entity';
 import { InsuranceNominee } from './entities/insurance-nominee-details.entity';
 import { InsuranceTypeMaster } from './entities/insurance-type-master.entity';
+import { InsuranceSubType } from './entities/insurance-subtype.entity';
 
 @Module({
     imports: [
@@ -59,7 +60,8 @@ import { InsuranceTypeMaster } from './entities/insurance-type-master.entity';
             InsurancePolicy,
             InsurancePolicyRenewalHistory,
             InsuranceNominee,
-            InsuranceTypeMaster
+            InsuranceTypeMaster,
+            InsuranceSubType
         ]),
         InsuranceEscalationModule,
         ScheduleModule.forRoot(),

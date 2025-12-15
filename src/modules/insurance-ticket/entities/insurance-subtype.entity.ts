@@ -10,7 +10,7 @@ import {
     OneToMany
 } from 'typeorm';
 import { Insurance_Type } from 'src/utils/app.utils';
-import { InsuranceProduct } from './insurance-product.entity';
+import { InsuranceProduct } from '../../insurance-product/entities/insurance-product.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 
@@ -19,8 +19,11 @@ export class InsuranceSubType {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ name: 'insurance_sub_type', nullable: true })
-    insuranceSubType: string;
+    @Column({ name: 'name', nullable: true })
+    name: string;
+
+    @Column({ length: 50, unique: true })
+    code: string;
 
     @Column({
         type: 'enum',
@@ -30,9 +33,12 @@ export class InsuranceSubType {
     })
     insuranceType: Insurance_Type;
 
-        @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
-        @JoinColumn({ name: 'insurance_type_master' })
-        insuranceTypeMaster: InsuranceTypeMaster;
+    @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+    @JoinColumn({ name: 'insurance_types' })
+    insuranceTypes: InsuranceTypeMaster;
+
+    @Column({ name: 'description', nullable: true })
+    description: string;
 
     @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;

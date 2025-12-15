@@ -59,9 +59,10 @@ export class InsuranceProductController {
         return this._productService.companyBulkUpload(reqBody);
     }
     //---------------------------- products apis ----------------------------//
+    @UseGuards(JwtInsAuthGuard)
     @Post('createProduct')
     @ApiOperation({ summary: 'Create new insurance product' })
-    async createProduct(@Body() requestObj: CreateInsuranceProductDto) {
+    async createProduct(@Body() requestObj: any) {
         return this._productService.createProduct(requestObj);
     }
 

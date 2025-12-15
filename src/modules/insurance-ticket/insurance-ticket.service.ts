@@ -52,6 +52,8 @@ import { InsuranceNominee } from './entities/insurance-nominee-details.entity';
 import { InsuranceTypeMaster } from './entities/insurance-type-master.entity';
 import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
 import { InsuranceType } from './entities/insurance-type.entity';
+import { InsuranceSubType } from './entities/insurance-subtype.entity';
+import { standardResponse } from 'src/utils/helper/response.helper';
 @Injectable()
 export class InsuranceTicketService {
     constructor(
@@ -98,6 +100,8 @@ export class InsuranceTicketService {
         private readonly quoteRepo: Repository<QuoteEntity>,
         @InjectRepository(InsuranceTypeMaster)
         private readonly insuranceTypeRepo: Repository<InsuranceTypeMaster>,
+        @InjectRepository(InsuranceSubType)
+        private readonly insuranceSubTypeRepo: Repository<InsuranceSubType>,
 
         @InjectRepository(InsuranceProduct)
         private readonly productRepo: Repository<InsuranceProduct>,
@@ -105,12 +109,11 @@ export class InsuranceTicketService {
         private readonly loggedInsUserService: LoggedInsUserService,
         private readonly policyService: InsurancePolicyService,
 
-
         @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
         private readonly roleService: RoleService
     ) {}
 
-        async getInsuranceType(reqObj: any): Promise<InsuranceTypeMaster | null> {
+    async getInsuranceType(reqObj: any): Promise<InsuranceTypeMaster | null> {
         try {
             const insuranceType = await this.insuranceTypeRepo.findOne({ where: { code: reqObj.insuranceType } });
             return insuranceType;
@@ -119,7 +122,7 @@ export class InsuranceTicketService {
             return null;
         }
     }
-  
+
     async createTicket(requestParam: CreateInsuranceTicketDto, req: any): Promise<InsuranceTicket> {
         let createdBy = null;
         let agentId = null;
@@ -589,15 +592,15 @@ export class InsuranceTicketService {
 
     async getTicketDetails(ticketId: number): Promise<TicketResponse> {
         try {
-            console.log("api is calling in get ticket details");
-            
+            console.log('api is calling in get ticket details');
+
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
             if (!loggedInUser) {
                 throw new UnauthorizedException('User not logged in');
             }
             const userRole = loggedInUser.userType.roleName;
             // Optimized query with specific relations
-              console.log("api is calling in get ticket details222");
+            console.log('api is calling in get ticket details222');
             const ticket = await this.ticketRepo
                 .createQueryBuilder('ticket')
                 .leftJoinAndSelect('ticket.insuranceUserId', 'insuranceUserId')
@@ -615,7 +618,7 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('ticket.insuranceTypes', 'insuranceTypes')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
-              console.log("toicket detailslskjdkfjdk", ticket);
+            console.log('toicket detailslskjdkfjdk', ticket);
 
             if (!ticket) {
                 return {
@@ -673,144 +676,144 @@ export class InsuranceTicketService {
             const insuredMedicalDetails = getLatestMedical(ticket.insuredMedical);
 
             // console.log('medical details of insuredMedicalDetails', insuredMedicalDetails);
-            const  data = {
-                    ticketId: ticket.id,
-                    ticketNumber: ticket.ticketNumber,
-                    insuranceType: ticket.insuranceTypes.code,
-                    ticketStatus: ticket.ticketStatus,
-                    includeSelfAsDependent: ticket.includeSelfAsDependent ?? false,
-                    preferredCompany: ticket.preferredCompany ?? null,
-                    preferredProduct: ticket.preferredProduct ?? null,
-                    policyHolderType: ticket.policyHolderType ?? null,
-                    coveragedRequired: ticket.coveragedRequired ?? null,
-                    userPreferredAmount: ticket.userPreferredAmount ?? null,
-                    insurancePurpose: ticket.insurancePurpose ?? null,
-                    PrimiumPaymentTerm: ticket.PrimiumPaymentTerm ?? null,
-                    policyTerm: ticket.policyTerm ?? null,
-                    prePolicyNumber: ticket.prePolicyNumber ?? null,
-                    preInsuranceComapny: ticket.preInsuranceComapny ?? null,
-                    preIdf: ticket.preIdf ?? null,
-                    endorsmentToNoted: ticket.endorsmentToNoted ?? null,
-                    coverageType: ticket.coverageType ?? null,
-                    isPreYearClaim: ticket.isPreYearClaim ?? false,
-                    assignedTo: ticket.assignTo?.id ?? null,
-                    assignedName: ticket.assignTo
-                        ? `${ticket.assignTo.firstName || ''} ${ticket.assignTo.middleName ? ticket.assignTo.middleName + ' ' : ''}${ticket.assignTo.lastName || ''}`.trim()
-                        : null,
-                    currentStep: ticket.currentStepStart ?? null,
-                    isDocumentCollected: ticket.isDocumentCollected ?? false,
-                    documents: ticket.documents ?? null,
-                    nextStepDeadline: ticket.nextStepDeadline ?? null,
-                    agentRemarks: ticket.agentRemarks ?? null,
-                    othersRemarks: ticket.othersRemarks ?? null,
-                    updatedBy: ticket.updatedBy?.id ?? null,
-                    updatedAt: ticket.updatedAt ?? null,
-                    insuranceUser: {
-                        name: ticket.insuranceUserId.name,
-                        gender: ticket.insuranceUserId.gender,
-                        primaryContactNumber: ticket.insuranceUserId.primaryContactNumber,
-                        secondaryContactNumber: ticket.insuranceUserId.secondaryContactNumber ?? null,
-                        emailId: ticket.insuranceUserId.emailId,
-                        employmentType: ticket.insuranceUserId.employmentType,
-                        dateOfBirth: ticket.insuranceUserId.dateOfBirth ?? null,
-                        address: ticket.insuranceUserId.permanentAddress ?? null,
-                        pinCode: ticket.insuranceUserId.permanentPinCode ?? null,
-                        adharNumber: ticket.insuranceUserId.adharNumber ?? null,
-                        panNumber: ticket.insuranceUserId.panNumber ?? null,
-                        highestEduQualification: ticket.insuranceUserId.highestEduQualification ?? null,
-                        // nomineeName: ticket.nomineeName ?? null,
-                        // nomineeRelation: ticket.nomineeRelation ?? null,
-                        // nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
-                        // nomineeEmailId: ticket.nomineeEmailId ?? null,
-                        updatedBy: ticket.insuranceUserId.updatedBy?.id ?? null,
-                        updatedAt: ticket.insuranceUserId.updatedAt ?? null,
-                        documents: ticket.insuranceUserId.documents ?? null
-                    },
-                    nomineeDetails: {
-                        id: ticket?.nominee?.id ?? null,
-                        name: ticket?.nominee?.name ?? null,
-                        gender: ticket?.nominee?.gender ?? null,
-                        relation: ticket?.nominee?.relation ?? null,
-                        contactNumber: ticket?.nominee?.primaryContactNumber ?? null,
-                        dateOfBirth: ticket?.nominee?.dateOfBirth ?? null
-                    },
-                    medicalDetails: formatMedicalDetails(medicalDetails),
-                    // ticket.insuranceDependent?.map((dep) => {
-                    //                             const depMedical =
-                    //                                 ticket.dependentMedical?.find((dm) => dm.dependentId?.id === dep.id) || null;
-                    dependents:
-                        ticket.insuranceDependent?.map((dep) => {
-                            const depMedical = ticket.dependentMedical?.find((dm) => dm.dependentId?.id === dep.id);
-                            // console.log('console 1  ))))))))))))) ', ticket.insuranceDependent);
-                            // console.log('console 2  ))))))))))))) ', ticket.dependentMedical);
-                            // console.log('console 3  ))))))))))))) ', depMedical);
+            const data = {
+                ticketId: ticket.id,
+                ticketNumber: ticket.ticketNumber,
+                insuranceType: ticket.insuranceTypes.code,
+                ticketStatus: ticket.ticketStatus,
+                includeSelfAsDependent: ticket.includeSelfAsDependent ?? false,
+                preferredCompany: ticket.preferredCompany ?? null,
+                preferredProduct: ticket.preferredProduct ?? null,
+                policyHolderType: ticket.policyHolderType ?? null,
+                coveragedRequired: ticket.coveragedRequired ?? null,
+                userPreferredAmount: ticket.userPreferredAmount ?? null,
+                insurancePurpose: ticket.insurancePurpose ?? null,
+                PrimiumPaymentTerm: ticket.PrimiumPaymentTerm ?? null,
+                policyTerm: ticket.policyTerm ?? null,
+                prePolicyNumber: ticket.prePolicyNumber ?? null,
+                preInsuranceComapny: ticket.preInsuranceComapny ?? null,
+                preIdf: ticket.preIdf ?? null,
+                endorsmentToNoted: ticket.endorsmentToNoted ?? null,
+                coverageType: ticket.coverageType ?? null,
+                isPreYearClaim: ticket.isPreYearClaim ?? false,
+                assignedTo: ticket.assignTo?.id ?? null,
+                assignedName: ticket.assignTo
+                    ? `${ticket.assignTo.firstName || ''} ${ticket.assignTo.middleName ? ticket.assignTo.middleName + ' ' : ''}${ticket.assignTo.lastName || ''}`.trim()
+                    : null,
+                currentStep: ticket.currentStepStart ?? null,
+                isDocumentCollected: ticket.isDocumentCollected ?? false,
+                documents: ticket.documents ?? null,
+                nextStepDeadline: ticket.nextStepDeadline ?? null,
+                agentRemarks: ticket.agentRemarks ?? null,
+                othersRemarks: ticket.othersRemarks ?? null,
+                updatedBy: ticket.updatedBy?.id ?? null,
+                updatedAt: ticket.updatedAt ?? null,
+                insuranceUser: {
+                    name: ticket.insuranceUserId.name,
+                    gender: ticket.insuranceUserId.gender,
+                    primaryContactNumber: ticket.insuranceUserId.primaryContactNumber,
+                    secondaryContactNumber: ticket.insuranceUserId.secondaryContactNumber ?? null,
+                    emailId: ticket.insuranceUserId.emailId,
+                    employmentType: ticket.insuranceUserId.employmentType,
+                    dateOfBirth: ticket.insuranceUserId.dateOfBirth ?? null,
+                    address: ticket.insuranceUserId.permanentAddress ?? null,
+                    pinCode: ticket.insuranceUserId.permanentPinCode ?? null,
+                    adharNumber: ticket.insuranceUserId.adharNumber ?? null,
+                    panNumber: ticket.insuranceUserId.panNumber ?? null,
+                    highestEduQualification: ticket.insuranceUserId.highestEduQualification ?? null,
+                    // nomineeName: ticket.nomineeName ?? null,
+                    // nomineeRelation: ticket.nomineeRelation ?? null,
+                    // nomineeMobileNumber: ticket.nomineeMobileNumber ?? null,
+                    // nomineeEmailId: ticket.nomineeEmailId ?? null,
+                    updatedBy: ticket.insuranceUserId.updatedBy?.id ?? null,
+                    updatedAt: ticket.insuranceUserId.updatedAt ?? null,
+                    documents: ticket.insuranceUserId.documents ?? null
+                },
+                nomineeDetails: {
+                    id: ticket?.nominee?.id ?? null,
+                    name: ticket?.nominee?.name ?? null,
+                    gender: ticket?.nominee?.gender ?? null,
+                    relation: ticket?.nominee?.relation ?? null,
+                    contactNumber: ticket?.nominee?.primaryContactNumber ?? null,
+                    dateOfBirth: ticket?.nominee?.dateOfBirth ?? null
+                },
+                medicalDetails: formatMedicalDetails(medicalDetails),
+                // ticket.insuranceDependent?.map((dep) => {
+                //                             const depMedical =
+                //                                 ticket.dependentMedical?.find((dm) => dm.dependentId?.id === dep.id) || null;
+                dependents:
+                    ticket.insuranceDependent?.map((dep) => {
+                        const depMedical = ticket.dependentMedical?.find((dm) => dm.dependentId?.id === dep.id);
+                        // console.log('console 1  ))))))))))))) ', ticket.insuranceDependent);
+                        // console.log('console 2  ))))))))))))) ', ticket.dependentMedical);
+                        // console.log('console 3  ))))))))))))) ', depMedical);
 
-                            return {
-                                id: dep.id,
-                                name: dep.name,
-                                dateOfBirth: dep.dateOfBirth || null,
-                                gender: dep.gender || null,
-                                primaryContactNumber: dep.primaryContactNumber || null,
-                                relation: dep.relation || null,
-                                medicalDetails: formatMedicalDetails(depMedical)
-                            };
-                        }) || [],
-                    vehicleDetails: ticket.vehicleDetails?.[0]
-                        ? {
-                              id: ticket.vehicleDetails[0].id,
-                              vehicleType: ticket.vehicleDetails[0].vehicleType,
-                              vehicleNumber: ticket.vehicleDetails[0].vehicleNumber,
-                              makingYear: ticket.vehicleDetails[0].makingYear ?? null,
-                              vehicleName: ticket.vehicleDetails[0].vehicleName ?? null,
-                              modelNumber: ticket.vehicleDetails[0].modelNumber ?? null,
-                              rcOwnerName: ticket.vehicleDetails[0].rcOwnerName ?? null,
-                              engineNumber: ticket.vehicleDetails[0].engineNumber ?? null,
-                              chassisNumber: ticket.vehicleDetails[0].chassisNumber ?? null,
-                              dateOfReg: ticket.vehicleDetails[0].dateOfReg ?? null,
-                              madeBy: ticket.vehicleDetails[0].madeBy ?? null,
-                              vehicleCategory: ticket.vehicleDetails[0].vehicleCategory ?? null,
-                              othersVehicleCategory: ticket.vehicleDetails[0].othersVehicleCategory ?? null,
-                              seatingCapacity: ticket.vehicleDetails[0].seatingCapacity ?? null,
-                              grossVehicleWeight: ticket.vehicleDetails[0].grossVehicleWeight ?? null,
-                              overTurning: ticket.vehicleDetails[0].overTurning ?? false,
-                              noClaimBonus: ticket.vehicleDetails[0].noClaimBonus ?? false,
-                              noClaimBonusOnPrePolicy: ticket.vehicleDetails[0].noClaimBonusOnPrePolicy ?? null,
-                              createdBy: ticket.vehicleDetails[0].createdBy?.id ?? null,
-                              updatedBy: ticket.vehicleDetails[0].updatedBy?.id ?? null,
-                              createdAt: ticket.vehicleDetails[0].createdAt ?? null,
-                              updatedAt: ticket.vehicleDetails[0].updatedAt ?? null,
-                              isActive: ticket.vehicleDetails[0].isActive
-                          }
-                        : null,
-                    insuredPersons: ticket.insuredPersons
-                        ? {
-                              id: ticket.insuredPersons.id,
-                              name: ticket.insuredPersons.name,
-                              dateOfBirth: ticket.insuredPersons.dateOfBirth ?? null,
-                              gender: ticket.insuredPersons.gender ?? null,
-                              primaryContactNumber: ticket.insuredPersons.primaryContactNumber ?? null,
-                              secondaryContactNumber: ticket.insuredPersons.secondaryContactNumber ?? null,
-                              emailId: ticket.insuredPersons.emailId ?? null,
-                              relation: ticket.insuredPersons.relation ?? null,
-                              permanentAddress: ticket.insuredPersons.permanentAddress ?? null,
-                              permanentCity: ticket.insuredPersons.permanentCity ?? null,
-                              permanentState: ticket.insuredPersons.permanentState ?? null,
-                              permanentPinCode: ticket.insuredPersons.permanentPinCode ?? null,
-                              createdBy: ticket.insuredPersons.createdBy?.id ?? null,
-                              updatedBy: ticket.insuredPersons.updatedBy?.id ?? null,
-                              createdAt: ticket.insuredPersons.createdAt ?? null,
-                              updatedAt: ticket.insuredPersons.updatedAt ?? null,
-                              isActive: ticket.insuredPersons.isActive
-                          }
-                        : null,
-                    insuredMedicalDetails: formatMedicalDetails(insuredMedicalDetails)
-                }
-                 console.log("in get ticket details data is", data);
-                
+                        return {
+                            id: dep.id,
+                            name: dep.name,
+                            dateOfBirth: dep.dateOfBirth || null,
+                            gender: dep.gender || null,
+                            primaryContactNumber: dep.primaryContactNumber || null,
+                            relation: dep.relation || null,
+                            medicalDetails: formatMedicalDetails(depMedical)
+                        };
+                    }) || [],
+                vehicleDetails: ticket.vehicleDetails?.[0]
+                    ? {
+                          id: ticket.vehicleDetails[0].id,
+                          vehicleType: ticket.vehicleDetails[0].vehicleType,
+                          vehicleNumber: ticket.vehicleDetails[0].vehicleNumber,
+                          makingYear: ticket.vehicleDetails[0].makingYear ?? null,
+                          vehicleName: ticket.vehicleDetails[0].vehicleName ?? null,
+                          modelNumber: ticket.vehicleDetails[0].modelNumber ?? null,
+                          rcOwnerName: ticket.vehicleDetails[0].rcOwnerName ?? null,
+                          engineNumber: ticket.vehicleDetails[0].engineNumber ?? null,
+                          chassisNumber: ticket.vehicleDetails[0].chassisNumber ?? null,
+                          dateOfReg: ticket.vehicleDetails[0].dateOfReg ?? null,
+                          madeBy: ticket.vehicleDetails[0].madeBy ?? null,
+                          vehicleCategory: ticket.vehicleDetails[0].vehicleCategory ?? null,
+                          othersVehicleCategory: ticket.vehicleDetails[0].othersVehicleCategory ?? null,
+                          seatingCapacity: ticket.vehicleDetails[0].seatingCapacity ?? null,
+                          grossVehicleWeight: ticket.vehicleDetails[0].grossVehicleWeight ?? null,
+                          overTurning: ticket.vehicleDetails[0].overTurning ?? false,
+                          noClaimBonus: ticket.vehicleDetails[0].noClaimBonus ?? false,
+                          noClaimBonusOnPrePolicy: ticket.vehicleDetails[0].noClaimBonusOnPrePolicy ?? null,
+                          createdBy: ticket.vehicleDetails[0].createdBy?.id ?? null,
+                          updatedBy: ticket.vehicleDetails[0].updatedBy?.id ?? null,
+                          createdAt: ticket.vehicleDetails[0].createdAt ?? null,
+                          updatedAt: ticket.vehicleDetails[0].updatedAt ?? null,
+                          isActive: ticket.vehicleDetails[0].isActive
+                      }
+                    : null,
+                insuredPersons: ticket.insuredPersons
+                    ? {
+                          id: ticket.insuredPersons.id,
+                          name: ticket.insuredPersons.name,
+                          dateOfBirth: ticket.insuredPersons.dateOfBirth ?? null,
+                          gender: ticket.insuredPersons.gender ?? null,
+                          primaryContactNumber: ticket.insuredPersons.primaryContactNumber ?? null,
+                          secondaryContactNumber: ticket.insuredPersons.secondaryContactNumber ?? null,
+                          emailId: ticket.insuredPersons.emailId ?? null,
+                          relation: ticket.insuredPersons.relation ?? null,
+                          permanentAddress: ticket.insuredPersons.permanentAddress ?? null,
+                          permanentCity: ticket.insuredPersons.permanentCity ?? null,
+                          permanentState: ticket.insuredPersons.permanentState ?? null,
+                          permanentPinCode: ticket.insuredPersons.permanentPinCode ?? null,
+                          createdBy: ticket.insuredPersons.createdBy?.id ?? null,
+                          updatedBy: ticket.insuredPersons.updatedBy?.id ?? null,
+                          createdAt: ticket.insuredPersons.createdAt ?? null,
+                          updatedAt: ticket.insuredPersons.updatedAt ?? null,
+                          isActive: ticket.insuredPersons.isActive
+                      }
+                    : null,
+                insuredMedicalDetails: formatMedicalDetails(insuredMedicalDetails)
+            };
+            console.log('in get ticket details data is', data);
+
             return {
                 status: 'success',
                 message: 'Ticket details fetched successfully',
-                data:data
+                data: data
             };
         } catch (error) {
             return {
@@ -1131,8 +1134,8 @@ export class InsuranceTicketService {
                 }
 
                 // Update Vehicle Details (MOTOR)
-                console.log("vehicle details is", vehicleDetails);
-                
+                console.log('vehicle details is', vehicleDetails);
+
                 if (ticket.insuranceType === Insurance_Type.Motor && vehicleDetails) {
                     const existingVehicle = await manager.findOne(InsuranceVehicleDetails, {
                         where: { ticketId: { id: ticketId } }
@@ -1163,8 +1166,13 @@ export class InsuranceTicketService {
                             updatedAt: new Date()
                         });
                     } else {
-                        console.log("en else part vehicleDetails is", vehicleDetails, vehicleDetails?.noClaimBonus, vehicleDetails.noClaimBonus);
-                        
+                        console.log(
+                            'en else part vehicleDetails is',
+                            vehicleDetails,
+                            vehicleDetails?.noClaimBonus,
+                            vehicleDetails.noClaimBonus
+                        );
+
                         await manager.save(InsuranceVehicleDetails, {
                             insuranceUserId: ticket.insuranceUserId,
                             ticketId: ticket,
@@ -1721,5 +1729,37 @@ export class InsuranceTicketService {
         //         calculatedAt: new Date()
         //     });
         // }
+    }
+
+    async getInsuranceSubType(reqBody: any): Promise<any> {
+        try {
+            const typeData = await this.insuranceTypeRepo.findOne({ where: { code: reqBody.insuranceType } });
+
+            const subTypes = await this.insuranceSubTypeRepo
+                .createQueryBuilder('subType')
+                .select(['subType.id AS id', 'subType.name AS name', 'subType.code AS code'])
+                .where('subType.insuranceTypes = :id', { id: typeData.id })
+                .andWhere('subType.isActive = true')
+                .getRawMany();
+            console.log('sub type is here', subTypes);
+
+            return standardResponse(
+                true,
+                'Sub Type get successfully',
+                200,
+                subTypes,
+                null,
+                'insurance-ticket/getInsuranceSubType'
+            );
+        } catch (error) {
+            console.log('error: api -insurance-ticket/getInsuranceSubType', error.message);
+            return standardResponse(
+                false,
+                'Error fetching insurance subtype',
+                500,
+                null,
+                'insurance-ticket/getInsuranceSubType'
+            );
+        }
     }
 }

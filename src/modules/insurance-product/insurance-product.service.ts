@@ -10,7 +10,7 @@ import { In, Repository } from 'typeorm';
 import { InsuranceProduct } from './entities/insurance-product.entity';
 import { read } from 'fs';
 import { Branch } from '@modules/branch/entities/branch.entity';
-import { InsuranceSubType } from './entities/insurance-subtype.entity';
+import { InsuranceSubType } from '../insurance-ticket/entities/insurance-subtype.entity';
 import { CreateInsuranceProductDto, UpdateInsuranceProductDto } from './dto/insurance-product.dto';
 import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
 import { CreateInsuranceCompanyDto, UpdateInsuranceCompanyDto } from './dto/insurance-companies.dto';
@@ -29,6 +29,8 @@ import { CommonConnectionOptions } from 'tls';
 import { CommonQuotationService } from '@modules/insurance-quotations/common-quotation.service';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
+import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
+import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
 
 @Injectable()
 export class InsuranceProductService {
@@ -45,9 +47,6 @@ export class InsuranceProductService {
         @InjectRepository(InsuranceCompanies)
         private readonly companyRepo: Repository<InsuranceCompanies>,
 
-        @InjectRepository(InsuranceSubType)
-        private readonly subTypeRepo: Repository<InsuranceSubType>,
-
         @InjectRepository(InsuranceUser)
         private readonly insuranceUserRepo: Repository<InsuranceUser>,
 
@@ -58,8 +57,18 @@ export class InsuranceProductService {
         private readonly purchasedRepo: Repository<InsurancePurchasedProduct>,
         @InjectRepository(InsuranceTypeMaster)
         private readonly insuranceTypeRepo: Repository<InsuranceTypeMaster>,
+
+        @InjectRepository(InsuranceSubType)
+        private readonly subTypeRepo: Repository<InsuranceSubType>,
+
         @InjectRepository(InsuranceFeatures)
         private readonly insuranceFeaturesRepo: Repository<InsuranceFeatures>,
+
+        @InjectRepository(ProductFeatures)
+        private readonly productFeaturesRepo: Repository<ProductFeatures>,
+
+        @InjectRepository(ProductWaitingPeriod)
+        private readonly productWaitingRepo: Repository<ProductWaitingPeriod>,
 
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
@@ -332,21 +341,83 @@ export class InsuranceProductService {
 
     //------------------------------- product services ------------------------------//
 
-    async createProduct(requestParam: CreateInsuranceProductDto): Promise<InsuranceProduct> {
-        // const branch = await this.branchRepo.findOne({ where: { id: requestParam.branchId } });
-        const insuranceCompany = await this.companyRepo.findOne({ where: { id: requestParam.insuranceCompanyId } });
-        // const insuranceSubType = await this.subTypeRepo.findOne({ where: { id: requestParam.insuranceSubType } });
+    async createProduct(reqBody: any): Promise<any> {
+        try {
+            const {
+                name,
+                insuranceType,
+                insuranceSubType,
+                insuranceCompanyId,
+                branchId,
+                insurancePrice,
+                incentivePercentage,
+                durationMonths,
+                payoutPercentage,
+                shortDescription,
+                insuranceFeatures,
+                insuranceWaitingPeriod
+            } = reqBody;
 
-        if (!insuranceCompany) {
-            throw new Error('Invalid insurance company ID.');
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+            if (!userEntity) {
+                return standardResponse(false, 'Logged user not found', 400, null, null, 'product/createProduct');
+            }
+            const insuranceCompany = await this.companyRepo.findOne({ where: { id: insuranceCompanyId } });
+            // const branch = await this.branchRepo.findOne({ where: { id: requestParam.branchId } });
+
+            if (!insuranceCompany) {
+                throw new Error('Invalid insurance company ID.');
+            }
+
+            const insuranceTypesData = await this.insuranceTypeRepo.findOne({ where: { code: insuranceType } });
+            if (!insuranceTypesData) {
+                throw new NotFoundException('Insurance type is not available');
+            }
+            const subType = await this.subTypeRepo.findOne({ where: { id: insuranceSubType } });
+            if (!subType) {
+                throw new NotFoundException('Insurance Sub type is not available');
+            }
+
+            const newProduct = this.productRepo.create({
+                name: name,
+                insuranceTypes: insuranceTypesData,
+                insuranceSubType: subType,
+                insuranceCompanyId: insuranceCompany,
+                shortDescription: shortDescription,
+                createdBy: userEntity
+            });
+            const savedProduct = await this.productRepo.save(newProduct);
+
+            const features = insuranceFeatures.map((pf) => {
+                return this.productFeaturesRepo.create({
+                    product: savedProduct,
+                    insuranceFeatures: { id: pf.featureId },
+                    isActive: true,
+                    createdBy: userEntity
+                });
+            });
+
+            await this.productFeaturesRepo.save(features);
+
+            const waitingPeriod = insuranceWaitingPeriod.map((wp) => {
+                return this.productWaitingRepo.create({
+                    product: savedProduct,
+                    insuranceWaitingPeriod: { id: wp.insuranceWaitingPeriodId },
+                    waitingTime: wp.insuranceWaitingTime,
+                    timeType: wp.insuranceWaitingTimeType,
+                    isActive: true,
+                    createdBy: userEntity
+                });
+            });
+
+            await this.productWaitingRepo.save(waitingPeriod);
+
+            return standardResponse(true, 'Data saved successfully', 201, savedProduct, null, 'product/createProduct');
+        } catch (error) {
+            console.log('Error! api- product/createProduct', error.message);
+
+            return standardResponse(false, 'Failed! to saved', 201, null, null, 'product/createProduct');
         }
-
-        const newProduct = this.productRepo.create({
-            ...requestParam,
-            insuranceCompanyId: insuranceCompany
-        });
-
-        return await this.productRepo.save(newProduct);
     }
 
     async updateProduct(reqBody: any, req: any): Promise<any> {
@@ -746,6 +817,4 @@ export class InsuranceProductService {
 
         return response;
     }
-
-
 }
