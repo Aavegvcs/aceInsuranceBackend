@@ -68,8 +68,8 @@ export class InsuranceProductController {
 
     @Patch('updateProduct')
     @ApiOperation({ summary: 'Update insurance product' })
-    async updateProduct(@Body() reqBody: any, @Req() req: any) {
-        return this._productService.updateProduct(reqBody, req);
+    async updateProduct(@Body() reqBody: any) {
+        return this._productService.updateProduct(reqBody);
     }
 
     @Get('getAllProduct')

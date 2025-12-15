@@ -1741,7 +1741,7 @@ export class InsuranceTicketService {
                 .where('subType.insuranceTypes = :id', { id: typeData.id })
                 .andWhere('subType.isActive = true')
                 .getRawMany();
-            console.log('sub type is here', subTypes);
+            // console.log('sub type is here', subTypes);
 
             return standardResponse(
                 true,

@@ -22,6 +22,7 @@ import { CommonQuotationService } from '@modules/insurance-quotations/common-quo
 import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
+import { InsuranceWaitingPeriod } from '@modules/insurance-features/entities/insurance-waiting-period.entity';
 
 @Module({
     imports: [
@@ -37,6 +38,7 @@ import { ProductWaitingPeriod } from '@modules/insurance-features/entities/produ
             User,
             InsuranceTypeMaster,
             InsuranceFeatures,
+            InsuranceWaitingPeriod,
             ProductFeatures,
             ProductWaitingPeriod
         ]),

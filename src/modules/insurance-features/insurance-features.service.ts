@@ -259,7 +259,20 @@ export class InsuranceFeaturesService {
 
     async getInsuranceWaitingPeriods(insuranceType: any) {
         try {
+            // console.log("in waiting insurance type", insuranceType);
+            
             const typeData = await this.insuranceTypeRepo.findOne({ where: { code: insuranceType } });
+            if(!typeData){
+                return standardResponse(
+                false,
+                'InsuranceType is undefined',
+                404,
+                null,
+                null,
+                'insurance-features/getInsuranceWaitingPeriods'
+            );
+            }
+// console.log("in waiting typedata ", typeData);
 
             const periods = await this.insuranceWaitingRepo
                 .createQueryBuilder('insuranceWaiting')
@@ -273,7 +286,7 @@ export class InsuranceFeaturesService {
                 .andWhere('insuranceWaiting.isActive = true')
                 .getRawMany();
 
-            //  console.log('waiting peried is here', periods);
+            //   console.log('waiting peried is here', periods);
 
             return standardResponse(
                 true,

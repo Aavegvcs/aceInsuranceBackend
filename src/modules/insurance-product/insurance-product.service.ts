@@ -31,6 +31,7 @@ import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insuranc
 import { InsuranceFeatures } from '@modules/insurance-features/entities/insurance-features.entity';
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
+import { InsuranceWaitingPeriod } from '@modules/insurance-features/entities/insurance-waiting-period.entity';
 
 @Injectable()
 export class InsuranceProductService {
@@ -63,6 +64,8 @@ export class InsuranceProductService {
 
         @InjectRepository(InsuranceFeatures)
         private readonly insuranceFeaturesRepo: Repository<InsuranceFeatures>,
+        @InjectRepository(InsuranceWaitingPeriod)
+        private readonly insuranceWaitingRepo: Repository<InsuranceWaitingPeriod>,
 
         @InjectRepository(ProductFeatures)
         private readonly productFeaturesRepo: Repository<ProductFeatures>,
@@ -420,59 +423,219 @@ export class InsuranceProductService {
         }
     }
 
-    async updateProduct(reqBody: any, req: any): Promise<any> {
-        try {
-            const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
-            if (!userEntity) {
-                return {
-                    status: 'error',
-                    message: 'Logged user not found',
-                    data: null
-                };
-            }
+    // async updateProduct(reqBody: any, req: any): Promise<any> {
+    //     try {
+    //         const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
+    //         if (!userEntity) {
+    //             return {
+    //                 status: 'error',
+    //                 message: 'Logged user not found',
+    //                 data: null
+    //             };
+    //         }
 
-            const product = await this.productRepo.findOne({ where: { id: reqBody.id } });
-            const insuranceCompany = await this.companyRepo.findOne({ where: { id: reqBody.insuranceCompanyId } });
-            if (!product || !insuranceCompany) {
-                throw new Error(`product or insurance company not found`);
-            }
-            const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({
-                where: { code: reqBody.insuranceType }
+    //         const product = await this.productRepo.findOne({ where: { id: reqBody.id } });
+    //         const insuranceCompany = await this.companyRepo.findOne({ where: { id: reqBody.insuranceCompanyId } });
+    //         if (!product || !insuranceCompany) {
+    //             throw new Error(`product or insurance company not found`);
+    //         }
+    //         const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({
+    //             where: { code: reqBody.insuranceType }
+    //         });
+
+    //         const result = await this.productRepo.update(reqBody.id, {
+    //             name: reqBody.name,
+    //             insuranceType: reqBody.insuranceType,
+    //             insuranceTypes: insuranceTypeMaster,
+    //             insuranceCompanyId: reqBody.insuranceCompanyId,
+    //             // insurancePrice: reqBody.insurancePrice,
+    //             // incentivePercentage: reqBody.incentivePercentage,
+    //             // durationMonths: reqBody.durationMonths,
+    //             shortDescription: reqBody.shortDescription,
+    //             // features: reqBody.features,
+    //             // advantages: reqBody.advantages,
+    //             // benefits: reqBody.benefits,
+    //             // payoutPercentage: reqBody.payoutPercentage,
+    //             isActive: reqBody.isActive,
+    //             updatedAt: reqBody.updatedAt,
+    //             updatedBy: userEntity
+    //         });
+
+    //         if (result.affected === 0) {
+    //             return {
+    //                 status: 'error',
+    //                 message: `Failed to update product with ID ${reqBody.id}`,
+    //                 data: null
+    //             };
+    //         }
+
+    //         return {
+    //             status: 'success',
+    //             message: `product updated successfully`,
+    //             data: reqBody
+    //         };
+    //     } catch (error) {
+    //         console.log('api- insurance-product/updateProduct', error.message);
+
+    //         return {
+    //             status: 'error',
+    //             message: 'Error updating product',
+    //             data: null
+    //         };
+    //     }
+    // }
+
+    async updateProduct(reqBody: any): Promise<any> {
+        try {
+            const {
+                id,
+                name,
+                shortDescription,
+                insuranceType,
+                insuranceSubTypeId,
+                insuranceCompanyId,
+                insuranceFeatures,
+                insuranceWaitingPeriod,
+                isActive
+            } = reqBody;
+            const userEntity = await this.userRepo.findOne({
+                where: { email: 'aftab.alam@aaveg.com' }
             });
 
-            const result = await this.productRepo.update(reqBody.id, {
-                name: reqBody.name,
-                insuranceType: reqBody.insuranceType,
+            if (!userEntity) {
+                return { status: 'error', message: 'Logged user not found', data: null };
+            }
+
+            const product = await this.productRepo.findOne({
+                where: { id }
+            });
+
+            if (!product) {
+                return { status: 'error', message: 'Product not found', data: null };
+            }
+
+            const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({
+                where: { code: insuranceType }
+            });
+
+            if (!insuranceTypeMaster) {
+                return { status: 'error', message: 'Insurance type not found', data: null };
+            }
+
+            await this.productRepo.update(id, {
+                name,
+                insuranceType,
                 insuranceTypes: insuranceTypeMaster,
-                insuranceCompanyId: reqBody.insuranceCompanyId,
-                insurancePrice: reqBody.insurancePrice,
-                incentivePercentage: reqBody.incentivePercentage,
-                durationMonths: reqBody.durationMonths,
-                shortDescription: reqBody.shortDescription,
-                features: reqBody.features,
-                advantages: reqBody.advantages,
-                benefits: reqBody.benefits,
-                payoutPercentage: reqBody.payoutPercentage,
-                isActive: reqBody.isActive,
-                updatedAt: reqBody.updatedAt,
+                insuranceCompanyId,
+                insuranceSubType: { id: insuranceSubTypeId } as any,
+                shortDescription,
+                isActive,
+                updatedAt: new Date(),
                 updatedBy: userEntity
             });
 
-            if (result.affected === 0) {
-                return {
-                    status: 'error',
-                    message: `Failed to update product with ID ${reqBody.id}`,
-                    data: null
-                };
+            const existingFeatures = await this.productFeaturesRepo.find({
+                where: { product: { id } },
+                relations: ['insuranceFeatures']
+            });
+            console.log('existing features', existingFeatures);
+
+            const incomingFeatureIds = new Set<number>((insuranceFeatures || []).map((f: any) => Number(f.featureId)));
+            console.log('incoming featuresid', incomingFeatureIds);
+
+            const existingFeatureMap = new Map<number, any>();
+            existingFeatures.forEach((pf) => {
+                existingFeatureMap.set(pf.insuranceFeatures.id, pf);
+            });
+
+            for (const featureId of incomingFeatureIds) {
+                const existing = existingFeatureMap.get(featureId);
+
+                if (existing) {
+                    if (!existing.isActive) {
+                        existing.isActive = true;
+                        existing.updatedAt = new Date();
+                        existing.updatedBy = userEntity;
+                        await this.productFeaturesRepo.save(existing);
+                    }
+                } else {
+                    await this.productFeaturesRepo.save(
+                        this.productFeaturesRepo.create({
+                            product: product,
+                            insuranceFeatures: { id: featureId } as any,
+                            isActive: true,
+                            createdBy: userEntity
+                        })
+                    );
+                }
+            }
+            for (const existing of existingFeatures) {
+                if (!incomingFeatureIds.has(existing.insuranceFeatures.id)) {
+                    console.log('deactivate', existing.insuranceFeatures.id);
+                    if (existing.isActive) {
+                        existing.isActive = false;
+                        existing.updatedAt = new Date();
+                        existing.updatedBy = userEntity;
+                        await this.productFeaturesRepo.save(existing);
+                    }
+                }
             }
 
+            const existingWaiting = await this.productWaitingRepo.find({
+                where: { product: { id } },
+                relations: ['insuranceWaitingPeriod']
+            });
+
+            const incomingWaitingMap = new Map<number, any>();
+            (insuranceWaitingPeriod || []).forEach((w: any) => {
+                incomingWaitingMap.set(Number(w.insuranceWaitingPeriodId), w);
+            });
+
+            for (const [waitingId, incoming] of incomingWaitingMap.entries()) {
+                const existing = existingWaiting.find((ew) => ew.insuranceWaitingPeriod.id === waitingId);
+
+                if (existing) {
+                    // UPDATE
+                    existing.isActive = true;
+                    existing.waitingTime = incoming.insuranceWaitingTime;
+                    existing.timeType = incoming.insuranceWaitingTimeType;
+                    existing.updatedAt = new Date();
+                    existing.updatedBy = userEntity;
+
+                    await this.productWaitingRepo.save(existing);
+                } else {
+                    // INSERT
+                    await this.productWaitingRepo.save(
+                        this.productWaitingRepo.create({
+                            product: product,
+                            insuranceWaitingPeriod: { id: waitingId } as any,
+                            waitingTime: incoming.insuranceWaitingTime,
+                            timeType: incoming.insuranceWaitingTimeType,
+                            isActive: true,
+                            createdBy: userEntity
+                        })
+                    );
+                }
+            }
+
+            /*Deactivate removed waiting periods */
+            for (const existing of existingWaiting) {
+                if (!incomingWaitingMap.has(existing.insuranceWaitingPeriod.id)) {
+                    if (existing.isActive) {
+                        existing.isActive = false;
+                        existing.updatedAt = new Date();
+                        existing.updatedBy = userEntity;
+                        await this.productWaitingRepo.save(existing);
+                    }
+                }
+            }
             return {
                 status: 'success',
-                message: `product updated successfully`,
+                message: 'Product updated successfully',
                 data: reqBody
             };
         } catch (error) {
-            console.log('api- insurance-product/updateProduct', error.message);
+            console.error('insurance-product/updateProduct', error);
 
             return {
                 status: 'error',
@@ -482,11 +645,11 @@ export class InsuranceProductService {
         }
     }
 
-    async getAllProducts(): Promise<InsuranceProduct[]> {
-        const query = 'CALL get_allProduct()';
-        const result = await this.productRepo.query(query);
-        return result[0];
-    }
+    // async getAllProducts(): Promise<InsuranceProduct[]> {
+    //     const query = 'CALL get_allProduct()';
+    //     const result = await this.productRepo.query(query);
+    //     return result[0];
+    // }
 
     async getProductById(id: number): Promise<InsuranceProduct | null> {
         return await this.productRepo.findOne({ where: { id } });
@@ -520,153 +683,153 @@ export class InsuranceProductService {
         }
     }
 
-    async productBulkUpload(reqBody: any): Promise<any> {
-        const failed: { index: number; name: string; reason: string }[] = [];
-        const data = reqBody.data || [];
-        const incomingCompany = reqBody.insuranceCompanyId;
-        const startIndex = reqBody.startIndex;
-        const userEntity = await this.loggedInsUserService.getCurrentUser();
+    // async productBulkUpload(reqBody: any): Promise<any> {
+    //     const failed: { index: number; name: string; reason: string }[] = [];
+    //     const data = reqBody.data || [];
+    //     const incomingCompany = reqBody.insuranceCompanyId;
+    //     const startIndex = reqBody.startIndex;
+    //     const userEntity = await this.loggedInsUserService.getCurrentUser();
 
-        if (!userEntity) {
-            return standardResponse(
-                false,
-                'Logged user not found',
-                404,
-                null,
-                null,
-                'insurance-product/productBulkUpload'
-            );
-        }
+    //     if (!userEntity) {
+    //         return standardResponse(
+    //             false,
+    //             'Logged user not found',
+    //             404,
+    //             null,
+    //             null,
+    //             'insurance-product/productBulkUpload'
+    //         );
+    //     }
 
-        try {
-            // Step 1: Validate incoming data
-            if (!Array.isArray(data) || data.length === 0) {
-                return standardResponse(
-                    true,
-                    'No data provided for bulk upload',
-                    404,
-                    { successCount: 0, failedCount: 0, failed: [] },
-                    null,
-                    'insurance-product/productBulkUpload'
-                );
-            }
+    //     try {
+    //         // Step 1: Validate incoming data
+    //         if (!Array.isArray(data) || data.length === 0) {
+    //             return standardResponse(
+    //                 true,
+    //                 'No data provided for bulk upload',
+    //                 404,
+    //                 { successCount: 0, failedCount: 0, failed: [] },
+    //                 null,
+    //                 'insurance-product/productBulkUpload'
+    //             );
+    //         }
 
-            // Step 2: Validate company existence
-            const insuranceCompany = await this.companyRepo.findOne({ where: { id: incomingCompany } });
-            if (!insuranceCompany) {
-                return standardResponse(
-                    false,
-                    'Invalid Insurance Company',
-                    400,
-                    null,
-                    null,
-                    'insurance-product/productBulkUpload'
-                );
-            }
+    //         // Step 2: Validate company existence
+    //         const insuranceCompany = await this.companyRepo.findOne({ where: { id: incomingCompany } });
+    //         if (!insuranceCompany) {
+    //             return standardResponse(
+    //                 false,
+    //                 'Invalid Insurance Company',
+    //                 400,
+    //                 null,
+    //                 null,
+    //                 'insurance-product/productBulkUpload'
+    //             );
+    //         }
 
-            // Step 3: Extract incoming product names
-            const incomingNames = data.map((item) => item.name);
-            const existingProducts = await this.productRepo
-                .createQueryBuilder('product')
-                .leftJoinAndSelect('product.insuranceCompanyId', 'company')
-                .where('product.name IN (:...names)', { names: incomingNames })
-                .andWhere('company.id = :companyId', { companyId: insuranceCompany.id })
-                .getMany();
+    //         // Step 3: Extract incoming product names
+    //         const incomingNames = data.map((item) => item.name);
+    //         const existingProducts = await this.productRepo
+    //             .createQueryBuilder('product')
+    //             .leftJoinAndSelect('product.insuranceCompanyId', 'company')
+    //             .where('product.name IN (:...names)', { names: incomingNames })
+    //             .andWhere('company.id = :companyId', { companyId: insuranceCompany.id })
+    //             .getMany();
 
-            // console.log("data is ", data);
+    //         // console.log("data is ", data);
 
-            console.log('existing product', existingProducts);
+    //         console.log('existing product', existingProducts);
 
-            const existingSet = new Set(existingProducts.map((p) => `${p.name}-${p.insuranceCompanyId.id}`));
-            console.log('existing set', existingSet);
+    //         const existingSet = new Set(existingProducts.map((p) => `${p.name}-${p.insuranceCompanyId.id}`));
+    //         console.log('existing set', existingSet);
 
-            // Step 5: Filter unique data
-            const uniqueData: any[] = [];
-            const headerOffset = 1;
-            data.forEach((item, index) => {
-                // const rowIndex = startIndex + index;
-                const rowIndex = startIndex + index + headerOffset;
-                const key = `${item.name}-${incomingCompany}`;
-                if (existingSet.has(key)) {
-                    failed.push({
-                        index: rowIndex,
-                        name: item.name,
-                        reason: `Product '${item.name}' already exists for company '${insuranceCompany.companyName}'`
-                    });
-                } else {
-                    console.log('in else part', item);
+    //         // Step 5: Filter unique data
+    //         const uniqueData: any[] = [];
+    //         const headerOffset = 1;
+    //         data.forEach((item, index) => {
+    //             // const rowIndex = startIndex + index;
+    //             const rowIndex = startIndex + index + headerOffset;
+    //             const key = `${item.name}-${incomingCompany}`;
+    //             if (existingSet.has(key)) {
+    //                 failed.push({
+    //                     index: rowIndex,
+    //                     name: item.name,
+    //                     reason: `Product '${item.name}' already exists for company '${insuranceCompany.companyName}'`
+    //                 });
+    //             } else {
+    //                 console.log('in else part', item);
 
-                    uniqueData.push(item);
-                }
-            });
-            console.log('unique data is here', uniqueData);
+    //                 uniqueData.push(item);
+    //             }
+    //         });
+    //         console.log('unique data is here', uniqueData);
 
-            // Step 6: Bulk insert unique data
-            if (uniqueData.length > 0) {
-                try {
-                    const insertData = uniqueData.map((item) => ({
-                        ...item,
-                        insuranceCompanyId: insuranceCompany,
-                        createdBy: userEntity.id,
-                        createdAt: new Date()
-                    }));
-                    console.log('in last insert data, ', insertData);
+    //         // Step 6: Bulk insert unique data
+    //         if (uniqueData.length > 0) {
+    //             try {
+    //                 const insertData = uniqueData.map((item) => ({
+    //                     ...item,
+    //                     insuranceCompanyId: insuranceCompany,
+    //                     createdBy: userEntity.id,
+    //                     createdAt: new Date()
+    //                 }));
+    //                 console.log('in last insert data, ', insertData);
 
-                    await this.productRepo
-                        .createQueryBuilder()
-                        .insert()
-                        .into(this.productRepo.metadata.tableName)
-                        .values(insertData)
-                        .execute();
-                } catch (error) {
-                    uniqueData.forEach((item) => {
-                        failed.push({
-                            index: startIndex + data.indexOf(item),
-                            name: item.name,
-                            reason: error.message || 'Database insert error'
-                        });
-                    });
-                }
-            }
+    //                 await this.productRepo
+    //                     .createQueryBuilder()
+    //                     .insert()
+    //                     .into(this.productRepo.metadata.tableName)
+    //                     .values(insertData)
+    //                     .execute();
+    //             } catch (error) {
+    //                 uniqueData.forEach((item) => {
+    //                     failed.push({
+    //                         index: startIndex + data.indexOf(item),
+    //                         name: item.name,
+    //                         reason: error.message || 'Database insert error'
+    //                     });
+    //                 });
+    //             }
+    //         }
 
-            // Step 7: Prepare response
-            const successCount = uniqueData.length - failed.length > 0 ? uniqueData.length - failed.length : 0;
-            const failedCount = failed.length;
-            let message = 'Data inserted successfully.';
+    //         // Step 7: Prepare response
+    //         const successCount = uniqueData.length - failed.length > 0 ? uniqueData.length - failed.length : 0;
+    //         const failedCount = failed.length;
+    //         let message = 'Data inserted successfully.';
 
-            if (successCount > 0 && failedCount > 0) {
-                message = 'Data partially inserted!';
-            } else if (successCount === 0 && failedCount > 0) {
-                message = 'Failed to insert data!';
-            }
+    //         if (successCount > 0 && failedCount > 0) {
+    //             message = 'Data partially inserted!';
+    //         } else if (successCount === 0 && failedCount > 0) {
+    //             message = 'Failed to insert data!';
+    //         }
 
-            return standardResponse(
-                true,
-                message,
-                202,
-                { successCount, failedCount, failed },
-                null,
-                'insurance-product/productBulkUpload'
-            );
-        } catch (error) {
-            return standardResponse(
-                false,
-                'Failed! to insert data',
-                500,
-                {
-                    successCount: 0,
-                    failedCount: data.length,
-                    failed: data.map((item, index) => ({
-                        index: startIndex + index,
-                        name: item.name || 'Unknown',
-                        reason: error.message || 'Unexpected server error'
-                    }))
-                },
-                null,
-                'insurance-product/productBulkUpload'
-            );
-        }
-    }
+    //         return standardResponse(
+    //             true,
+    //             message,
+    //             202,
+    //             { successCount, failedCount, failed },
+    //             null,
+    //             'insurance-product/productBulkUpload'
+    //         );
+    //     } catch (error) {
+    //         return standardResponse(
+    //             false,
+    //             'Failed! to insert data',
+    //             500,
+    //             {
+    //                 successCount: 0,
+    //                 failedCount: data.length,
+    //                 failed: data.map((item, index) => ({
+    //                     index: startIndex + index,
+    //                     name: item.name || 'Unknown',
+    //                     reason: error.message || 'Unexpected server error'
+    //                 }))
+    //             },
+    //             null,
+    //             'insurance-product/productBulkUpload'
+    //         );
+    //     }
+    // }
 
     async createSubType(requestParam: CreateInsuranceSubTypeDto): Promise<InsuranceSubType> {
         const newObj = this.subTypeRepo.create(requestParam);
@@ -816,5 +979,412 @@ export class InsuranceProductService {
         };
 
         return response;
+    }
+
+    //     async getAllProducts(): Promise<any> {
+    //         try {
+    //             // ---------------------------------------------------------
+    //             // 1️⃣ FETCH QUOTATION + QUOTES (FAST)
+    //             // ---------------------------------------------------------
+    //             const products = await this.productRepo
+    //                 .createQueryBuilder('product')
+    //                 .leftJoin('product.insuranceCompanyId', 'company')
+    //                 .leftJoin('product.insuranceSubType', 'subType')
+    //                 .leftJoin('subType.insuranceTypes', 'insuranceType')
+    //                 .select([
+    //                     'product.id AS id',
+    //                     'product.name AS name',
+    //                     'subType.id AS subTypeId',
+    //                     'subType.name AS subTypeName',
+    //                     'subType.code AS subTypeCode',
+    //                     'insuranceType.code AS insuranceType',
+    //                     'product.insurancePrice AS insurancePrice',
+    //                     'product.incentivePercentage AS incentivePercentage',
+    //                     'product.durationMonths AS durationMonths',
+    //                     'product.payoutPercentage AS payoutPercentage',
+    //                     'product.benefits AS benefits',
+    //                     'product.advantages AS advantages',
+    //                     'product.features AS features',
+    //                     'product.shortDescription AS shortDescription',
+    //                     'product.isActive AS isActive',
+    //                     'company.id AS insuranceCompanyId',
+    //                     'company.companyName AS insuranceCompanyName'
+    //                 ])
+    //                 .getRawMany();
+
+    //                 console.log("here is all products", products);
+
+    //             if (!products) {
+    //                 throw new Error('Quotation not found');
+    //             }
+
+    //             // ---------------------------------------------------------
+    //             // 2️⃣ FETCH ALL PRODUCT FEATURES WITH QUOTE-OVERRIDE STATUS
+    //             // ---------------------------------------------------------
+    //             const featureRows = await this.productRepo
+    //                 .createQueryBuilder('product')
+    //                 .leftJoin('product.productFeatures', 'productFeature')
+    //                 .leftJoin('productFeature.insuranceFeatures', 'insuranceFeature')
+    //                 .select([
+    //                     'product.id AS productId',
+    //                     'insuranceFeature.id AS featureId',
+    //                     'insuranceFeature.featuresName AS featureName',
+    //                     'insuranceFeature.description AS featureDescription',
+    //                     'productFeature.id AS productFeatureId',
+    //                     'productFeature.isActive AS productFeatureIsActive'
+    //                 ])
+    //                 .where('productFeature.isActive = true')
+    //                 .andWhere('insuranceFeature.isActive = true')
+    //                 .getRawMany();
+
+    //      console.log("this is features", featureRows);
+
+    //             const waitingRows = await this.productRepo
+    //                 .createQueryBuilder('product')
+    //                 .leftJoin('product.productWaitingPeriod', 'productWaiting')
+    //                 .leftJoin('productWaiting.insuranceWaitingPeriod', 'waitingMaster')
+    //                 .select([
+    //                     'product.id AS productId',
+    //                     'waitingMaster.id AS waitingId',
+    //                     'waitingMaster.name AS waitingName',
+    //                     'productWaiting.waitingTime AS productWaitingTime',
+    //                     'productWaiting.timeType AS productTimeType',
+    //                     'productWaiting.id AS productWaitingId',
+    //                     'productWaiting.isActive AS productWaitingIsActive'
+    //                 ])
+    //                 .where('productWaiting.isActive = true')
+    //                 .getRawMany();
+    // console.log("this is waiting", waitingRows);
+
+    //             // ---------------------------------------------------------
+    //             // 4️⃣ MAP FEATURES + WAITING PERIOD TO EACH QUOTE
+    //             // ---------------------------------------------------------
+    //             const finalData = products.map((p) => {
+    //                 const pFeatures = featureRows
+    //                     .filter((r) => r.productId === p.id)
+    //                     .map((f) => ({
+    //                         featureId: f.featureId,
+    //                         featureName: f.featureName,
+    //                         description: f.featureDescription,
+    //                         status: f.productFeatureId && f.productFeatureIsActive ? true : false
+    //                     }));
+
+    //                 const pWaiting = waitingRows
+    //                     .filter((r) => r.productId === p.id)
+    //                     .map((w) => ({
+    //                         insuranceWaitingPeriodId: w.waitingId,
+    //                         insuranceWaitingPeriodName: w.waitingName,
+    //                         insuranceWaitingTime: w.quoteWaitingTime || w.productWaitingTime,
+    //                         insuranceWaitingTimeType: w.quoteTimeType || w.productTimeType,
+    //                         status: w.productWaitingId && w.productWaitingIsActive ? true : false
+    //                     }));
+
+    //                 return {
+    //                     products,
+    //                     productFeatures: pFeatures,
+    //                     productWaitingPeriod: pWaiting
+    //                 };
+    //             });
+    //             return standardResponse(
+    //                 true,
+    //                 'data get successfully',
+    //                 200,
+    //                 finalData,
+    //                 null,
+    //                 'insurance-product/getAllProducts'
+    //             );
+    //         } catch (error) {
+    //             console.log("Error! api- insurance-product/getAllProducts", error.message);
+
+    //            return standardResponse(
+    //                 true,
+    //                 'Faild! to get all products',
+    //                 500,
+    //                 null,
+    //                 null,
+    //                 'insurance-product/getAllProducts'
+    //             );
+    //         }
+    //     }
+
+    async getAllProducts(): Promise<any> {
+        try {
+            // 1️⃣ PRODUCTS
+            const products = await this.productRepo
+                .createQueryBuilder('product')
+                .leftJoin('product.insuranceCompanyId', 'company')
+                .leftJoin('product.insuranceSubType', 'subType')
+                .leftJoin('subType.insuranceTypes', 'insuranceType')
+                .select([
+                    'product.id AS id',
+                    'product.name AS name',
+                    'insuranceType.code AS insuranceType',
+                    'subType.id AS insuranceSubTypeId',
+                    'subType.name AS insuranceSubTypeName',
+                    'product.insurancePrice AS insurancePrice',
+                    'product.incentivePercentage AS incentivePercentage',
+                    'product.durationMonths AS durationMonths',
+                    'product.payoutPercentage AS payoutPercentage',
+                    'product.benefits AS benefits',
+                    'product.advantages AS advantages',
+                    'product.features AS features',
+                    'product.shortDescription AS shortDescription',
+                    'product.isActive AS isActive',
+                    'company.id AS insuranceCompanyId',
+                    'company.companyName AS insuranceCompanyName'
+                ])
+                .getRawMany();
+
+            // 2️⃣ PRODUCT FEATURES
+            const featureRows = await this.productRepo
+                .createQueryBuilder('product')
+                .leftJoin('product.productFeatures', 'pf')
+                .leftJoin('pf.insuranceFeatures', 'f')
+                .select([
+                    'product.id AS productId',
+                    'f.id AS featureId',
+                    'f.featuresName AS featureName',
+                    'f.description AS description',
+                    'f.coverage AS coverage',
+                    'f.isStandard AS isStandard',
+                    'pf.isActive AS status'
+                ])
+                .where('pf.isActive = true')
+                .getRawMany();
+
+            // 3️⃣ WAITING PERIODS
+            const waitingRows = await this.productRepo
+                .createQueryBuilder('product')
+                .leftJoin('product.productWaitingPeriod', 'pw')
+                .leftJoin('pw.insuranceWaitingPeriod', 'wm')
+                .select([
+                    'product.id AS productId',
+                    'wm.id AS insuranceWaitingPeriodId',
+                    'wm.name AS insuranceWaitingPeriodName',
+                    'pw.waitingTime AS insuranceWaitingTime',
+                    'pw.timeType AS insuranceWaitingTimeType',
+                    'pw.isActive AS status'
+                ])
+                .where('pw.isActive = true')
+                .getRawMany();
+
+            // 4️⃣ MAP FINAL RESPONSE
+            const finalData = products.map((p) => {
+                const basic = [];
+                const addon = [];
+
+                featureRows
+                    .filter((f) => f.productId === p.id)
+                    .forEach((f) => {
+                        const feature = {
+                            featureId: f.featureId,
+                            featureName: f.featureName,
+                            description: f.description,
+                            coverage: f.coverage,
+                            isStandard: f.isStandard,
+                            status: true
+                        };
+
+                        f.isStandard ? basic.push(feature) : addon.push(feature);
+                    });
+
+                const waiting = waitingRows.filter((w) => w.productId === p.id);
+
+                return {
+                    ...p,
+                    insuranceFeatures: {
+                        basic,
+                        addon
+                    },
+                    insuranceWaitingPeriod: waiting
+                };
+            });
+
+            return standardResponse(
+                true,
+                'Products fetched successfully',
+                200,
+                finalData,
+                null,
+                'insurance-product/getAllProducts'
+            );
+        } catch (error) {
+            console.log('Error getAllProducts:', error.message);
+            return standardResponse(
+                false,
+                'Failed to get products',
+                500,
+                null,
+                null,
+                'insurance-product/getAllProducts'
+            );
+        }
+    }
+
+    async productBulkUpload(reqBody: any): Promise<any> {
+        const failed: { index: number; name: string; reason: string }[] = [];
+        const data = reqBody.data || [];
+        const incomingCompany = reqBody.insuranceCompanyId;
+        const startIndex = reqBody.startIndex || 1;
+
+        const userEntity = await this.loggedInsUserService.getCurrentUser();
+        if (!userEntity) {
+            return standardResponse(false, 'Logged user not found', 404, null);
+        }
+
+        try {
+            if (!Array.isArray(data) || data.length === 0) {
+                return standardResponse(true, 'No data provided', 200, {
+                    successCount: 0,
+                    failedCount: 0,
+                    failed: []
+                });
+            }
+            const insuranceCompany = await this.companyRepo.findOne({
+                where: { id: incomingCompany }
+            });
+
+            if (!insuranceCompany) {
+                return standardResponse(false, 'Invalid Insurance Company', 400, null);
+            }
+            const incomingNames = data.map((i) => i.name?.trim());
+            const existingProducts = await this.productRepo.find({
+                where: {
+                    name: In(incomingNames),
+                    insuranceCompanyId: insuranceCompany
+                }
+            });
+
+            const existingSet = new Set(existingProducts.map((p) => `${p.name}-${p.insuranceCompanyId.id}`));
+
+            let successCount = 0;
+
+            for (let i = 0; i < data.length; i++) {
+                const item = data[i];
+                const rowIndex = startIndex + i + 1;
+
+                try {
+                    if (!item.name || !item['Insurance Type']) {
+                        throw new Error('Name or Insurance Type missing');
+                    }
+
+                    const key = `${item.name}-${incomingCompany}`;
+                    if (existingSet.has(key)) {
+                        failed.push({
+                            index: rowIndex,
+                            name: item.name,
+                            reason: 'Product already exists'
+                        });
+                        continue;
+                    }
+                    const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({
+                        where: { code: item['Insurance Type'] }
+                    });
+
+                    if (!insuranceTypeMaster) {
+                        throw new Error(`Invalid insurance type ${item['Insurance Type']}`);
+                    }
+
+                    const insuranceSubType = await this.subTypeRepo.findOne({
+                        where: { code: item['Insurance Sub Type'] }
+                    });
+
+                    if (!insuranceSubType) {
+                        throw new Error(`Invalid insurance sub type ${item['Insurance Type']}`);
+                    }
+                    const product = await this.productRepo.save(
+                        this.productRepo.create({
+                            name: item.name,
+                            insuranceType: item['Insurance Type'],
+                            insuranceTypes: insuranceTypeMaster,
+                            insuranceSubType: insuranceSubType,
+                            insuranceCompanyId: insuranceCompany,
+                            shortDescription: item['Short Descritpion'],
+                            isActive: true,
+                            createdBy: userEntity
+                        })
+                    );
+                    const parseFeatures = (val?: string): string[] => (val ? val.split(',').map((v) => v.trim()) : []);
+
+                    const allFeatureNames = [
+                        ...parseFeatures(item['Basic Features']),
+                        ...parseFeatures(item['AddOn features'])
+                    ];
+
+                    if (allFeatureNames.length > 0) {
+                        const featureMasters = await this.insuranceFeaturesRepo.find({
+                            where: {
+                                featuresName: In(allFeatureNames),
+                                insuranceTypes: insuranceTypeMaster
+                            }
+                        });
+
+                        for (const feature of featureMasters) {
+                            await this.productFeaturesRepo.save(
+                                this.productFeaturesRepo.create({
+                                    product,
+                                    insuranceFeatures: feature,
+                                    isActive: true,
+                                    createdBy: userEntity
+                                })
+                            );
+                        }
+                    }
+                    const parseWaitingJson = (value?: string): any[] => {
+                        if (!value) return [];
+                        try {
+                            return JSON.parse(value);
+                        } catch {
+                            return [];
+                        }
+                    };
+
+                    const waitingList = parseWaitingJson(item['Waiting Period']);
+
+                    for (const w of waitingList) {
+                        const waitingMaster = await this.insuranceWaitingRepo.findOne({
+                            where: {
+                                name: w.waitingName.trim(),
+                                insuranceTypes: insuranceTypeMaster
+                            }
+                        });
+
+                        if (!waitingMaster) {
+                            throw new Error(`Waiting period '${w.waitingName}' not found`);
+                        }
+
+                        await this.productWaitingRepo.save(
+                            this.productWaitingRepo.create({
+                                product,
+                                insuranceWaitingPeriod: waitingMaster,
+                                waitingTime: Number(w.waitingTime),
+                                timeType: w.timeType,
+                                isActive: true,
+                                createdBy: userEntity
+                            })
+                        );
+                    }
+
+                    successCount++;
+                } catch (err) {
+                    failed.push({
+                        index: rowIndex,
+                        name: item.name || 'Unknown',
+                        reason: err.message || 'Processing error'
+                    });
+                }
+            }
+            return standardResponse(true, 'Bulk upload completed', 202, {
+                successCount,
+                failedCount: failed.length,
+                failed
+            });
+        } catch (error) {
+            return standardResponse(false, 'Bulk upload failed', 500, {
+                successCount: 0,
+                failedCount: data.length,
+                failed
+            });
+        }
     }
 }
