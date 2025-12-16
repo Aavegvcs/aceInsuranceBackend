@@ -76,7 +76,7 @@ export class InsuranceRolePermissionService {
                 throw new UnauthorizedException('User not logged in');
             }
             const { name, type, module, description } = reqBody;
-            console.log('here is details', reqBody);
+            // console.log('here is details', reqBody);
 
             const result = await this.permissionRepo.query('CALL ins_permission(?, ?, ?, ?, ?)', [
                 name,

@@ -17,7 +17,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
     ManyToOne,
-    JoinColumn, 
+    JoinColumn,
     OneToMany,
     OneToOne
 } from 'typeorm';
@@ -44,6 +44,7 @@ import { EscalationCase } from '@modules/insurance-escalation/entities/escalatio
 import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
 import { InsuranceNominee } from './insurance-nominee-details.entity';
 import { InsuranceTypeMaster } from './insurance-type-master.entity';
+import { InsuranceSubType } from './insurance-subtype.entity';
 @Entity({ name: 'insurance_ticket' })
 export class InsuranceTicket {
     @PrimaryGeneratedColumn()
@@ -62,9 +63,13 @@ export class InsuranceTicket {
     @Column({ type: 'enum', enum: Insurance_Type, name: 'insurance_type', nullable: true })
     insuranceType: Insurance_Type;
 
-    @ManyToOne(() => InsuranceTypeMaster,(data)=> data.insuranceTicket, { nullable: true })
+    @ManyToOne(() => InsuranceTypeMaster, (data) => data.insuranceTicket, { nullable: true })
     @JoinColumn({ name: 'insurance_types' })
     insuranceTypes: InsuranceTypeMaster;
+
+    @ManyToOne(() => InsuranceSubType, (ticket) => ticket.ticket, { nullable: true })
+    @JoinColumn({ name: 'insurance_subtype' })
+    insuranceSubType: InsuranceSubType;
 
     @Column({ type: 'enum', enum: Policy_Holerder_Type, name: 'policy_holder_type', nullable: true })
     policyHolderType: Policy_Holerder_Type;
@@ -91,19 +96,19 @@ export class InsuranceTicket {
     @CreateDateColumn({ name: 'next_step_deadline', type: 'timestamp' })
     nextStepDeadline: Date;
 
-    @Column({name: 'agent_remarks',nullable: true})
+    @Column({ name: 'agent_remarks', nullable: true })
     agentRemarks: string;
 
-    @Column({name: 'others_remarks', nullable: true})
+    @Column({ name: 'others_remarks', nullable: true })
     othersRemarks: string;
 
-    @Column({name: 'payment_remarks', nullable: true})
+    @Column({ name: 'payment_remarks', nullable: true })
     paymentRemarks: string;
 
-    @Column({name: 'policy_provision_remarks', nullable: true})
+    @Column({ name: 'policy_provision_remarks', nullable: true })
     policyProvisionRemarks: string;
 
-    @Column({name: 'quotation_revised_remarks', nullable: true})
+    @Column({ name: 'quotation_revised_remarks', nullable: true })
     quotationRevisedRemarks: string;
 
     //------ added column on 10-03-2025 ------
@@ -141,7 +146,6 @@ export class InsuranceTicket {
     // @Column({type:'int', name: 'Primium_term', nullable: true })
     // PrimiumTerm: number;
 
-
     @Column({ name: 'is_pre_year_claim', type: 'boolean', default: true })
     isPreYearClaim: boolean;
 
@@ -164,23 +168,23 @@ export class InsuranceTicket {
     includeSelfAsDependent: boolean;
 
     @Column({ name: 'is_document_collected', type: 'boolean', default: false })
-    isDocumentCollected : boolean;
-    
+    isDocumentCollected: boolean;
+
     @Column({ type: 'json', name: 'documents', nullable: true })
     documents: any;
 
     @Column({ name: 'is_product_selected', type: 'boolean', default: false })
-    isProductSelected : boolean;
+    isProductSelected: boolean;
 
-    @ManyToOne(() => InsuranceProduct,{ nullable: true })
+    @ManyToOne(() => InsuranceProduct, { nullable: true })
     @JoinColumn({ name: 'selected_product' })
     selectedProduct: InsuranceProduct;
 
-        // 👇 The policy this ticket belongs to (only set for renewals)
+    // 👇 The policy this ticket belongs to (only set for renewals)
     @ManyToOne(() => InsurancePolicy, (policy) => policy.tickets, { nullable: true })
     @JoinColumn({ name: 'policy_id' })
     policy: InsurancePolicy;
-    
+
     // selected means after customer approved this and now proceed to pay payments
     @ManyToOne(() => InsuranceQuotation, (data) => data.quotes)
     @JoinColumn({ name: 'quotation_id' })

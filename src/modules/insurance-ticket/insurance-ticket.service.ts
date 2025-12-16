@@ -1731,6 +1731,273 @@ export class InsuranceTicketService {
         // }
     }
 
+    async createInsuranceSubtype(reqBody: any): Promise<any> {
+        try {
+            const { insuranceSubType, insuranceType, code, description } = reqBody;
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+            if (!userEntity) {
+                return standardResponse(false, 'Logged user not found', 400);
+            }
+
+            const insuranceTypeEntity = await this.insuranceTypeRepo.findOne({
+                where: { code: insuranceType }
+            });
+            console.log('insurance type', insuranceTypeEntity);
+
+            if (!insuranceTypeEntity) {
+                return standardResponse(false, 'Invalid insurance type', 400);
+            }
+
+            const existingSubtype = await this.insuranceSubTypeRepo.findOne({
+                where: {
+                    code: code,
+                    insuranceTypes: { id: insuranceTypeEntity.id }
+                }
+            });
+
+            console.log('exsiing subtype', existingSubtype);
+
+            if (existingSubtype) {
+                return standardResponse(
+                    false,
+                    'Feature already exists',
+                    409,
+                    null,
+                    null,
+                    'insurance-ticket/createInsuranceSubtype'
+                );
+            }
+
+            const newSubtype = this.insuranceSubTypeRepo.create({
+                name: insuranceSubType,
+                insuranceTypes: insuranceTypeEntity,
+                code: code,
+                description,
+                isActive: true,
+                createdAt: new Date(),
+                createdBy: userEntity
+            });
+            await this.insuranceSubTypeRepo.save(newSubtype);
+
+            return standardResponse(
+                true,
+                'Insurance feature created successfully',
+                201,
+                newSubtype,
+                null,
+                'insurance-ticket/createInsuranceSubtype'
+            );
+        } catch (error) {
+            console.log('api- insurance-ticket/createInsuranceSubtype:', error);
+
+            return standardResponse(
+                false,
+                'Error creating insurance subtype',
+                500,
+                null,
+                null,
+                'insurance-ticket/createInsuranceSubtype'
+            );
+        }
+    }
+
+    async updateInsuranceSubtype(reqBody: any): Promise<any> {
+        try {
+            const { insuranceSubtypeId, insuranceSubType, insuranceType, code, description, isActive } = reqBody;
+
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+            if (!userEntity) {
+                return standardResponse(false, 'Logged user not found', 400);
+            }
+
+            const subtype = await this.insuranceSubTypeRepo.findOne({
+                where: { id: insuranceSubtypeId },
+                relations: ['insuranceTypes']
+            });
+
+            if (!subtype) {
+                return standardResponse(
+                    false,
+                    'Subtype not found',
+                    404,
+                    null,
+                    null,
+                    'insurance-ticket/updateInsuranceSubtype'
+                );
+            }
+
+            const insuranceTypeEntity = await this.insuranceTypeRepo.findOne({
+                where: { code: insuranceType }
+            });
+
+            if (!insuranceTypeEntity) {
+                return standardResponse(
+                    false,
+                    'Invalid insurance type',
+                    400,
+                    null,
+                    null,
+                    'insurance-ticket/updateInsuranceSubtype'
+                );
+            }
+
+            const duplicateCheck = await this.insuranceSubTypeRepo.findOne({
+                where: {
+                    code: code,
+                    insuranceTypes: { id: insuranceTypeEntity.id }
+                }
+            });
+            
+            // console.log('duplicate check', duplicateCheck.id, insuranceSubtypeId);
+
+            if (duplicateCheck && duplicateCheck.id !== insuranceSubtypeId) {
+                return standardResponse(
+                    false,
+                    'Subtype already exists with same code',
+                    409,
+                    null,
+                    null,
+                    'insurance-ticket/updateInsuranceSubtype'
+                );
+            }
+
+            subtype.name = insuranceSubType;
+            subtype.insuranceTypes = insuranceTypeEntity;
+            subtype.code = code;
+            subtype.description = description;
+            subtype.isActive = isActive;
+            subtype.updatedAt = new Date();
+            subtype.updatedBy = userEntity;
+
+            await this.insuranceSubTypeRepo.save(subtype);
+
+            return standardResponse(
+                true,
+                'Insurance subtype updated successfully',
+                200,
+                subtype,
+                null,
+                'insurance-ticket/updateInsuranceSubtype'
+            );
+        } catch (error) {
+            console.log('api- insurance-ticket/updateInsuranceSubtype:', error);
+            return standardResponse(false, 'Error updating insurance subtytpe', 500);
+        }
+    }
+
+    async getAllInsuranceSubtype(): Promise<any> {
+        try {
+            // console.log('in get allinsurance subtype service');
+
+            const data = await this.insuranceSubTypeRepo
+                .createQueryBuilder('subType')
+                .leftJoin('subType.insuranceTypes', 'it')
+                .select([
+                    'subType.id AS id',
+                    'subType.name AS name',
+                    'subType.code AS code',
+                    'subType.description AS description',
+                    'subType.is_active AS isActive',
+                    'it.id AS insuranceTypeId',
+                    'it.name AS insuranceTypeName',
+                    'it.code AS insuranceTypeCode'
+                ])
+                .where('subType.deletedAt IS NULL')
+                .orderBy('subType.created_at', 'DESC')
+                .getRawMany();
+
+            // console.log('here is subtype data', data);
+
+            return standardResponse(
+                true,
+                'Insurance subtype fetched successfully',
+                200,
+                data,
+                null,
+                'insurance-ticket/fetchSubtypeDetails'
+            );
+        } catch (error) {
+            console.log('api- insurance-ticket/fetchSubtypeDetails:', error);
+            return standardResponse(
+                false,
+                'Error fetching insurance subtype',
+                500,
+                null,
+                'insurance-ticket/fetchSubtypeDetails'
+            );
+        }
+    }
+
+    async deleteInsuranceSubtype(reqBody: any): Promise<any> {
+        try {
+            const { insuranceSubType } = reqBody;
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+            if (!userEntity) {
+                return standardResponse(
+                    false,
+                    'Logged user not found',
+                    400,
+                    null,
+                    null,
+                    'insurance-ticket/deleteInsuranceSubtype'
+                );
+            }
+
+            // 2. Check if feature exists
+            const subtype = await this.insuranceSubTypeRepo.findOne({
+                where: { id: insuranceSubType }
+            });
+
+            if (!subtype) {
+                return standardResponse(
+                    false,
+                    'Subtype not found',
+                    404,
+                    null,
+                    null,
+                    'insurance-ticket/deleteInsuranceSubtype'
+                );
+            }
+
+            if (!subtype.isActive) {
+                return standardResponse(
+                    false,
+                    'Subtype already deleted',
+                    400,
+                    null,
+                    null,
+                    'insurance-ticket/deleteInsuranceSubtype'
+                );
+            }
+
+            // 3. Soft delete the record
+            subtype.isActive = false;
+            subtype.deletedAt = new Date();
+            subtype.updatedBy = userEntity;
+
+            await this.insuranceSubTypeRepo.save(subtype);
+
+            return standardResponse(
+                true,
+                'Insurance feature deleted successfully',
+                200,
+                subtype,
+                null,
+                'insurance-ticket/deleteInsuranceSubtype'
+            );
+        } catch (error) {
+            console.log('api- insurance-ticket/deleteInsuranceSubtype:', error.message);
+            return standardResponse(
+                false,
+                'Error deleting insurance feature',
+                500,
+                null,
+                null,
+                'insurance-ticket/deleteInsuranceSubtype'
+            );
+        }
+    }
+
     async getInsuranceSubType(reqBody: any): Promise<any> {
         try {
             const typeData = await this.insuranceTypeRepo.findOne({ where: { code: reqBody.insuranceType } });

@@ -46,11 +46,10 @@ export class InsuranceTicketController {
         return this._ticketService.getTicketById(reqObj);
     }
 
-   @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Post('getInsuranceTicket')
     @ApiOperation({ summary: 'Get all tickets for a given agent' })
     async getInsuranceTicket(@Body() reqObj: any, @Req() req: any, @Headers() headers: any) {
-        
         return this._ticketService.getTicket(reqObj);
     }
 
@@ -95,7 +94,7 @@ export class InsuranceTicketController {
         return this._ticketService.updateTicketStatus(Number(ticketId), reqBody);
     }
 
-   @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Post('changeStep')
     @ApiOperation({ summary: 'change Steps' })
     async changeSteps(@Body() reqObj: any, @Req() req: any) {
@@ -112,5 +111,36 @@ export class InsuranceTicketController {
     async getInsuranceSubType(@Body() reqObj: any) {
         return this._ticketService.getInsuranceSubType(reqObj);
     }
-    
+
+    @UseGuards(JwtInsAuthGuard)
+    @Post('createInsuranceSubtype')
+    @ApiOperation({ summary: 'create insurance subtype' })
+    async createInsuranceSubtype(@Body() reqBody: any) {
+        const response = await this._ticketService.createInsuranceSubtype(reqBody);
+        return response;
+    }
+
+    @UseGuards(JwtInsAuthGuard)
+    @Patch('updateInsuranceSubtype')
+    @ApiOperation({ summary: 'update insurance subtype' })
+    async updateInsuranceSubtype(@Body() reqBody: any) {
+        const response = await this._ticketService.updateInsuranceSubtype(reqBody);
+        return response;
+    }
+
+    @Get('getAllInsuranceSubtype')
+    @ApiOperation({ summary: 'get insurance subtype' })
+    async getAllInsuranceSubtype() {
+        
+        const response = await this._ticketService.getAllInsuranceSubtype();
+        return response;
+    }
+
+    @UseGuards(JwtInsAuthGuard)
+    @Patch('deleteInsuranceSubtype')
+    @ApiOperation({ summary: 'delete insurance subtype' })
+    async deleteInsuranceSubtype(@Body() reqBody: any) {
+        const response = await this._ticketService.deleteInsuranceSubtype(reqBody);
+        return response;
+    }
 }

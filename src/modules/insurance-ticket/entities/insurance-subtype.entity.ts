@@ -13,6 +13,7 @@ import { Insurance_Type } from 'src/utils/app.utils';
 import { InsuranceProduct } from '../../insurance-product/entities/insurance-product.entity';
 import { User } from '@modules/user/user.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { InsuranceTicket } from './insurance-ticket.entity';
 
 @Entity({ name: 'insurance_sub_type' })
 export class InsuranceSubType {
@@ -62,4 +63,7 @@ export class InsuranceSubType {
 
     @OneToMany(() => InsuranceProduct, (product) => product.insuranceSubType)
     product: InsuranceProduct[];
+
+    @OneToMany(() => InsuranceTicket, (ticket) => ticket.insuranceSubType)
+    ticket: InsuranceTicket[];
 }
