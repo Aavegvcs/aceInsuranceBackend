@@ -92,7 +92,7 @@ export class InsuranceProductService {
     }
     async updateCompany(reqBody: any, req: any): Promise<any> {
         let response: any = {};
-        console.log('in company reqBody', reqBody);
+        // console.log('in company reqBody', reqBody);
         try {
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
             // console.log('loggedInUser', loggedInUser);
@@ -301,12 +301,12 @@ export class InsuranceProductService {
             let message = null;
             const successCount = uniqueData.length - failed.length;
             const failedCount = failed.length;
-            console.log('before set message in company bulk upload', successCount, failedCount);
+            // console.log('before set message in company bulk upload', successCount, failedCount);
             if (successCount > 0 && failedCount > 0) {
                 message = 'Data partialy inserted!';
             } else if (successCount < 0 && failedCount > 0) message = 'Failed to inserted data';
             else {
-                console.log('else part in company bulk upload', successCount, failedCount);
+                // console.log('else part in company bulk upload', successCount, failedCount);
 
                 message = 'Data inserted successfully.';
             }
@@ -538,10 +538,10 @@ export class InsuranceProductService {
                 where: { product: { id } },
                 relations: ['insuranceFeatures']
             });
-            console.log('existing features', existingFeatures);
+            // console.log('existing features', existingFeatures);
 
             const incomingFeatureIds = new Set<number>((insuranceFeatures || []).map((f: any) => Number(f.featureId)));
-            console.log('incoming featuresid', incomingFeatureIds);
+            // console.log('incoming featuresid', incomingFeatureIds);
 
             const existingFeatureMap = new Map<number, any>();
             existingFeatures.forEach((pf) => {
@@ -571,7 +571,7 @@ export class InsuranceProductService {
             }
             for (const existing of existingFeatures) {
                 if (!incomingFeatureIds.has(existing.insuranceFeatures.id)) {
-                    console.log('deactivate', existing.insuranceFeatures.id);
+                    // console.log('deactivate', existing.insuranceFeatures.id);
                     if (existing.isActive) {
                         existing.isActive = false;
                         existing.updatedAt = new Date();
@@ -668,7 +668,7 @@ export class InsuranceProductService {
 
     async getAllProductByType(reqBody: any): Promise<any> {
         try {
-            console.log('reqBody', reqBody);
+            // console.log('reqBody', reqBody);
 
             const query = 'CALL get_ProductByType(?, ?)';
             const result = await this.companyRepo.query(query, [reqBody.insuranceCompanyId, reqBody.insuranceType]);
