@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpException,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+    Req,
+    UseGuards
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { InsuranceFeaturesService } from './insurance-features.service';
 import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
@@ -15,7 +27,7 @@ export class InsuranceFeaturesController {
         const response = await this._featuresService.createInsuranceFeatures(reqBody);
         return response;
     }
-   
+
     @UseGuards(JwtInsAuthGuard)
     @Patch('updateInsuranceFeatures')
     @ApiOperation({ summary: 'update insurance features' })
@@ -24,12 +36,10 @@ export class InsuranceFeaturesController {
         return response;
     }
 
-     @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Post('getAllInsuranceFeatures')
     @ApiOperation({ summary: 'get insurance features' })
     async getAllInsuranceFeatures(@Body() reqBody: any) {
-      
-        
         const response = await this._featuresService.getAllInsuranceFeatures(reqBody);
         return response;
     }
@@ -42,20 +52,67 @@ export class InsuranceFeaturesController {
         return response;
     }
 
-     @Get('getInsuranceFeatures/:insuranceType')
-        async getInsuranceFeatures(@Param('insuranceType') insuranceType: any) {
-            try {
-                return await this._featuresService.getInsuranceFeatures(insuranceType);
-            } catch (error) {
-                throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+    @UseGuards(JwtInsAuthGuard)
+    @Post('featuresBulkUpload')
+    @ApiOperation({ summary: 'Bulk upload of insurance features' })
+    featuresBulkUpload(@Body() body: any) {
+        return this._featuresService.featuresBulkUpload(body);
+    }
+
+    @Get('getInsuranceFeatures/:insuranceType')
+    async getInsuranceFeatures(@Param('insuranceType') insuranceType: any) {
+        try {
+            return await this._featuresService.getInsuranceFeatures(insuranceType);
+        } catch (error) {
+            throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
-         @Get('getInsuranceWaitingPeriods/:insuranceType')
-        async getInsuranceWaitingPeriods(@Param('insuranceType') insuranceType: any) {
-            try {
-                return await this._featuresService.getInsuranceWaitingPeriods(insuranceType);
-            } catch (error) {
-                throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+    }
+    @Get('getInsuranceWaitingPeriods/:insuranceType')
+    async getInsuranceWaitingPeriods(@Param('insuranceType') insuranceType: any) {
+        try {
+            return await this._featuresService.getInsuranceWaitingPeriods(insuranceType);
+        } catch (error) {
+            throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // waiting period apis
+    @UseGuards(JwtInsAuthGuard)
+    @Post('createWaitingPeriod')
+    @ApiOperation({ summary: 'create waiting period' })
+    async createWaitingPeriod(@Body() reqBody: any) {
+        const response = await this._featuresService.createWaitingPeriod(reqBody);
+        return response;
+    }
+
+    @UseGuards(JwtInsAuthGuard)
+    @Patch('updateWaitingPeriod')
+    @ApiOperation({ summary: 'update waiting period' })
+    async updateWaitingPeriod(@Body() reqBody: any) {
+        const response = await this._featuresService.updateWaitingPeriod(reqBody);
+        return response;
+    }
+
+    @UseGuards(JwtInsAuthGuard)
+    @Post('getAllWaitingPeriod')
+    @ApiOperation({ summary: 'get waiting period' })
+    async getAllWaitingPeriod(@Body() reqBody: any) {
+        const response = await this._featuresService.getAllWaitingPeriod(reqBody);
+        return response;
+    }
+
+    @UseGuards(JwtInsAuthGuard)
+    @Patch('deleteWaitingPeriod')
+    @ApiOperation({ summary: 'delete waiting period' })
+    async deleteWaitingPeriod(@Body() reqBody: any) {
+        const response = await this._featuresService.deleteWaitingPeriod(reqBody);
+        return response;
+    }
+
+    @UseGuards(JwtInsAuthGuard)
+    @Post('waitingPeriodBulkUpload')
+    @ApiOperation({ summary: 'bulk upload for waiting period' })
+    waitingPeriodBulkUpload(@Body() body: any) {
+        return this._featuresService.waitingPeriodBulkUpload(body);
+    }
 }
