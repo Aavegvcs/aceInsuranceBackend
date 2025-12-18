@@ -14,6 +14,8 @@ import { InsuranceProduct } from '../../insurance-product/entities/insurance-pro
 import { User } from '@modules/user/user.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
 import { InsuranceTicket } from './insurance-ticket.entity';
+import { InsurancePurchasedProduct } from '@modules/insurance-product/entities/insurance-puchased-product.entity';
+import { InsurancePolicy } from '@modules/insurance-policy/entities/insurance-policy.entity';
 
 @Entity({ name: 'insurance_sub_type' })
 export class InsuranceSubType {
@@ -34,7 +36,7 @@ export class InsuranceSubType {
     })
     insuranceType: Insurance_Type;
 
-    @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+    @ManyToOne(() => InsuranceTypeMaster,(data)=>data.insuranceSubType, { nullable: true })
     @JoinColumn({ name: 'insurance_types' })
     insuranceTypes: InsuranceTypeMaster;
 
@@ -64,6 +66,12 @@ export class InsuranceSubType {
     @OneToMany(() => InsuranceProduct, (product) => product.insuranceSubType)
     product: InsuranceProduct[];
 
+    @OneToMany(() => InsurancePurchasedProduct, (data) => data.insuranceSubType)
+    purchasedProduct: InsurancePurchasedProduct[];
+
     @OneToMany(() => InsuranceTicket, (ticket) => ticket.insuranceSubType)
     ticket: InsuranceTicket[];
+
+    @OneToMany(() => InsurancePolicy, (data) => data.policyType)
+    policy: InsurancePolicy[];
 }

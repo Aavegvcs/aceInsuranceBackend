@@ -18,6 +18,7 @@ import { InsuranceAgent } from '@modules/insurance-ticket/entities/insurance-age
 import { User } from '@modules/user/user.entity';
 import { InsuranceUser } from '@modules/insurance-ticket/entities/insurance-user.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { InsuranceSubType } from '@modules/insurance-ticket/entities/insurance-subtype.entity';
 
 @Entity({ name: 'insurance_purchased_product' })
 export class InsurancePurchasedProduct {
@@ -83,6 +84,10 @@ export class InsurancePurchasedProduct {
     @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
     @JoinColumn({ name: 'insurance_type_master' })
     insuranceTypeMaster: InsuranceTypeMaster;
+
+    @ManyToOne(() => InsuranceSubType, (subtype) => subtype.purchasedProduct, { nullable: true })
+    @JoinColumn({ name: 'insurance_subtype' })
+    insuranceSubType: InsuranceSubType;
 
     @Column({ name: 'any_remarks', nullable: true })
     anyRemarks: string;

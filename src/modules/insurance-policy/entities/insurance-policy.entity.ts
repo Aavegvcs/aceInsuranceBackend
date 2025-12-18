@@ -20,13 +20,13 @@ import { Insurance_Type, Policy_Status } from 'src/utils/app.utils';
 import { InsurancePolicyRenewalHistory } from './insurance-policy-renewal-history.entity';
 import { InsuranceClaim } from '@modules/insurance-claim/entities/insurance-claim.entity';
 import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { InsuranceSubType } from '@modules/insurance-ticket/entities/insurance-subtype.entity';
 
 @Entity({ name: 'insurance_policy' })
 export class InsurancePolicy {
     @PrimaryGeneratedColumn()
     id: number;
 
-    // 👇 The ticket that created this policy (first purchase)
     @ManyToOne(() => InsuranceTicket, { nullable: true })
     @JoinColumn({ name: 'original_ticket_id' })
     originalTicket: InsuranceTicket;
@@ -53,14 +53,9 @@ export class InsurancePolicy {
     @Column({ name: 'previous_policy_number', nullable: true })
     previousPolicyNumber: string;
 
-
-    // @Column({ type: 'enum', enum: Insurance_Type, name: 'policy_type', nullable: true })
-    // policyType: Insurance_Type; // e.g. Health, Motor, Life
-
-    @ManyToOne(() => InsuranceTypeMaster, { nullable: true })
+    @ManyToOne(() => InsuranceSubType,(data)=>data.policy, { nullable: true })
     @JoinColumn({ name: 'policy_type' })
-    policyType: InsuranceTypeMaster; // e.g. Health, Motor, Life
-
+    policyType: InsuranceSubType;
 
     @Column({ type: 'decimal', precision: 12, scale: 2, name: 'sum_assured', nullable: true })
     sumAssured: number; // basically it is the coverage amount

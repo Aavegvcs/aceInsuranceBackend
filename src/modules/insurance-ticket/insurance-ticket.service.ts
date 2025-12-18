@@ -288,7 +288,7 @@ export class InsuranceTicketService {
             reqObj.ticketStatus
         ]);
         const tickets = result[0];
-        // console.log('here is result', result[0]);
+        //  console.log('here is result', result[0]);
 
         // await this.redisClient.set(cacheKey, JSON.stringify(tickets), 'EX', 300);
 
@@ -296,9 +296,16 @@ export class InsuranceTicketService {
     }
 
     async getAllTicketsByTicketNumber(ticketNumber: number): Promise<InsuranceTicket[]> {
+        // return await this.ticketRepo
+        //     .createQueryBuilder('ticket')
+        //     .leftJoinAndSelect('insuranceTypes', 'insuranceTypes')
+        //     .where('ticket.ticketNumber = :ticketNumber', { ticketNumber })
+        //     .getMany();
+
         return await this.ticketRepo
             .createQueryBuilder('ticket')
-            .leftJoinAndSelect('insuranceTypes', 'insuranceTypes')
+            .leftJoinAndSelect('ticket.insuranceSubType', 'insuranceSubType')
+            .leftJoinAndSelect('insuranceSubType.insuranceTypes', 'insuranceTypes')
             .where('ticket.ticketNumber = :ticketNumber', { ticketNumber })
             .getMany();
     }
@@ -306,7 +313,6 @@ export class InsuranceTicketService {
     // ============================ api for create ticket ============================
 
     async createInsuranceTicket(reqBody: any, req: any): Promise<any> {
-        // let userEntity = req.user ? await this.userRepo.findOne({ where: { email: req.user.email } }) : null;
         let userEntity = await this.loggedInsUserService.getCurrentUser();
 
         if (!userEntity) {
@@ -318,11 +324,20 @@ export class InsuranceTicketService {
         }
 
         let { userDetails, ticketDetails } = reqBody;
-        // Check if required sections exist
         if (!userDetails || !ticketDetails) {
             return {
                 status: 'error',
                 message: 'Missing userDetails or ticketDetails',
+                data: null
+            };
+        }
+        const insuranceSubType = await this.insuranceTypeRepo.findOne({
+            where: { id: ticketDetails.insuranceSubType }
+        });
+        if (!insuranceSubType) {
+            return {
+                status: 'error',
+                message: 'Insurance Sub Type is required!',
                 data: null
             };
         }
@@ -358,10 +373,7 @@ export class InsuranceTicketService {
                 }
             };
         }
-        // console.log("here is branch data ", branch);
 
-        // console.log("in ticket createion assigen person is-",ticketDetails.assigned, assignPerson)
-        // Initial response object
         const response = {
             status: 'success',
             message: 'Insurance ticket created successfully',
@@ -485,6 +497,7 @@ export class InsuranceTicketService {
             const newTicketNumber = ticketNumberResult[0][0].ticketNumber;
             // console.log('newTicketNumber', newTicketNumber);
             const insuranceTypes = await this.getInsuranceType(ticketDetails.ticketType);
+
             let ticketDocuments = [];
             if (ticketDetails.ticketType === Ticket_Type.PORT) {
                 ticketDocuments = [{ name: 'portDocument', url: ticketDetails.portDocument }];
@@ -495,6 +508,7 @@ export class InsuranceTicketService {
                 ticketType: ticketDetails.ticketType,
                 insuranceType: ticketDetails.insuranceType,
                 insuranceTicketMaster: insuranceTypes,
+                insuranceSubType: insuranceSubType,
                 policyHolderType: ticketDetails.policyHolderType,
                 familyMemberType: ticketDetails.familyMemberType,
                 agentRemarks: ticketDetails.agentRemarks,
@@ -544,7 +558,7 @@ export class InsuranceTicketService {
                     new Date(),
                     Current_Step.DOCUMENT_COLLECTED,
                     addDays(3),
-                    insuranceTypes.code,
+                    insuranceSubType.code,
                     ticketDetails.agentRemarks,
                     ticketDetails.othersRemarks,
                     userEntity.id
@@ -615,10 +629,11 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('ticket.createdBy', 'createdBy')
                 .leftJoinAndSelect('createdBy.branch', 'branch')
                 .leftJoinAndSelect('ticket.nominee', 'nominee')
-                .leftJoinAndSelect('ticket.insuranceTypes', 'insuranceTypes')
+                .leftJoinAndSelect('ticket.insuranceSubType', 'insuranceSubType')
+                .leftJoinAndSelect('insuranceSubType.insuranceTypes', 'insuranceTypes')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
-            // console.log('toicket detailslskjdkfjdk', ticket);
+            console.log('toicket detailslskjdkfjdk', ticket);
 
             if (!ticket) {
                 return {
@@ -679,7 +694,8 @@ export class InsuranceTicketService {
             const data = {
                 ticketId: ticket.id,
                 ticketNumber: ticket.ticketNumber,
-                insuranceType: ticket.insuranceTypes.code,
+                insuranceType: ticket.insuranceSubType?.insuranceTypes?.code,
+                insuranceSubTypeCode: ticket.insuranceSubType.code,
                 ticketStatus: ticket.ticketStatus,
                 includeSelfAsDependent: ticket.includeSelfAsDependent ?? false,
                 preferredCompany: ticket.preferredCompany ?? null,
@@ -744,9 +760,6 @@ export class InsuranceTicketService {
                 dependents:
                     ticket.insuranceDependent?.map((dep) => {
                         const depMedical = ticket.dependentMedical?.find((dm) => dm.dependentId?.id === dep.id);
-                        // console.log('console 1  ))))))))))))) ', ticket.insuranceDependent);
-                        // console.log('console 2  ))))))))))))) ', ticket.dependentMedical);
-                        // console.log('console 3  ))))))))))))) ', depMedical);
 
                         return {
                             id: dep.id,
@@ -808,7 +821,7 @@ export class InsuranceTicketService {
                     : null,
                 insuredMedicalDetails: formatMedicalDetails(insuredMedicalDetails)
             };
-            // console.log('in get ticket details data is', data);
+            console.log('in get ticket details data is', data);
 
             return {
                 status: 'success',
@@ -853,9 +866,18 @@ export class InsuranceTicketService {
         // console.log('is insuredMedicalDetails', insuredMedicalDetails);
         let ticket = null;
         try {
+            // ticket = await this.ticketRepo.findOne({
+            //     where: { id: ticketId },
+            //     relations: ['insuranceUserId', 'insuranceTypes']
+            // });
             ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId', 'insuranceTypes']
+                relations: {
+                    insuranceUserId: true,
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
             });
 
             if (!ticket) {
@@ -873,6 +895,10 @@ export class InsuranceTicketService {
                     data: null
                 };
             }
+            const insuranceTypesCode = ticket?.insuranceSubType?.insuranceTypes?.code;
+            const insuranceSubTypeCode = ticket?.insuranceSubType?.code;
+            // console.log("subTypeCode", subTypeCode);
+
             // Update InsuranceUser (Proposer) Details
             await this.ticketRepo.manager.transaction(async (manager) => {
                 await manager.update(InsuranceUser, ticket.insuranceUserId.id, {
@@ -946,7 +972,7 @@ export class InsuranceTicketService {
                         new Date(),
                         Current_Step.QUOTATION_GENERATED,
                         addHours(1),
-                        ticket.insuranceTypes.code,
+                        insuranceSubTypeCode,
                         reqBody.agentRemarks,
                         reqBody.othersRemarks,
                         userEntity.id
@@ -988,7 +1014,7 @@ export class InsuranceTicketService {
 
                 // Update Medical Details (HEALTH or LIFE)
                 if (
-                    (ticket.insuranceType === Insurance_Type.Health || ticket.insuranceType === Insurance_Type.Life) &&
+                    (insuranceTypesCode === Insurance_Type.Health || insuranceTypesCode === Insurance_Type.Life) &&
                     medicalDetails
                 ) {
                     const existingMedical = await manager.findOne(ProposersMedical, {
@@ -1034,7 +1060,7 @@ export class InsuranceTicketService {
                 }
                 // Update Dependents (HEALTH or LIFE)
                 if (
-                    (ticket.insuranceType === Insurance_Type.Health || ticket.insuranceType === Insurance_Type.Life) &&
+                    (insuranceTypesCode === Insurance_Type.Health || insuranceTypesCode === Insurance_Type.Life) &&
                     dependents &&
                     !includeSelfAsDependent
                 ) {
@@ -1136,7 +1162,7 @@ export class InsuranceTicketService {
                 // Update Vehicle Details (MOTOR)
                 // console.log('vehicle details is', vehicleDetails);
 
-                if (ticket.insuranceType === Insurance_Type.Motor && vehicleDetails) {
+                if (insuranceTypesCode === Insurance_Type.Motor && vehicleDetails) {
                     const existingVehicle = await manager.findOne(InsuranceVehicleDetails, {
                         where: { ticketId: { id: ticketId } }
                     });
@@ -1203,7 +1229,7 @@ export class InsuranceTicketService {
                 // end of vehicle details
 
                 // insured person code
-                if (ticket.insuranceType === Insurance_Type.Life && insuredPersons) {
+                if (insuranceTypesCode === Insurance_Type.Life && insuredPersons) {
                     const existingInsured = await manager.findOne(InsuredPerson, {
                         where: { ticketId: { id: ticketId } }
                     });
@@ -1317,10 +1343,20 @@ export class InsuranceTicketService {
                 };
             }
             const { ticketStatus, isActive } = reqBody;
+            // const ticket = await this.ticketRepo.findOne({
+            //     where: { id: ticketId },
+            //     relations: ['insuranceUserId', 'insuranceTypes']
+            // });
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId', 'insuranceTypes']
+                relations: {
+                    insuranceUserId: true,
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
             });
+
             if (!ticket) {
                 return {
                     status: 'error',
@@ -1328,6 +1364,8 @@ export class InsuranceTicketService {
                     data: { ticketId }
                 };
             }
+            // const insuranceTypesCode = ticket?.insuranceSubType?.insuranceTypes?.code
+            const insuranceSubTypeCode = ticket?.insuranceSubType?.code;
 
             if (ticket.currentStepStart === Current_Step.CLOSED || ticket.ticketStatus === Ticket_Status.CLOSED) {
                 return {
@@ -1385,7 +1423,7 @@ export class InsuranceTicketService {
                 ticketStatus === Ticket_Status.CLOSED ? new Date() : ticket.currentStepStartAt,
                 ticketStatus === Ticket_Status.CLOSED ? Current_Step.CLOSED : ticket.nextStepStart,
                 ticketStatus === Ticket_Status.CLOSED ? addHours(1) : ticket.nextStepDeadline,
-                ticket.insuranceTypes.code,
+                insuranceSubTypeCode,
                 ticket.agentRemarks,
                 ticket.othersRemarks,
                 userEntity.id
@@ -1428,7 +1466,7 @@ export class InsuranceTicketService {
                 where: {
                     id: ticketId
                 },
-                relations: ['insuranceUserId', 'assignTo', 'selectedProduct', 'insuranceTypes']
+                relations: ['insuranceUserId', 'assignTo', 'selectedProduct', 'insuranceSubType', 'insuranceTypes']
             });
 
             if (!ticket) {
@@ -1574,7 +1612,7 @@ export class InsuranceTicketService {
                 ticket.currentStepStartAt,
                 ticket.nextStepStart,
                 ticket.nextStepDeadline,
-                ticket.insuranceTypes.code,
+                ticket.insuranceSubType.code,
                 ticket.agentRemarks,
                 ticket.othersRemarks,
                 userEntity.id
@@ -1847,7 +1885,7 @@ export class InsuranceTicketService {
                     insuranceTypes: { id: insuranceTypeEntity.id }
                 }
             });
-            
+
             // console.log('duplicate check', duplicateCheck.id, insuranceSubtypeId);
 
             if (duplicateCheck && duplicateCheck.id !== insuranceSubtypeId) {
