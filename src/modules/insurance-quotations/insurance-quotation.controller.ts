@@ -30,6 +30,7 @@ export class InsuranceQuotationController {
         }
     }
 
+     @UseGuards(JwtInsAuthGuard)
     @Post('sendQuotationMail')
     async sendQuotationMail(@Body() reqBody: any) {
         try {
@@ -51,7 +52,7 @@ export class InsuranceQuotationController {
                 });
             }
 
-            const result = await this.quotationService.downloadQuotation(reqBody);
+            const result = await this.quotationService.downloadQuotationPdf(reqBody);
 
             if (result.status === 'error') {
                 return res.status(HttpStatus.BAD_REQUEST).json({

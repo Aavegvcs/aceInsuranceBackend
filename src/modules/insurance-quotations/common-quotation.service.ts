@@ -192,7 +192,7 @@ export class CommonQuotationService {
 
     async getTicketDetails(reqTicket: any): Promise<any> {
         try {
-            // console.log('in get ticket details ', reqTicket);
+            //  console.log('in get ticket details ', reqTicket);
 
             // Base query (common joins)
             let query = this.ticketRepo
@@ -200,7 +200,9 @@ export class CommonQuotationService {
                 .leftJoinAndSelect('ticket.insuranceUserId', 'insuranceUserId')
                 .leftJoinAndSelect('ticket.branch', 'branch')
                 .leftJoinAndSelect('ticket.nominee', 'nominee')
-                .leftJoinAndSelect('ticketTypes', 'ticketTypes')
+                // .leftJoinAndSelect('ticketTypes', 'ticketTypes')
+                .leftJoinAndSelect('ticket.insuranceSubType', 'insuranceSubType')
+                .leftJoinAndSelect('insuranceSubType.insuranceTypes', 'insuranceTypes')
                 .where('ticket.id = :ticketId', { ticketId: reqTicket.id });
 
             // Conditional joins based on insuranceType
@@ -229,6 +231,7 @@ export class CommonQuotationService {
 
             // Execute query
             const ticket = await query.getOne();
+// console.log("in common quotation ticket is", ticket);
 
             if (!ticket) {
                 return {
@@ -268,9 +271,11 @@ export class CommonQuotationService {
                 ticketId: ticket.id,
                 ticketNumber: ticket.ticketNumber,
                 // insuranceType: ticket.insuranceType,
-                insuranceType: ticket.insuranceTypes.code,
+                insuranceType: ticket.insuranceSubType?.insuranceTypes?.code,
+                insuranceSubTypeCode: ticket.insuranceSubType?.code,
+                insuranceSubTypeName: ticket.insuranceSubType?.name,
                 ticketStatus: ticket.ticketStatus,
-                insuranceUser: ticket.insuranceUserId,
+                insuranceUser: ticket?.insuranceUserId,
                 branch: {
                     contactPerson: ticket.branch?.contactPerson || 'N/A',
                     phone: ticket.branch?.phone || 'N/A',
@@ -305,7 +310,7 @@ export class CommonQuotationService {
                     break;
                 }
             }
-            // console.log('in get ticket details res is ->>>>', data);
+             console.log('in get ticket details res is ->>>>', data);
 
             return {
                 status: 'success',

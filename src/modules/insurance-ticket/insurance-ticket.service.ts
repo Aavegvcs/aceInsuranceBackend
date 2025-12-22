@@ -331,8 +331,9 @@ export class InsuranceTicketService {
                 data: null
             };
         }
-        const insuranceSubType = await this.insuranceTypeRepo.findOne({
-            where: { id: ticketDetails.insuranceSubType }
+        const insuranceSubType = await this.insuranceSubTypeRepo.findOne({
+            where: { id: ticketDetails.insuranceSubType },
+            relations:['insuranceTypes']
         });
         if (!insuranceSubType) {
             return {
@@ -341,7 +342,7 @@ export class InsuranceTicketService {
                 data: null
             };
         }
-        // console.log("before branch details",ticketDetails.assignedTo,  userEntity, ticketDetails.branchId);
+        console.log("before insuranceSubType details",insuranceSubType);
 
         let assignPerson = await this.userRepo.findOne({
             where: { id: ticketDetails.assignedTo },
@@ -492,11 +493,11 @@ export class InsuranceTicketService {
             let currentStepTimeline = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
             // console.log("ticket details ticket type", ticketDetails.insuranceType)
             const ticketNumberResult = await this.ticketRepo.query('CALL get_ticketNumber(?)', [
-                ticketDetails.insuranceType
+                insuranceSubType?.insuranceTypes?.code
             ]);
             const newTicketNumber = ticketNumberResult[0][0].ticketNumber;
-            // console.log('newTicketNumber', newTicketNumber);
-            const insuranceTypes = await this.getInsuranceType(ticketDetails.ticketType);
+             console.log('ticket id in create ticket', insuranceSubType?.insuranceTypes.id);
+            // const insuranceTypes = await this.getInsuranceType(insuranceSubType?.insuranceTypes?.code);
 
             let ticketDocuments = [];
             if (ticketDetails.ticketType === Ticket_Type.PORT) {
@@ -507,7 +508,7 @@ export class InsuranceTicketService {
                 ticketNumber: newTicketNumber,
                 ticketType: ticketDetails.ticketType,
                 insuranceType: ticketDetails.insuranceType,
-                insuranceTicketMaster: insuranceTypes,
+                insuranceTypes: {id: insuranceSubType?.insuranceTypes?.id},
                 insuranceSubType: insuranceSubType,
                 policyHolderType: ticketDetails.policyHolderType,
                 familyMemberType: ticketDetails.familyMemberType,
@@ -633,7 +634,7 @@ export class InsuranceTicketService {
                 .leftJoinAndSelect('insuranceSubType.insuranceTypes', 'insuranceTypes')
                 .where('ticket.id = :ticketId', { ticketId })
                 .getOne();
-            console.log('toicket detailslskjdkfjdk', ticket);
+            // console.log('toicket detailslskjdkfjdk', ticket);
 
             if (!ticket) {
                 return {
@@ -695,7 +696,9 @@ export class InsuranceTicketService {
                 ticketId: ticket.id,
                 ticketNumber: ticket.ticketNumber,
                 insuranceType: ticket.insuranceSubType?.insuranceTypes?.code,
+                insuranceSubTypeId: ticket.insuranceSubType.id,
                 insuranceSubTypeCode: ticket.insuranceSubType.code,
+                insuranceSubTypeName: ticket.insuranceSubType.name,
                 ticketStatus: ticket.ticketStatus,
                 includeSelfAsDependent: ticket.includeSelfAsDependent ?? false,
                 preferredCompany: ticket.preferredCompany ?? null,
@@ -821,7 +824,7 @@ export class InsuranceTicketService {
                     : null,
                 insuredMedicalDetails: formatMedicalDetails(insuredMedicalDetails)
             };
-            console.log('in get ticket details data is', data);
+            // console.log('in get ticket details data is', data);
 
             return {
                 status: 'success',
@@ -1684,14 +1687,24 @@ export class InsuranceTicketService {
             role === Roles.productHead
         ) {
             stepStatus = [
+                 Current_Step.PAYMENT_LINK_GENERATED,
                 Current_Step.PAYMENT_DENIED,
                 Current_Step.PAYMENT_CONFIRMED,
+                Current_Step.POLICY_ISSUED,
                 Current_Step.POLICY_RECEIVED,
                 Current_Step.POLICY_DELIVERED
             ];
         }
         if (role === Roles.teleCaller) {
-            stepStatus = [Current_Step.PAYMENT_LINK_GENERATED, Current_Step.POLICY_ISSUED];
+            // stepStatus = [Current_Step.PAYMENT_LINK_GENERATED, Current_Step.POLICY_ISSUED];
+            stepStatus = [
+                 Current_Step.PAYMENT_LINK_GENERATED,
+                Current_Step.PAYMENT_DENIED,
+                Current_Step.PAYMENT_CONFIRMED,
+                Current_Step.POLICY_ISSUED,
+                Current_Step.POLICY_RECEIVED,
+                Current_Step.POLICY_DELIVERED
+            ];
         }
 
         return {

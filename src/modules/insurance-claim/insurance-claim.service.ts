@@ -212,6 +212,8 @@ export class InsuranceClaimService {
                 pageNo,
                 pageSize
             ]);
+           
+            
             // return result[0];
             res = standardResponse(
                 true,

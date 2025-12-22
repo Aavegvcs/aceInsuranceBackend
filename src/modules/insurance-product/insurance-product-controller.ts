@@ -65,7 +65,7 @@ export class InsuranceProductController {
     async createProduct(@Body() requestObj: any) {
         return this._productService.createProduct(requestObj);
     }
-
+    @UseGuards(JwtInsAuthGuard)
     @Patch('updateProduct')
     @ApiOperation({ summary: 'Update insurance product' })
     async updateProduct(@Body() reqBody: any) {

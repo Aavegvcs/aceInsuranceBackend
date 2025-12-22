@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 // import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as nodemailer from 'nodemailer';
@@ -183,14 +183,16 @@ export class InsuranceQuotationService {
                 // console.log('line no 172 quotation details, ', quotation);
 
                 const ticketDetails = await this.quotationService.getTicketDetails(ticket);
-                // console.log("ticket details line no 190", ticketDetails);
+                // console.log('ticket details line no 190', ticketDetails);
 
                 const data = {
                     customerName: ticketDetails.data.insuranceUser.name,
                     insuranceType: ticketDetails.data.insuranceType,
+                    insuranceSubTypeCode: ticketDetails.data.insuranceSubTypeCode,
+                    insuranceSubTypeName: ticketDetails.data.insuranceSubTypeName,
                     ticketNumber: ticketDetails.data.ticketNumber,
                     proposer: {
-                        name: ticketDetails.data.insuranceUser.name,
+                        name: ticketDetails.data?.insuranceUser.name,
                         dob: ticketDetails.data.insuranceUser.dateOfBirth?.toString().split('T')[0] || 'N/A',
                         gender: formatToCamelCase(ticketDetails.data?.insuranceUser?.gender) || 'N/A',
                         height: ticketDetails.data?.medicalDetails
@@ -232,10 +234,10 @@ export class InsuranceQuotationService {
                               weight: ticketDetails.data.insuredPersons?.weight || 0
                           }
                         : null,
-                    pinCode: ticketDetails.data.insuranceUser.permanentPinCode || 'N/A',
-                    mobileNo: ticketDetails.data.insuranceUser.primaryContactNumber || 'N/A',
-                    emailId: ticketDetails.data.insuranceUser.emailId || 'N/A',
-                    pedDeclared: ticketDetails.data.medicalDetails
+                    pinCode: ticketDetails.data?.insuranceUser?.permanentPinCode || 'N/A',
+                    mobileNo: ticketDetails.data?.insuranceUser?.primaryContactNumber || 'N/A',
+                    emailId: ticketDetails.data?.insuranceUser?.emailId || 'N/A',
+                    pedDeclared: ticketDetails.data?.medicalDetails
                         ? ticketDetails.data?.medicalDetails?.preExistDiseases || 'N/A'
                         : null,
                     quotes: quotation.quotes.map((quote) => ({
@@ -261,16 +263,26 @@ export class InsuranceQuotationService {
                         address: ticketDetails.data?.branch?.address
                     }
                 };
-                // console.log('line no 250 data is here', data);
+                //  console.log('line no 250 data is here', data);
 
                 // Step 1: Collect all features across products
-                //  console.log("testing line no 268");
+                // console.log('testing line no 268', ticket.insuranceSubType?.insuranceTypes?.code);
 
+                // const insuranceFeatures = await this.insurncetFeaturesRepo.find({
+                //     where: { isActive: true, insuranceTypes: ticket.insuranceSubType?.insuranceTypes?.code },
+                //     relations: ['insuranceTypes']
+                // });
                 const insuranceFeatures = await this.insurncetFeaturesRepo.find({
-                    where: { isActive: true, insuranceTypes: ticket.insuranceType },
+                    where: {
+                        isActive: true,
+                        insuranceTypes: {
+                            code: ticket.insuranceSubType?.insuranceTypes?.code
+                        }
+                    },
                     relations: ['insuranceTypes']
                 });
-                // console.log("line no 272 insurance features", insuranceFeatures);
+
+                // console.log('line no 272 insurance features', insuranceFeatures);
 
                 const basicFeatures: InsuranceFeatures[] = [];
                 const addOnFeatures: InsuranceFeatures[] = [];
@@ -586,7 +598,7 @@ export class InsuranceQuotationService {
 
                 doc.font('DejaVuSans')
                     .fillColor('black')
-                    .text(`${formatToCamelCase(data.insuranceType)}`, rightX + 90, rightY + 30);
+                    .text(`${formatToCamelCase(data.insuranceSubTypeName)}`, rightX + 90, rightY + 30);
 
                 rightY += 2;
 
@@ -667,9 +679,9 @@ export class InsuranceQuotationService {
                     const insuredHeaders = ['Name', 'DOB', 'Gender', 'Height', 'Weight'];
                     const insuredRows = [
                         [
-                            data.insuredPersons.name,
-                            data.insuredPersons.dob,
-                            data.insuredPersons.gender,
+                            data?.insuredPersons?.name,
+                            data?.insuredPersons?.dob,
+                            data?.insuredPersons?.gender,
                             `${data.insuredPersons.height} cm`,
                             `${data.insuredPersons.weight} kg`
                         ]
@@ -1050,7 +1062,7 @@ export class InsuranceQuotationService {
             `,
                 [
                     {
-                        filename: `quotation_${ticket.insuranceType}_${ticket.id}.pdf`,
+                        filename: `quotation_${ticket.insuranceSubType?.insuranceTypes?.code}_${ticket.id}.pdf`,
                         content: pdfBuffer
                     }
                     //   {
@@ -1075,10 +1087,37 @@ export class InsuranceQuotationService {
 
     // this is for download pdf
     async downloadQuotationPdf(
-        ticket: any,
-        quotationId: string
+        reqBody: any
+        // ticket: any,
+        // quotationId: string
     ): Promise<{ status: string; message: string; data: Buffer }> {
         try {
+            const { ticketId, quotationId } = reqBody;
+
+            if (!ticketId || !quotationId) {
+                return {
+                    status: 'error',
+                    message: 'Invalid request body',
+                    data: null
+                };
+            }
+            const ticket = await this.ticketRepo.findOne({
+                where: { id: ticketId },
+                relations: {
+                    insuranceUserId: true,
+                    branch: true,
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
+            });
+            if (!ticket) {
+                return {
+                    status: 'error',
+                    message: 'Ticket not found',
+                    data: null
+                };
+            }
             const pdfBuffer = await this.generateQuotationPDF(ticket, quotationId);
 
             // Instead of sending email, return the PDF buffer for download
@@ -1117,9 +1156,19 @@ export class InsuranceQuotationService {
                 };
             }
             // Fetch the ticket with relations
+            // const ticket = await this.ticketRepo.findOne({
+            //     where: { id: ticketId },
+            //     relations: ['insuranceUserId', 'branch', 'insuranceTypes']
+            // });
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId', 'branch', 'insuranceTypes']
+                relations: {
+                    insuranceUserId: true,
+                    branch: true,
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
             });
             if (!ticket) {
                 return {
@@ -1128,6 +1177,8 @@ export class InsuranceQuotationService {
                     data: null
                 };
             }
+            const insuranceTypesCode = ticket?.insuranceSubType?.insuranceTypes?.code;
+            const insuranceSubTypeCode = ticket?.insuranceSubType?.code;
 
             // Generate quotation number and validity date
             const quotationNumber = await generateQuoteId(ticketId);
@@ -1157,7 +1208,11 @@ export class InsuranceQuotationService {
                 const company = await this.insCompanyRepo.findOne({ where: { id: parseInt(quoteData.companyId) } });
                 const product = await this.productRepo.findOne({
                     where: { id: quoteData.productId },
-                    relations: ['insuranceTypes']
+                    relations: {
+                        insuranceSubType: {
+                            insuranceTypes: true
+                        }
+                    }
                 });
                 // console.log("here is product in generation qutoatin", product);
 
@@ -1285,7 +1340,7 @@ export class InsuranceQuotationService {
                 new Date(),
                 Current_Step.QUOTATION_SENT,
                 addDays(3),
-                ticket.insuranceType,
+                insuranceSubTypeCode,
                 ticket.agentRemarks,
                 ticket.othersRemarks,
                 userEntity.id
@@ -1330,7 +1385,7 @@ export class InsuranceQuotationService {
                         Current_Step.SUBMITTED_FOR_REVISION,
                         updatedTicket.nextStepDeadline,
 
-                        ticket.insuranceType,
+                        insuranceSubTypeCode,
                         ticket.agentRemarks,
                         ticket.othersRemarks,
                         userEntity.id
@@ -1378,13 +1433,14 @@ export class InsuranceQuotationService {
 
     async sendQuotationMail(reqBody: any): Promise<any> {
         try {
-            const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
             if (!userEntity) {
-                return {
-                    status: 'error',
-                    message: 'Logged user not found',
-                    data: null
-                };
+                throw new NotFoundException("Logged user not found")
+                // return {
+                //     status: 'error',
+                //     message: 'Logged user not found',
+                //     data: null
+                // };
             }
             const { ticketId, quotationId } = reqBody;
             //  console.log('formQuoteData:',reqBody);
@@ -1396,9 +1452,18 @@ export class InsuranceQuotationService {
                 };
             }
             // Fetch the ticket with relations
+            // const ticket = await this.ticketRepo.findOne({
+            //     where: { id: ticketId },
+            //     relations: ['insuranceUserId', 'insuranceTypes']
+            // });
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId', 'insuranceTypes']
+                relations: {
+                    insuranceUserId: true,
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
             });
             if (!ticket) {
                 return {
@@ -1436,7 +1501,7 @@ export class InsuranceQuotationService {
                     Current_Step.SUBMITTED_FOR_REVISION,
                     ticket.nextStepDeadline,
 
-                    ticket.insuranceTypes.code,
+                    ticket.insuranceSubType?.code,
                     ticket.agentRemarks,
                     ticket.othersRemarks,
                     userEntity.id
@@ -1465,42 +1530,52 @@ export class InsuranceQuotationService {
         }
     }
     // later remove this extra function and use downloadQuotationPdf directly function who is called
-    async downloadQuotation(reqBody: any): Promise<any> {
-        try {
-            const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
-            if (!userEntity) {
-                return {
-                    status: 'error',
-                    message: 'Logged user not found',
-                    data: null
-                };
-            }
-            const { ticketId, quotationId } = reqBody;
+    // async downloadQuotation(reqBody: any): Promise<any> {
+    //     try {
+    //         const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
+    //         if (!userEntity) {
+    //             return {
+    //                 status: 'error',
+    //                 message: 'Logged user not found',
+    //                 data: null
+    //             };
+    //         }
+    //         const { ticketId, quotationId } = reqBody;
 
-            if (!ticketId || !quotationId) {
-                return {
-                    status: 'error',
-                    message: 'Invalid request body',
-                    data: null
-                };
-            }
-            const ticket = await this.ticketRepo.findOne({
-                where: { id: ticketId },
-                relations: ['insuranceUserId', 'branch', 'insuranceTypes']
-            });
-            if (!ticket) {
-                return {
-                    status: 'error',
-                    message: 'Ticket not found',
-                    data: null
-                };
-            }
-            const responsedata = await this.downloadQuotationPdf(ticket, String(quotationId));
-            return responsedata;
-        } catch (err) {
-            console.error('send quotation mail Error:', err);
-        }
-    }
+    //         if (!ticketId || !quotationId) {
+    //             return {
+    //                 status: 'error',
+    //                 message: 'Invalid request body',
+    //                 data: null
+    //             };
+    //         }
+    //         // const ticket = await this.ticketRepo.findOne({
+    //         //     where: { id: ticketId },
+    //         //     relations: ['insuranceUserId', 'branch', 'insuranceTypes']
+    //         // });
+    //         const ticket = await this.ticketRepo.findOne({
+    //             where: { id: ticketId },
+    //             relations: {
+    //                 insuranceUserId: true,
+    //                 branch: true,
+    //                 insuranceSubType: {
+    //                     insuranceTypes: true
+    //                 }
+    //             }
+    //         });
+    //         if (!ticket) {
+    //             return {
+    //                 status: 'error',
+    //                 message: 'Ticket not found',
+    //                 data: null
+    //             };
+    //         }
+    //         const responsedata = await this.downloadQuotationPdf(ticket, String(quotationId));
+    //         return responsedata;
+    //     } catch (err) {
+    //         console.error('send quotation mail Error:', err);
+    //     }
+    // }
 
     async changedQuotatinSatus(reqBody: any, req: any): Promise<any> {
         try {
@@ -1516,9 +1591,18 @@ export class InsuranceQuotationService {
 
             const { ticketId, quotationId, status, changedRemarks, isProductSelected, selectedProduct } = reqBody;
 
+            // const ticket = await this.ticketRepo.findOne({
+            //     where: { id: ticketId },
+            //     relations: ['insuranceUserId']
+            // });
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId']
+                relations: {
+                    insuranceUserId: true,
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
             });
 
             const product = await this.productRepo.findOne({ where: { id: selectedProduct } });
@@ -1618,7 +1702,7 @@ export class InsuranceQuotationService {
                     nextStep,
                     nextStepDeadline,
 
-                    ticket.insuranceType,
+                    ticket.insuranceSubType?.insuranceTypes?.code,
                     ticket.agentRemarks,
                     ticket.othersRemarks,
                     userEntity.id
@@ -2409,9 +2493,18 @@ export class InsuranceQuotationService {
             }
             // console.log('here is quotes **********', quotes);
 
+            // const ticket = await this.ticketRepo.findOne({
+            //     where: { id: ticketId },
+            //     relations: ['insuranceUserId', 'insuranceTypes']
+            // });
             const ticket = await this.ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['insuranceUserId', 'insuranceTypes']
+                relations: {
+                    insuranceUserId: true,
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
             });
 
             if (!ticket) return { status: 'error', message: 'Ticket not found', data: null };
@@ -2575,7 +2668,7 @@ export class InsuranceQuotationService {
                     new Date(),
                     Current_Step.CUSTOMER_APPROVED,
                     ticket.nextStepDeadline,
-                    ticket.insuranceTypes.code,
+                    ticket.insuranceSubType?.insuranceTypes?.code,
                     ticket.agentRemarks,
                     ticket.othersRemarks,
                     userEntity.id

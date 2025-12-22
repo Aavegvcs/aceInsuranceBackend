@@ -349,7 +349,7 @@ export class InsuranceProductService {
             const {
                 name,
                 insuranceType,
-                insuranceSubType,
+                insuranceSubTypeId,
                 insuranceCompanyId,
                 branchId,
                 insurancePrice,
@@ -376,7 +376,7 @@ export class InsuranceProductService {
             if (!insuranceTypesData) {
                 throw new NotFoundException('Insurance type is not available');
             }
-            const subType = await this.subTypeRepo.findOne({ where: { id: insuranceSubType } });
+            const subType = await this.subTypeRepo.findOne({ where: { id: insuranceSubTypeId } });
             if (!subType) {
                 throw new NotFoundException('Insurance Sub type is not available');
             }
@@ -423,68 +423,6 @@ export class InsuranceProductService {
         }
     }
 
-    // async updateProduct(reqBody: any, req: any): Promise<any> {
-    //     try {
-    //         const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
-    //         if (!userEntity) {
-    //             return {
-    //                 status: 'error',
-    //                 message: 'Logged user not found',
-    //                 data: null
-    //             };
-    //         }
-
-    //         const product = await this.productRepo.findOne({ where: { id: reqBody.id } });
-    //         const insuranceCompany = await this.companyRepo.findOne({ where: { id: reqBody.insuranceCompanyId } });
-    //         if (!product || !insuranceCompany) {
-    //             throw new Error(`product or insurance company not found`);
-    //         }
-    //         const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({
-    //             where: { code: reqBody.insuranceType }
-    //         });
-
-    //         const result = await this.productRepo.update(reqBody.id, {
-    //             name: reqBody.name,
-    //             insuranceType: reqBody.insuranceType,
-    //             insuranceTypes: insuranceTypeMaster,
-    //             insuranceCompanyId: reqBody.insuranceCompanyId,
-    //             // insurancePrice: reqBody.insurancePrice,
-    //             // incentivePercentage: reqBody.incentivePercentage,
-    //             // durationMonths: reqBody.durationMonths,
-    //             shortDescription: reqBody.shortDescription,
-    //             // features: reqBody.features,
-    //             // advantages: reqBody.advantages,
-    //             // benefits: reqBody.benefits,
-    //             // payoutPercentage: reqBody.payoutPercentage,
-    //             isActive: reqBody.isActive,
-    //             updatedAt: reqBody.updatedAt,
-    //             updatedBy: userEntity
-    //         });
-
-    //         if (result.affected === 0) {
-    //             return {
-    //                 status: 'error',
-    //                 message: `Failed to update product with ID ${reqBody.id}`,
-    //                 data: null
-    //             };
-    //         }
-
-    //         return {
-    //             status: 'success',
-    //             message: `product updated successfully`,
-    //             data: reqBody
-    //         };
-    //     } catch (error) {
-    //         console.log('api- insurance-product/updateProduct', error.message);
-
-    //         return {
-    //             status: 'error',
-    //             message: 'Error updating product',
-    //             data: null
-    //         };
-    //     }
-    // }
-
     async updateProduct(reqBody: any): Promise<any> {
         try {
             const {
@@ -498,9 +436,7 @@ export class InsuranceProductService {
                 insuranceWaitingPeriod,
                 isActive
             } = reqBody;
-            const userEntity = await this.userRepo.findOne({
-                where: { email: 'aftab.alam@aaveg.com' }
-            });
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
 
             if (!userEntity) {
                 return { status: 'error', message: 'Logged user not found', data: null };
@@ -538,11 +474,8 @@ export class InsuranceProductService {
                 where: { product: { id } },
                 relations: ['insuranceFeatures']
             });
-            // console.log('existing features', existingFeatures);
 
             const incomingFeatureIds = new Set<number>((insuranceFeatures || []).map((f: any) => Number(f.featureId)));
-            // console.log('incoming featuresid', incomingFeatureIds);
-
             const existingFeatureMap = new Map<number, any>();
             existingFeatures.forEach((pf) => {
                 existingFeatureMap.set(pf.insuranceFeatures.id, pf);
@@ -668,10 +601,10 @@ export class InsuranceProductService {
 
     async getAllProductByType(reqBody: any): Promise<any> {
         try {
-            // console.log('reqBody', reqBody);
+            console.log('reqBody', reqBody);
 
             const query = 'CALL get_ProductByType(?, ?)';
-            const result = await this.companyRepo.query(query, [reqBody.insuranceCompanyId, reqBody.insuranceType]);
+            const result = await this.companyRepo.query(query, [reqBody.insuranceCompanyId, reqBody.insuranceSubTypeId]);
 
             if (!result || result.length === 0) {
                 throw new Error(`No products found for company with ID ${reqBody.insuranceCompanyId}`);
@@ -936,7 +869,7 @@ export class InsuranceProductService {
     async deleteProduct(reqBody: any, req: any): Promise<any> {
         let result = {};
         try {
-            const userEntity = await this.userRepo.findOne({ where: { email: 'aftab.alam@aaveg.com' } });
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
             if (!userEntity) {
                 return {
                     status: 'error',
@@ -1120,6 +1053,7 @@ export class InsuranceProductService {
                     'product.name AS name',
                     'insuranceType.code AS insuranceType',
                     'subType.id AS insuranceSubTypeId',
+                    'subType.code AS insuranceSubTypeCode',
                     'subType.name AS insuranceSubTypeName',
                     'product.insurancePrice AS insurancePrice',
                     'product.incentivePercentage AS incentivePercentage',
@@ -1135,7 +1069,6 @@ export class InsuranceProductService {
                 ])
                 .getRawMany();
 
-            // 2️⃣ PRODUCT FEATURES
             const featureRows = await this.productRepo
                 .createQueryBuilder('product')
                 .leftJoin('product.productFeatures', 'pf')

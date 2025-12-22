@@ -291,7 +291,15 @@ export class InsurancePolicyService {
             }
             // console.log('in backend policy id ', policyId);
 
-            const policy = await this._policyRepo.findOne({ where: { id: policyId }, relations:['policyType'] });
+            const policy = await this._policyRepo.findOne({
+                where: { id: policyId },
+                relations: {
+                    policyType: {
+                        insuranceTypes: true
+                    }
+                }
+            });
+
             if (!policy) {
                 return standardResponse(
                     false,
@@ -306,7 +314,7 @@ export class InsurancePolicyService {
 
             const query = 'CALL get_insurancePolicyDetails(?, ?)';
 
-            const result = await this._policyRepo.query(query, [policyId, policy.policyType.code]);
+            const result = await this._policyRepo.query(query, [policyId, policy.policyType?.insuranceTypes?.code]);
             const policyDetails = result[0][0];
             // console.log('policy details 1', policyDetails);
 
@@ -352,9 +360,22 @@ export class InsurancePolicyService {
     ): Promise<any> {
         try {
             // Load ticket with relations
+            // const ticket = await this._ticketRepo.findOne({
+            //     where: { id: ticketId },
+            //     relations: ['selectedProduct', 'selectedProduct.insuranceCompanyId', 'insuranceUserId', 'insuranceSubType']
+            // });
+
             const ticket = await this._ticketRepo.findOne({
                 where: { id: ticketId },
-                relations: ['selectedProduct', 'selectedProduct.insuranceCompanyId', 'insuranceUserId', 'insuranceTypes']
+                relations: {
+                    insuranceUserId: true,
+                    selectedProduct: {
+                        insuranceCompanyId: true
+                    },
+                    insuranceSubType: {
+                        insuranceTypes: true
+                    }
+                }
             });
 
             if (!ticket) {
@@ -379,7 +400,7 @@ export class InsurancePolicyService {
                     insuranceCompany: ticket.selectedProduct.insuranceCompanyId,
                     insuranceProduct: ticket.selectedProduct,
                     policyNumber: policyNumber,
-                    policyType: ticket.insuranceTypes,
+                    policyType: ticket.insuranceSubType,
                     sumAssured: ticket.selectedCoveraged,
                     premiumAmount: ticket.SelectedPremium,
                     isRenewal: false,
@@ -422,10 +443,10 @@ export class InsurancePolicyService {
                     return { status: false, message: 'No existing policy found for renewal', data: null };
                 }
 
-                const insuranceType = ticket.insuranceTypes; // e.g. HEALTH, MOTOR, LIFE
+                const insuranceType = ticket.insuranceSubType?.insuranceTypes?.code; // e.g. HEALTH, MOTOR, LIFE
 
                 // For Health & Motor -> Create new policy
-                if (insuranceType.code === Insurance_Type.Health || insuranceType.code === Insurance_Type.Motor) {
+                if (insuranceType === Insurance_Type.Health || insuranceType === Insurance_Type.Motor) {
                     const newPolicy = this._policyRepo.create({
                         originalTicket: prevPolicy.originalTicket || prevPolicy.currentTicket,
                         currentTicket: ticket,
@@ -434,7 +455,7 @@ export class InsurancePolicyService {
                         insuranceProduct: ticket.selectedProduct,
                         policyNumber: policyNumber,
                         previousPolicyNumber: prevPolicy.policyNumber,
-                        policyType: insuranceType,
+                        policyType: ticket.insuranceSubType,
                         sumAssured: ticket.selectedCoveraged,
                         premiumAmount: ticket.SelectedPremium,
                         isRenewal: true,
@@ -473,7 +494,7 @@ export class InsurancePolicyService {
                 }
 
                 // For Life -> Update existing policy
-                if (insuranceType.code === Insurance_Type.Life) {
+                if (insuranceType === Insurance_Type.Life) {
                     const oldStartDate = prevPolicy.startDate;
                     const oldEndDate = prevPolicy.endDate;
                     const previousPremiumAmount = prevPolicy.premiumAmount;
@@ -534,8 +555,8 @@ export class InsurancePolicyService {
     // ------------------- POLICY HISTORY CREATION ------------------- //
     private async createPolicyHistory(
         policyId: number,
-        policyNumber:any,
-        prevPolicyNumber:any,
+        policyNumber: any,
+        prevPolicyNumber: any,
         ticket: any,
         previousTicket: any,
         currentTicket: any,
@@ -554,7 +575,7 @@ export class InsurancePolicyService {
         const history = this._policyHistoryRepo.create({
             policy: { id: policyId },
             originalTicket: ticket,
-            policyNumber:policyNumber,
+            policyNumber: policyNumber,
             previousPolicyNumber: prevPolicyNumber,
             previousTicket: previousTicket,
             currentTicket: currentTicket,
