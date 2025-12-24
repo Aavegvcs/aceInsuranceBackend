@@ -11,6 +11,12 @@ import { InsuranceProduct } from '@modules/insurance-product/entities/insurance-
 import { EmailService } from '@modules/email/email.service';
 import { InsuranceQuotation } from './entities/insurance-quotation.entity';
 import { User } from '@modules/user/user.entity';
+import { spawn } from 'child_process';
+// import * as wkhtmltopdf from 'wkhtmltopdf';
+// wkhtmltopdf.command = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
+
+import * as Handlebars from 'handlebars';
+import * as ejs from 'ejs';
 import axios from 'axios';
 import {
     addDays,
@@ -23,6 +29,7 @@ import {
     TICKET_LOG_EVENTS,
     Ticket_Status
 } from 'src/utils/app.utils';
+
 import { InsuranceCompanies } from '@modules/insurance-product/entities/insurance-companies.entity';
 import { QuoteEntity } from './entities/quote.entity';
 import { CommonQuotationService } from './common-quotation.service';
@@ -170,11 +177,9 @@ export class InsuranceQuotationService {
                     .leftJoinAndSelect('quotation.quotes', 'quote')
                     .leftJoinAndSelect('quote.company', 'company')
                     .leftJoinAndSelect('quote.product', 'product')
-                    .leftJoinAndSelect(
-                        'quote.quoteFeatures',
-                        'quoteFeature',
-                        'quoteFeature.isActive = true' // ✅ filter active quote features
-                    )
+                    .leftJoinAndSelect('product.productFeatures', 'productFeature', 'productFeature.isActive = true')
+                    .leftJoinAndSelect('productFeature.insuranceFeatures', 'productInsuranceFeature')
+                    .leftJoinAndSelect('quote.quoteFeatures', 'quoteFeature', 'quoteFeature.isActive = true')
                     .leftJoinAndSelect('quoteFeature.insuranceFeatures', 'insuranceFeature')
                     .where('quotation.id = :quotationId', { quotationId: parseInt(quotationId) })
                     .andWhere('quotation.ticketId = :ticketId', { ticketId: parseInt(ticket.id) })
@@ -272,52 +277,87 @@ export class InsuranceQuotationService {
                 //     where: { isActive: true, insuranceTypes: ticket.insuranceSubType?.insuranceTypes?.code },
                 //     relations: ['insuranceTypes']
                 // });
-                const insuranceFeatures = await this.insurncetFeaturesRepo.find({
-                    where: {
-                        isActive: true,
-                        insuranceTypes: {
-                            code: ticket.insuranceSubType?.insuranceTypes?.code
-                        }
-                    },
-                    relations: ['insuranceTypes']
-                });
+
+                // commented old code 23-12-2025
+                // const insuranceFeatures = await this.insurncetFeaturesRepo.find({
+                //     where: {
+                //         isActive: true,
+                //         insuranceTypes: {
+                //             code: ticket.insuranceSubType?.insuranceTypes?.code
+                //         }
+                //     },
+                //     relations: ['insuranceTypes']
+                // });
 
                 // console.log('line no 272 insurance features', insuranceFeatures);
 
-                const basicFeatures: InsuranceFeatures[] = [];
-                const addOnFeatures: InsuranceFeatures[] = [];
+                // const basicFeatures: InsuranceFeatures[] = [];
+                // const addOnFeatures: InsuranceFeatures[] = [];
 
                 // Separate based on isStandard
-                insuranceFeatures.forEach((feature) => {
-                    if (feature.isStandard) {
-                        basicFeatures.push(feature);
-                    } else {
-                        addOnFeatures.push(feature);
-                    }
-                });
+                // insuranceFeatures.forEach((feature) => {
+                //     if (feature.isStandard) {
+                //         basicFeatures.push(feature);
+                //     } else {
+                //         addOnFeatures.push(feature);
+                //     }
+                // });
 
                 // Split into basic and add-on based on name containing 'Cover' (assumption for categorization)
                 // Prepare final comparison data for basic
-                const finalBasicData: { feature: string; quoteValues: string[] }[] = basicFeatures.map((feature) => {
-                    return {
-                        feature: feature.featuresName,
-                        quoteValues: quotation.quotes.map((quote) => {
-                            const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
-                            return includedFeatures.includes(feature.id) ? '✓' : '×';
-                        })
-                    };
-                });
+                // const finalBasicData: { feature: string; quoteValues: string[] }[] = basicFeatures.map((feature) => {
+                //     return {
+                //         feature: feature.featuresName,
+                //         quoteValues: quotation.quotes.map((quote) => {
+                //             const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
+                //             return includedFeatures.includes(feature.id) ? '✓' : '×';
+                //         })
+                //     };
+                // });
 
                 // Prepare final comparison data for add-on
-                const finalAddOnData: { feature: string; quoteValues: string[] }[] = addOnFeatures.map((feature) => {
-                    return {
-                        feature: feature.featuresName,
-                        quoteValues: quotation.quotes.map((quote) => {
-                            const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
-                            return includedFeatures.includes(feature.id) ? '✓' : '×';
-                        })
-                    };
+                // const finalAddOnData: { feature: string; quoteValues: string[] }[] = addOnFeatures.map((feature) => {
+                //     return {
+                //         feature: feature.featuresName,
+                //         quoteValues: quotation.quotes.map((quote) => {
+                //             const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
+                //             return includedFeatures.includes(feature.id) ? '✓' : '×';
+                //         })
+                //     };
+                // });
+
+                // --- new logic for product features
+                const productFeatureMap = new Map<number, InsuranceFeatures>();
+
+                quotation.quotes.forEach((quote) => {
+                    quote.product?.productFeatures?.forEach((pf) => {
+                        const feature = pf.insuranceFeatures;
+                        if (feature && feature.isActive) {
+                            productFeatureMap.set(feature.id, feature);
+                        }
+                    });
                 });
+
+                const allProductFeatures = Array.from(productFeatureMap.values());
+                const basicFeatures = allProductFeatures.filter((feature) => feature.isStandard === true);
+
+                const addOnFeatures = allProductFeatures.filter((feature) => feature.isStandard === false);
+                const finalBasicData = basicFeatures.map((feature) => ({
+                    feature: feature.featuresName,
+                    quoteValues: quotation.quotes.map((quote) => {
+                        const selectedFeatureIds = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
+                        return selectedFeatureIds.includes(feature.id) ? '✓' : '×';
+                    })
+                }));
+                const finalAddOnData = addOnFeatures.map((feature) => ({
+                    feature: feature.featuresName,
+                    quoteValues: quotation.quotes.map((quote) => {
+                        const selectedFeatureIds = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
+                        return selectedFeatureIds.includes(feature.id) ? '✓' : '×';
+                    })
+                }));
+
+                //--- end new logic for product features
 
                 function ensureSpace(doc: any, neededHeight: number, startY: number) {
                     const bottomMargin = 50;
@@ -1435,7 +1475,7 @@ export class InsuranceQuotationService {
         try {
             const userEntity = await this.loggedInsUserService.getCurrentUser();
             if (!userEntity) {
-                throw new NotFoundException("Logged user not found")
+                throw new NotFoundException('Logged user not found');
                 // return {
                 //     status: 'error',
                 //     message: 'Logged user not found',
@@ -2909,4 +2949,75 @@ export class InsuranceQuotationService {
             );
         }
     }
+
+    // async quotationPdf(data: any): Promise<Buffer> {
+    //     console.log('he he he he ', process.env.WKHTMLTOPDF_PATH);
+
+    //     const templatePath = path.join(process.cwd(), 'src/templates/quotation/quotation-pdf.ejs');
+    //     console.log('here is data', data);
+
+    //     const html = await ejs.renderFile(templatePath, data);
+
+    //     return new Promise((resolve, reject) => {
+    //         const chunks: Buffer[] = [];
+
+    //         //   wkhtmltopdf(html, { pageSize: 'A4' })
+    //         wkhtmltopdf(html, {
+    //             pageSize: 'A4',
+    //             command: process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf'
+    //         })
+    //             .on('data', (chunk) => chunks.push(chunk))
+    //             .on('end', () => resolve(Buffer.concat(chunks)))
+    //             .on('error', reject);
+    //     });
+    // }
+
+
+async quotationPdf(data: any): Promise<Buffer> {
+  const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
+  ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG')
+  : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
+
+const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+
+  const html = await ejs.renderFile(
+    path.join(process.cwd(), 'src/templates/quotation/quotation-pdf.ejs'),
+    {   ...data, logoBase64 }
+  );
+
+  return new Promise((resolve, reject) => {
+    const wkhtmlPath = process.env.WKHTMLTOPDF_PATH;
+
+    if (!wkhtmlPath) {
+      return reject(
+        new Error('WKHTMLTOPDF_PATH is not set')
+      );
+    }
+
+    const child = spawn(
+      `"${wkhtmlPath}"`,   // 🔥 THIS FIXES YOUR ERROR
+      ['--encoding', 'UTF-8','-', '-'],
+      { shell: true }
+    );
+
+    const output: Buffer[] = [];
+    const errors: Buffer[] = [];
+
+    child.stdout.on('data', d => output.push(d));
+    child.stderr.on('data', e => errors.push(e));
+
+    child.on('close', code => {
+      if (code !== 0) {
+        return reject(
+          new Error(Buffer.concat(errors).toString())
+        );
+      }
+      resolve(Buffer.concat(output));
+    });
+
+    child.stdin.write(html);
+    child.stdin.end();
+  });
+}
+
 }

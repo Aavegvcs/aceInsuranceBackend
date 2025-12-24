@@ -310,7 +310,7 @@ export class CommonQuotationService {
                     break;
                 }
             }
-             console.log('in get ticket details res is ->>>>', data);
+            //  console.log('in get ticket details res is ->>>>', data);
 
             return {
                 status: 'success',

@@ -14,6 +14,8 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { InsuranceQuotationService } from './insurance-quotation.service';
 import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
+import { Response } from 'express';
+
 
 @ApiTags('insurance-quotation')
 @Controller('insurance-quotation')
@@ -30,7 +32,7 @@ export class InsuranceQuotationController {
         }
     }
 
-     @UseGuards(JwtInsAuthGuard)
+    @UseGuards(JwtInsAuthGuard)
     @Post('sendQuotationMail')
     async sendQuotationMail(@Body() reqBody: any) {
         try {
@@ -143,5 +145,18 @@ export class InsuranceQuotationController {
         } catch (error) {
             throw new HttpException('Failed to fetch quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Post('pdf/download')
+    async downloadQuotationPdf(@Body() body: any, @Res() res: Response) {
+        const pdf = await this.quotationService.quotationPdf(body);
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': 'attachment; filename=quotation.pdf',
+            'Content-Length': pdf.length
+        });
+
+        res.end(pdf);
     }
 }
