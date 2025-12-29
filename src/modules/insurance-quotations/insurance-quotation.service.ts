@@ -2995,7 +2995,7 @@ const logoBase64 = fs.readFileSync(logoPath).toString('base64');
     }
 
     const child = spawn(
-      `"${wkhtmlPath}"`,   // 🔥 THIS FIXES YOUR ERROR
+      `"${wkhtmlPath}"`,   // THIS FIXES YOUR ERROR
       ['--encoding', 'UTF-8','-', '-'],
       { shell: true }
     );
