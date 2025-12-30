@@ -11,7 +11,7 @@
       },
       {
         "include": "templates/**/*",
-        "outDir": "dist/templates"
+        "outDir": "dist/src"
       }
     ]
   }

@@ -37,6 +37,12 @@ RUN ls -la dist/src && test -f dist/src/main.js || (echo "Build failed: dist/src
 # Verify assets were copied
 RUN ls -la dist/src/assets/fonts && test -f dist/src/assets/fonts/AvenirNext-Regular.ttf || (echo "Fonts not copied to dist" && exit 1)
 
+# Verify templates were copied
+RUN test -d dist/src/templates \
+  && [ "$(ls -A dist/src/templates)" ] \
+  || (echo "Templates not copied to dist/src/templates" && exit 1)
+
+
 # Stage 2: Run the NestJS application
 FROM node:20-alpine AS runner
 
