@@ -9,18 +9,29 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Install system dependencies for canvas and fonts
-RUN apk add --no-cache \
-    build-base \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    giflib-dev \
-    librsvg-dev \
-    fontconfig \
-    freetype-dev \
-    ttf-freefont\
+# RUN apk add --no-cache \
+#     build-base \
+#     cairo-dev \
+#     jpeg-dev \
+#     pango-dev \
+#     giflib-dev \
+#     librsvg-dev \
+#     fontconfig \
+#     freetype-dev \
+#     ttf-freefont\
+#     wkhtmltopdf \
+#     xvfb
+RUN apt-get update && apt-get install -y \
     wkhtmltopdf \
-    xvfb
+    fontconfig \
+    fonts-dejavu \
+    libcairo2 \
+    libjpeg62-turbo \
+    libpango-1.0-0 \
+    libgif7 \
+    librsvg2-bin \
+    && rm -rf /var/lib/apt/lists/*
+
 
 # Copy package.json and pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
@@ -60,17 +71,28 @@ ENV NODE_ENV=production
 RUN npm install -g pnpm
 
 # Install runtime dependencies for canvas and fonts
-RUN apk add --no-cache \
-    cairo \
-    jpeg \
-    pango \
-    giflib \
-    librsvg \
-    fontconfig \
-    freetype \
-    ttf-freefont \
+# RUN apk add --no-cache \
+#     cairo \
+#     jpeg \
+#     pango \
+#     giflib \
+#     librsvg \
+#     fontconfig \
+#     freetype \
+#     ttf-freefont \
+#     wkhtmltopdf \
+#     xvfb
+RUN apt-get update && apt-get install -y \
     wkhtmltopdf \
-    xvfb
+    fontconfig \
+    fonts-dejavu \
+    libcairo2 \
+    libjpeg62-turbo \
+    libpango-1.0-0 \
+    libgif7 \
+    librsvg2-bin \
+    && rm -rf /var/lib/apt/lists/*
+
 
 # Copy necessary files from builder stage
 COPY --from=builder /app/dist ./dist
