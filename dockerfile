@@ -17,7 +17,9 @@ RUN apk add --no-cache \
     librsvg-dev \
     fontconfig \
     freetype-dev \
-    ttf-freefont
+    ttf-freefont\
+    wkhtmltopdf \
+    xvfb
 
 # Copy package.json and pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
@@ -64,7 +66,9 @@ RUN apk add --no-cache \
     librsvg \
     fontconfig \
     freetype \
-    ttf-freefont
+    ttf-freefont \
+    wkhtmltopdf \
+    xvfb
 
 # Copy necessary files from builder stage
 COPY --from=builder /app/dist ./dist
