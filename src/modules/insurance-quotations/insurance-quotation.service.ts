@@ -2980,11 +2980,11 @@ export class InsuranceQuotationService {
         const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
         const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
+
         const html = await ejs.renderFile(templatePath, {
             ...data,
             logoBase64
         });
-
         // const html = await ejs.renderFile(path.join(process.cwd(), 'src/templates/quotation/quotation-pdf.ejs'), {
         //     ...data,
         //     logoBase64
