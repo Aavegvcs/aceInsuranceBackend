@@ -1,5 +1,6 @@
 # Stage 1: Build the NestJS application
-FROM node:20-alpine AS builder
+# FROM node:20-alpine AS builder --commented at 30-12-2025
+FROM node:20-bullseye AS builder
 
 # Set working directory
 WORKDIR /app
@@ -46,7 +47,8 @@ RUN test -d dist/src/templates \
 
 
 # Stage 2: Run the NestJS application
-FROM node:20-alpine AS runner
+# FROM node:20-alpine AS runner --commented at 30-12-2025
+FROM node:20-bullseye AS runner
 
 # Set working directory
 WORKDIR /app
