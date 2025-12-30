@@ -2972,52 +2972,52 @@ export class InsuranceQuotationService {
     //     });
     // }
 
+    async quotationPdf(data: any): Promise<Buffer> {
+        const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
+            ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG')
+            : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
 
-async quotationPdf(data: any): Promise<Buffer> {
-  const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
-  ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG')
-  : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
+        const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
-const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+        const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
+        const html = await ejs.renderFile(templatePath, {
+            ...data,
+            logoBase64
+        });
 
-  const html = await ejs.renderFile(
-    path.join(process.cwd(), 'src/templates/quotation/quotation-pdf.ejs'),
-    {   ...data, logoBase64 }
-  );
+        // const html = await ejs.renderFile(path.join(process.cwd(), 'src/templates/quotation/quotation-pdf.ejs'), {
+        //     ...data,
+        //     logoBase64
+        // });
 
-  return new Promise((resolve, reject) => {
-    const wkhtmlPath = process.env.WKHTMLTOPDF_PATH;
+        return new Promise((resolve, reject) => {
+            const wkhtmlPath = process.env.WKHTMLTOPDF_PATH;
 
-    if (!wkhtmlPath) {
-      return reject(
-        new Error('WKHTMLTOPDF_PATH is not set')
-      );
+            if (!wkhtmlPath) {
+                return reject(new Error('WKHTMLTOPDF_PATH is not set'));
+            }
+
+            const child = spawn(
+                `"${wkhtmlPath}"`, // THIS FIXES YOUR ERROR
+                ['--encoding', 'UTF-8', '-', '-'],
+                { shell: true }
+            );
+
+            const output: Buffer[] = [];
+            const errors: Buffer[] = [];
+
+            child.stdout.on('data', (d) => output.push(d));
+            child.stderr.on('data', (e) => errors.push(e));
+
+            child.on('close', (code) => {
+                if (code !== 0) {
+                    return reject(new Error(Buffer.concat(errors).toString()));
+                }
+                resolve(Buffer.concat(output));
+            });
+
+            child.stdin.write(html);
+            child.stdin.end();
+        });
     }
-
-    const child = spawn(
-      `"${wkhtmlPath}"`,   // THIS FIXES YOUR ERROR
-      ['--encoding', 'UTF-8','-', '-'],
-      { shell: true }
-    );
-
-    const output: Buffer[] = [];
-    const errors: Buffer[] = [];
-
-    child.stdout.on('data', d => output.push(d));
-    child.stderr.on('data', e => errors.push(e));
-
-    child.on('close', code => {
-      if (code !== 0) {
-        return reject(
-          new Error(Buffer.concat(errors).toString())
-        );
-      }
-      resolve(Buffer.concat(output));
-    });
-
-    child.stdin.write(html);
-    child.stdin.end();
-  });
-}
-
 }
