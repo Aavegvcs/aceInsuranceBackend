@@ -2981,7 +2981,7 @@ export class InsuranceQuotationService {
 
         const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
 
-        const html:string = await ejs.renderFile(templatePath, {
+        const html: string = await ejs.renderFile(templatePath, {
             ...data,
             logoBase64
         });
@@ -3003,18 +3003,18 @@ export class InsuranceQuotationService {
             //     { shell: true }
             // );
             if (!html || html.trim().length === 0) {
-  throw new Error('Rendered HTML is empty');
-}
+                throw new Error('Rendered HTML is empty');
+            }
 
             const child = spawn(
-                wkhtmlPath,
+                'xvfb-run',
                 [
+                    '--auto-servernum',
+                    '--server-args=-screen 0 1024x768x24',
+                    wkhtmlPath,
                     '--encoding',
                     'UTF-8',
                     '--enable-local-file-access',
-                    '--disable-smart-shrinking',
-                    '--print-media-type',
-                    '--no-outline',
                     '-',
                     '-'
                 ],
@@ -3023,9 +3023,10 @@ export class InsuranceQuotationService {
                     shell: false
                 }
             );
-child.stderr.on('data', (data) => {
-  console.error('WKHTMLTOPDF STDERR:', data.toString());
-});
+
+            child.stderr.on('data', (data) => {
+                console.error('WKHTMLTOPDF STDERR:', data.toString());
+            });
 
             const output: Buffer[] = [];
             const errors: Buffer[] = [];
