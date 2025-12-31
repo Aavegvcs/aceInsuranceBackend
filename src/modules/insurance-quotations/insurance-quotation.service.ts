@@ -12,6 +12,7 @@ import { EmailService } from '@modules/email/email.service';
 import { InsuranceQuotation } from './entities/insurance-quotation.entity';
 import { User } from '@modules/user/user.entity';
 import { spawn } from 'child_process';
+import * as os from 'os';
 // import * as wkhtmltopdf from 'wkhtmltopdf';
 // wkhtmltopdf.command = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
 
@@ -2972,77 +2973,77 @@ export class InsuranceQuotationService {
     //     });
     // }
 
-    async quotationPdf(data: any): Promise<Buffer> {
-        const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
-            ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG')
-            : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
 
-        const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+async quotationPdf(data: any): Promise<Buffer> {
+  const logoPath = path.join(
+    __dirname,
+    '../../assets/images/ACUMEN-BLUE-LOGO.PNG'
+  );
 
-        const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
+  const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
-        const html: string = await ejs.renderFile(templatePath, {
-            ...data,
-            logoBase64
-        });
-        // const html = await ejs.renderFile(path.join(process.cwd(), 'src/templates/quotation/quotation-pdf.ejs'), {
-        //     ...data,
-        //     logoBase64
-        // });
+  const templatePath = path.join(
+    __dirname,
+    '../../templates/quotation/quotation-pdf.ejs'
+  );
 
-        return new Promise((resolve, reject) => {
-            const wkhtmlPath = process.env.WKHTMLTOPDF_PATH;
+  const html: string = await ejs.renderFile(templatePath, {
+    ...data,
+    logoBase64
+  });
 
-            if (!wkhtmlPath) {
-                return reject(new Error('WKHTMLTOPDF_PATH is not set'));
-            }
+  if (!html || html.trim().length === 0) {
+    throw new Error('Rendered HTML is empty');
+  }
 
-            // const child = spawn(
-            //     `"${wkhtmlPath}"`, // THIS FIXES YOUR ERROR
-            //     ['--encoding', 'UTF-8', '-', '-'],
-            //     { shell: true }
-            // );
-            if (!html || html.trim().length === 0) {
-                throw new Error('Rendered HTML is empty');
-            }
+  // 🔥 temp files (THIS IS THE FIX)
+  const tmpDir = os.tmpdir();
+  const htmlPath = path.join(tmpDir, `quotation-${Date.now()}.html`);
+  const pdfPath = path.join(tmpDir, `quotation-${Date.now()}.pdf`);
 
-            const child = spawn(
-                'xvfb-run',
-                [
-                    '--auto-servernum',
-                    '--server-args=-screen 0 1024x768x24',
-                    wkhtmlPath,
-                    '--encoding',
-                    'UTF-8',
-                    '--enable-local-file-access',
-                    '-',
-                    '-'
-                ],
-                {
-                    stdio: ['pipe', 'pipe', 'pipe'],
-                    shell: false
-                }
-            );
+  fs.writeFileSync(htmlPath, html, 'utf8');
 
-            child.stderr.on('data', (data) => {
-                console.error('WKHTMLTOPDF STDERR:', data.toString());
-            });
+  const wkhtmlPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
 
-            const output: Buffer[] = [];
-            const errors: Buffer[] = [];
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      wkhtmlPath,
+      [
+        '--enable-local-file-access',
+        htmlPath,
+        pdfPath
+      ],
+      { shell: false }
+    );
 
-            child.stdout.on('data', (d) => output.push(d));
-            child.stderr.on('data', (e) => errors.push(e));
+    let stderr = '';
 
-            child.on('close', (code) => {
-                if (code !== 0) {
-                    return reject(new Error(Buffer.concat(errors).toString()));
-                }
-                resolve(Buffer.concat(output));
-            });
+    child.stderr.on('data', (d) => {
+      stderr += d.toString();
+    });
 
-            child.stdin.write(html);
-            child.stdin.end();
-        });
-    }
+    child.on('close', (code) => {
+      if (code !== 0) {
+        return reject(new Error(stderr || 'wkhtmltopdf failed'));
+      }
+
+      if (!fs.existsSync(pdfPath)) {
+        return reject(new Error('PDF not created'));
+      }
+
+      const pdfBuffer = fs.readFileSync(pdfPath);
+
+      // cleanup
+      fs.unlinkSync(htmlPath);
+      fs.unlinkSync(pdfPath);
+
+      if (!pdfBuffer || pdfBuffer.length === 0) {
+        return reject(new Error('Generated PDF is empty'));
+      }
+
+      resolve(pdfBuffer);
+    });
+  });
+}
+
 }
