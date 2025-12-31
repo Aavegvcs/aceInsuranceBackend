@@ -23,6 +23,7 @@ RUN npm install -g pnpm
 #     xvfb
 RUN apt-get update && apt-get install -y \
     wkhtmltopdf \
+    xvfb \
     fontconfig \
     fonts-dejavu \
     libcairo2 \
@@ -84,6 +85,7 @@ RUN npm install -g pnpm
 #     xvfb
 RUN apt-get update && apt-get install -y \
     wkhtmltopdf \
+    xvfb \
     fontconfig \
     fonts-dejavu \
     libcairo2 \
