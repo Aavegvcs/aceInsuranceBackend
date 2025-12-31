@@ -2996,10 +2996,10 @@ async quotationPdf(data: any): Promise<Buffer> {
     throw new Error('Rendered HTML is empty');
   }
 
-  // 🔥 temp files (THIS IS THE FIX)
+  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const tmpDir = os.tmpdir();
-  const htmlPath = path.join(tmpDir, `quotation-${Date.now()}.html`);
-  const pdfPath = path.join(tmpDir, `quotation-${Date.now()}.pdf`);
+  const htmlPath = path.join(tmpDir, `quotation-${uid}.html`);
+  const pdfPath = path.join(tmpDir, `quotation-${uid}.pdf`);
 
   fs.writeFileSync(htmlPath, html, 'utf8');
 
@@ -3008,11 +3008,7 @@ async quotationPdf(data: any): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const child = spawn(
       wkhtmlPath,
-      [
-        '--enable-local-file-access',
-        htmlPath,
-        pdfPath
-      ],
+      ['--enable-local-file-access', htmlPath, pdfPath],
       { shell: false }
     );
 
@@ -3022,27 +3018,39 @@ async quotationPdf(data: any): Promise<Buffer> {
       stderr += d.toString();
     });
 
-    child.on('close', (code) => {
-      if (code !== 0) {
-        return reject(new Error(stderr || 'wkhtmltopdf failed'));
-      }
-
-      if (!fs.existsSync(pdfPath)) {
-        return reject(new Error('PDF not created'));
-      }
-
-      const pdfBuffer = fs.readFileSync(pdfPath);
-
-      // cleanup
-      fs.unlinkSync(htmlPath);
-      fs.unlinkSync(pdfPath);
-
-      if (!pdfBuffer || pdfBuffer.length === 0) {
-        return reject(new Error('Generated PDF is empty'));
-      }
-
-      resolve(pdfBuffer);
+    child.on('error', (err) => {
+      cleanup();
+      reject(err);
     });
+
+    child.on('close', (code) => {
+      try {
+        if (code !== 0) {
+          throw new Error(stderr || 'wkhtmltopdf failed');
+        }
+
+        if (!fs.existsSync(pdfPath)) {
+          throw new Error('PDF not created');
+        }
+
+        const pdfBuffer = fs.readFileSync(pdfPath);
+
+        if (!pdfBuffer || pdfBuffer.length === 0) {
+          throw new Error('Generated PDF is empty');
+        }
+
+        resolve(pdfBuffer);
+      } catch (err) {
+        reject(err);
+      } finally {
+        cleanup();
+      }
+    });
+
+    function cleanup() {
+      if (fs.existsSync(htmlPath)) fs.unlinkSync(htmlPath);
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    }
   });
 }
 
