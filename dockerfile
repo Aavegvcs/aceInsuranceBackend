@@ -88,12 +88,18 @@ RUN apt-get update && apt-get install -y \
     xvfb \
     fontconfig \
     fonts-dejavu \
+    fonts-liberation \
+    fonts-freefont-ttf \
     libcairo2 \
     libjpeg62-turbo \
     libpango-1.0-0 \
     libgif7 \
     librsvg2-bin \
+    && fc-cache -f -v \
     && rm -rf /var/lib/apt/lists/*
+
+
+  
 
 
 # Copy necessary files from builder stage
