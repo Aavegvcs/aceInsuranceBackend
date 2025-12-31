@@ -2981,7 +2981,7 @@ export class InsuranceQuotationService {
 
         const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
 
-        const html = await ejs.renderFile(templatePath, {
+        const html:string = await ejs.renderFile(templatePath, {
             ...data,
             logoBase64
         });
@@ -2997,11 +2997,35 @@ export class InsuranceQuotationService {
                 return reject(new Error('WKHTMLTOPDF_PATH is not set'));
             }
 
+            // const child = spawn(
+            //     `"${wkhtmlPath}"`, // THIS FIXES YOUR ERROR
+            //     ['--encoding', 'UTF-8', '-', '-'],
+            //     { shell: true }
+            // );
+            if (!html || html.trim().length === 0) {
+  throw new Error('Rendered HTML is empty');
+}
+
             const child = spawn(
-                `"${wkhtmlPath}"`, // THIS FIXES YOUR ERROR
-                ['--encoding', 'UTF-8', '-', '-'],
-                { shell: true }
+                wkhtmlPath,
+                [
+                    '--encoding',
+                    'UTF-8',
+                    '--enable-local-file-access',
+                    '--disable-smart-shrinking',
+                    '--print-media-type',
+                    '--no-outline',
+                    '-',
+                    '-'
+                ],
+                {
+                    stdio: ['pipe', 'pipe', 'pipe'],
+                    shell: false
+                }
             );
+child.stderr.on('data', (data) => {
+  console.error('WKHTMLTOPDF STDERR:', data.toString());
+});
 
             const output: Buffer[] = [];
             const errors: Buffer[] = [];

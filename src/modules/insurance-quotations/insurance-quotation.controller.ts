@@ -2,6 +2,7 @@ import {
     Body,
     Controller,
     Get,
+    HttpCode,
     HttpException,
     HttpStatus,
     Param,
@@ -15,7 +16,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { InsuranceQuotationService } from './insurance-quotation.service';
 import { JwtInsAuthGuard } from '@modules/auth/jwt-ins-auth.guard';
 import { Response } from 'express';
-
 
 @ApiTags('insurance-quotation')
 @Controller('insurance-quotation')
@@ -147,16 +147,32 @@ export class InsuranceQuotationController {
         }
     }
 
+    // @Post('pdf/download')
+    // async downloadQuotationPdf(@Body() body: any, @Res() res: Response) {
+    //     const pdf = await this.quotationService.quotationPdf(body);
+
+    //     res.set({
+    //         'Content-Type': 'application/pdf',
+    //         'Content-Disposition': 'attachment; filename=quotation.pdf',
+    //         'Content-Length': pdf.length
+    //     });
+
+    //     res.end(pdf);
+    // }
+
     @Post('pdf/download')
-    async downloadQuotationPdf(@Body() body: any, @Res() res: Response) {
-        const pdf = await this.quotationService.quotationPdf(body);
+    @HttpCode(200)
+    async downloadQuotationPdf(@Body() body: any, @Res({ passthrough: false }) res: Response) {
+        const pdf: Buffer = await this.quotationService.quotationPdf(body);
 
-        res.set({
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment; filename=quotation.pdf',
-            'Content-Length': pdf.length
-        });
+        if (!pdf || pdf.length === 0) {
+            throw new Error('Generated PDF is empty');
+        }
 
-        res.end(pdf);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename="quotation.pdf"');
+        res.setHeader('Content-Length', pdf.length.toString());
+
+        return res.end(pdf);
     }
 }
