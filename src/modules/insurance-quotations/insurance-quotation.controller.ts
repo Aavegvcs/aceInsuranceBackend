@@ -175,33 +175,26 @@ export class InsuranceQuotationController {
 
     //     return res.end(pdf);
     // }
- @Post('pdf/download')
-  async downloadQuotationPdf(
-    @Body() body: any,
-    @Res({ passthrough: false }) res: Response
-  ) {
-    try {
-      const pdf: Buffer = await this.quotationService.quotationPdf(body);
+    @Post('pdf/download')
+    async downloadQuotationPdf(@Body() body: any, @Res({ passthrough: false }) res: Response) {
+        try {
+            const pdf: Buffer = await this.quotationService.quotationPdf(body);
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        'attachment; filename="quotation.pdf"'
-      );
-      res.setHeader('Content-Length', pdf.length.toString());
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'attachment; filename="quotation.pdf"');
+            res.setHeader('Content-Length', pdf.length.toString());
 
-      res.end(pdf); // ✅ ONLY response
-      return;
-    } catch (err: any) {
-      // 🔥 MOST IMPORTANT LINE (prevents ERR_HTTP_HEADERS_SENT)
-      if (res.headersSent) return;
+            res.end(pdf); // ✅ ONLY response
+            return;
+        } catch (err: any) {
+            // 🔥 MOST IMPORTANT LINE (prevents ERR_HTTP_HEADERS_SENT)
+            if (res.headersSent) return;
 
-      res.status(500).json({
-        success: false,
-        message: err?.message || 'PDF generation failed'
-      });
-      return;
+            res.status(500).json({
+                success: false,
+                message: err?.message || 'PDF generation failed'
+            });
+            return;
+        }
     }
-  }
-
 }
