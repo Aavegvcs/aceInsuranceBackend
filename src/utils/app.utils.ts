@@ -610,20 +610,35 @@ export const INSURANCE_TYPES = {
 //     Other = 'OTHER'
 // }
 export enum Insurance_Type {
-  Health = 'HEALTH',
-  Motor = 'MOTOR',
-  Life = 'LIFE',
-  TopUp = 'TOPUP',
-  Home = 'HOME',
-  PersonalAccident = 'PA',
-  CriticalIllness = 'CI',
-  Ulip = 'ULIP',
-  Term = 'TERM',
-  Pension = 'PENSION',
-  Gmc = 'GMC',
-  Gpa = 'GPA',
-  Travel = 'TRAVEL',
+    Health = 'HEALTH',
+    Motor = 'MOTOR',
+    Life = 'LIFE',
+    Other = 'OTHER'
 }
+
+export enum endorsement_fields_visibility {
+    All = 'ALL',
+    Health = 'HEALTH',
+    Motor = 'MOTOR',
+    Life = 'LIFE',
+    Other = 'OTHER'
+}
+
+// export enum Insurance_SubType {
+//   Health = 'HEALTH',
+//   Motor = 'MOTOR',
+//   Life = 'LIFE',
+//   TopUp = 'TOPUP',
+//   Home = 'HOME',
+//   PersonalAccident = 'PA',
+//   CriticalIllness = 'CI',
+//   Ulip = 'ULIP',
+//   Term = 'TERM',
+//   Pension = 'PENSION',
+//   Gmc = 'GMC',
+//   Gpa = 'GPA',
+//   Travel = 'TRAVEL',
+// }
 
 export enum Policy_Status {
     Active = 'ACTIVE',
@@ -805,13 +820,12 @@ export enum Vehicle_Type {
 }
 
 export enum Vehicle_Category {
-  TwoWheeler = 'TWO_WHEELER',
-  PrivateCar = 'PRIVATE_CAR',
-  GoodsCarryingVehicle = 'GOODS_CARRYING_VEHICLE',
-  PassengerCarryingVehicle = 'PASSENGER_CARRYING_VEHICLE',
-  Miscellaneous = 'MISCELLANEOUS',
+    TwoWheeler = 'TWO_WHEELER',
+    PrivateCar = 'PRIVATE_CAR',
+    GoodsCarryingVehicle = 'GOODS_CARRYING_VEHICLE',
+    PassengerCarryingVehicle = 'PASSENGER_CARRYING_VEHICLE',
+    Miscellaneous = 'MISCELLANEOUS'
 }
-
 
 export enum Client_Type {
     NEW_CLIENT = 'NEW_CLIENT',
@@ -970,4 +984,14 @@ export enum Claim_Final_Status {
     PENDING = 'PENDING',
     APPROVED = 'APPROVED',
     REJECTED = 'REJECTED'
+}
+
+export enum endorsement_field_type {
+    customerDetails = 'customerDetails',
+    medicalDetails = 'medicalDetails',
+    nomineeDetails = 'nomineeDetails',
+    ticketDetails = 'ticketDetails',
+    dependentDetails = 'dependentDetails',
+    insuredDetails = 'insuredDetails',
+    vehicleDetails = 'vehicleDetails'
 }

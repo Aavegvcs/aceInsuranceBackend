@@ -291,32 +291,46 @@ export class InsurancePolicyService {
             }
             // console.log('in backend policy id ', policyId);
 
-            const policy = await this._policyRepo.findOne({
-                where: { id: policyId },
-                relations: {
-                    policyType: {
-                        insuranceTypes: true
-                    }
-                }
-            });
+            // const policy = await this._policyRepo.findOne({
+            //     where: { id: policyId },
+            //     relations: {
+            //         policyType: {
+            //             insuranceTypes: true
+            //         }
+            //     }
+            // });
 
-            if (!policy) {
+            if (!policyId) {
                 return standardResponse(
                     false,
-                    'failed! policy not exists',
+                    'Policy Id is required',
                     404,
                     null,
                     null,
                     'insurance-policy/getInsurancePolicyDetails'
                 );
             }
-            // console.log("here is backe3n ", policyId, policy.policyType);
+            // console.log('here is backend policy ', policy);
+            // console.log('here is backe3n ', policyId, policy.policyType);
 
-            const query = 'CALL get_insurancePolicyDetails(?, ?)';
+            const query = 'CALL get_insurancePolicyDetails(?)';
 
-            const result = await this._policyRepo.query(query, [policyId, policy.policyType?.insuranceTypes?.code]);
+            const result = await this._policyRepo.query(query, [policyId]);
             const policyDetails = result[0][0];
-            // console.log('policy details 1', policyDetails);
+            console.log('policy details 1', policyDetails);
+            const returnMsz = result[1][0].RETURNMSZ;
+            if (returnMsz !== 'SUCCESS') {
+                return standardResponse(
+                    false,
+                    returnMsz,
+                    404,
+                    null,
+                    null,
+                    'insurance-policy/getInsurancePolicyDetails'
+                );
+            }
+            console.log('policy details 1', returnMsz);
+            //  policy details 1 [ { RETURNMSZ: 'SUCCESS' } ]
 
             if (policyDetails.claimProcess) {
                 try {
@@ -340,7 +354,7 @@ export class InsurancePolicyService {
         } catch (error) {
             res = standardResponse(
                 false,
-                'data fetch successfully',
+                'Internal server error',
                 500,
                 null,
                 error,
@@ -438,6 +452,7 @@ export class InsurancePolicyService {
             }
 
             // ------------------- RENEWAL LOGIC ------------------- //
+            // this logic is suspected to be changed
             if (ticket.ticketType === Ticket_Type.RENEWAL) {
                 if (!prevPolicy) {
                     return { status: false, message: 'No existing policy found for renewal', data: null };

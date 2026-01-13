@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { EscalationCase } from './entities/escalation-case.entity';
 import { InsuranceTicket } from '@modules/insurance-ticket/entities/insurance-ticket.entity';
 import { User } from '@modules/user/user.entity';
-import {  RoleId } from 'src/utils/app.utils';
+import { RoleId } from 'src/utils/app.utils';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { TicketNotificationService } from './ticket-notification-service';
 
@@ -93,7 +93,7 @@ export class InsuranceEscalationService {
             // Escalation conditions
             if (!isProductSuggested) {
                 escalation.notifiedToHigherStaff = true;
-                escalation.reasonNotified = 'Agent failed to suggest product or inform client';
+                escalation.reasonNotified = 'Staff failed to suggest product or inform customer';
                 escalation.escalatedOn = new Date();
                 caseEntity.caseStatus = 'closed';
             }
@@ -122,7 +122,7 @@ export class InsuranceEscalationService {
                     relations: ['userType', 'branch']
                 });
 
-                const message = `Ticket ${ticket.ticketNumber} Agent failed to suggest product or inform customer.`;
+                const message = `Ticket ${ticket.ticketNumber} Staff failed to suggest product or inform customer.`;
 
                 await Promise.all(
                     productHeads.map((head) =>
@@ -216,7 +216,13 @@ export class InsuranceEscalationService {
     async updateTelliCommEscalationDetails(body: any, req: any): Promise<any> {
         try {
             const { caseId, toldOtherProducts, reasonNotified } = body;
-
+            if (toldOtherProducts === undefined || toldOtherProducts === null) {
+                return {
+                    status: 'error',
+                    message: 'Please select response',
+                    data: null
+                };
+            }
             const caseEntity = await this.caseRepo.findOne({
                 where: { id: caseId },
                 relations: ['ticket']
@@ -237,17 +243,25 @@ export class InsuranceEscalationService {
             // console.log('loggedInUser in proposer', loggedInUser.id);
             // console.log('ticket id in update telli', caseEntity.ticket);
 
-            const ticket = await this.ticketRepo.findOne({ where: { id: caseEntity.ticket.id }, relations: ['branch'] });
+            const ticket = await this.ticketRepo.findOne({
+                where: { id: caseEntity.ticket.id },
+                relations: ['branch']
+            });
 
             if (!ticket) {
                 throw new Error('Ticket not found');
             }
+            // console.log('update telli comunication', toldOtherProducts, reasonNotified);
+
             const query = 'call update_telliCommEscalation(?, ?, ?)';
 
             const result = await this.caseRepo.query(query, [caseId, toldOtherProducts, reasonNotified]);
+            console.log('after restult', result[0][0]);
+
             if (result[0][0].status === 1) {
                 if (!toldOtherProducts) {
                     // sendNotificationToManager(caseEntity); // optional external logic
+                    // console.log('in if conditions', toldOtherProducts, ticket.branch.id);
 
                     const productHeads = await this.userRepo.find({
                         where: {
@@ -261,9 +275,10 @@ export class InsuranceEscalationService {
                         },
                         relations: ['userType', 'branch']
                     });
-                    //   console.log("in sclation service product head", productHeads)
+                    // console.log('in sclation service product head', productHeads);
                     for (const head of productHeads) {
-                        const message = `Ticket ${ticket.ticketNumber} Agent is not suggest any product to customer.`;
+                        const message = `Ticket ${ticket.ticketNumber} Staff is not suggest any product to customer.`;
+                        // console.log('escalation message to head', message);
                         await this.notificationService.createAndSendEscalationNotification(
                             ticket,
                             'Telecommunication',
@@ -409,5 +424,4 @@ export class InsuranceEscalationService {
             throw new Error(error.message || 'Something went wrong');
         }
     }
-    
 }

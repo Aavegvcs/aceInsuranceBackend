@@ -32,6 +32,7 @@ import { InsuranceFeatures } from '@modules/insurance-features/entities/insuranc
 import { ProductFeatures } from '@modules/insurance-features/entities/product-features.entity';
 import { ProductWaitingPeriod } from '@modules/insurance-features/entities/product-waiting-period.entity';
 import { InsuranceWaitingPeriod } from '@modules/insurance-features/entities/insurance-waiting-period.entity';
+import { Console } from 'console';
 
 @Injectable()
 export class InsuranceProductService {
@@ -604,7 +605,10 @@ export class InsuranceProductService {
             console.log('reqBody', reqBody);
 
             const query = 'CALL get_ProductByType(?, ?)';
-            const result = await this.companyRepo.query(query, [reqBody.insuranceCompanyId, reqBody.insuranceSubTypeId]);
+            const result = await this.companyRepo.query(query, [
+                reqBody.insuranceCompanyId,
+                reqBody.insuranceSubTypeId
+            ]);
 
             if (!result || result.length === 0) {
                 throw new Error(`No products found for company with ID ${reqBody.insuranceCompanyId}`);
@@ -900,9 +904,9 @@ export class InsuranceProductService {
     }
 
     async getProductForSelection(reqBody: any): Promise<any> {
-        const query = 'CALL get_productForSelection(?)';
+        const query = 'CALL get_productForSelection(?, ?)';
 
-        const result = await this.productRepo.query(query, [reqBody.ticketId]);
+        const result = await this.productRepo.query(query, [reqBody.ticketId, reqBody.quotationId]);
         // console.log('data is product', result[0]);
         let returnData = null;
         const response = {
@@ -1180,21 +1184,32 @@ export class InsuranceProductService {
             if (!insuranceCompany) {
                 return standardResponse(false, 'Invalid Insurance Company', 400, null);
             }
+
             const incomingNames = data.map((i) => i.name?.trim());
+            // console.log('incoming names --------', incomingNames, insuranceCompany);
+
             const existingProducts = await this.productRepo.find({
                 where: {
                     name: In(incomingNames),
-                    insuranceCompanyId: insuranceCompany
-                }
+                    insuranceCompanyId: { id: insuranceCompany.id }
+                },
+                relations: ['insuranceCompanyId']
             });
 
+            // console.log(
+            //     'existing products',
+            //     existingProducts.map((p) => p)
+            // );
+
             const existingSet = new Set(existingProducts.map((p) => `${p.name}-${p.insuranceCompanyId.id}`));
+            // console.log('existing set is here ---------', existingSet);
 
             let successCount = 0;
 
             for (let i = 0; i < data.length; i++) {
                 const item = data[i];
                 const rowIndex = startIndex + i + 1;
+                // console.log('processing row', rowIndex, item);
 
                 try {
                     if (!item.name || !item['Insurance Type']) {
@@ -1202,6 +1217,7 @@ export class InsuranceProductService {
                     }
 
                     const key = `${item.name}-${incomingCompany}`;
+                    // console.log('key is here', key);
                     if (existingSet.has(key)) {
                         failed.push({
                             index: rowIndex,
@@ -1210,6 +1226,8 @@ export class InsuranceProductService {
                         });
                         continue;
                     }
+                    // console.log('insurance faild data', failed);
+
                     const insuranceTypeMaster = await this.insuranceTypeRepo.findOne({
                         where: { code: item['Insurance Type'] }
                     });
@@ -1241,8 +1259,9 @@ export class InsuranceProductService {
 
                     const allFeatureNames = [
                         ...parseFeatures(item['Basic Features']),
-                        ...parseFeatures(item['AddOn features'])
+                        ...parseFeatures(item['AddOn Features'])
                     ];
+                    // console.log('all features', allFeatureNames);
 
                     if (allFeatureNames.length > 0) {
                         const featureMasters = await this.insuranceFeaturesRepo.find({
@@ -1251,6 +1270,7 @@ export class InsuranceProductService {
                                 insuranceTypes: insuranceTypeMaster
                             }
                         });
+                        // console.log('features masters------', featureMasters);
 
                         for (const feature of featureMasters) {
                             await this.productFeaturesRepo.save(
@@ -1307,8 +1327,14 @@ export class InsuranceProductService {
                     });
                 }
             }
-            return standardResponse(true, 'Bulk upload completed', 202, {
-                successCount,
+            const message =
+                successCount > 0 && failed.length > 0
+                    ? 'Bulk upload partially successful'
+                    : successCount === 0 && failed.length > 0
+                      ? 'Bulk upload failed'
+                      : 'Bulk upload successful';
+            return standardResponse(true, message, 202, {
+                message,
                 failedCount: failed.length,
                 failed
             });

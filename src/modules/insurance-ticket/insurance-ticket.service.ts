@@ -1505,7 +1505,6 @@ export class InsuranceTicketService {
                     ticket.nextStepStart = Current_Step.PAYMENT_CONFIRMED;
                     ticket.paymentRemarks = paymentRemarks;
                     ticket.nextStepDeadline = addHours(4);
-                    // ticket.nextStepDeadline = twoMinutesLater;
 
                     break;
 
@@ -1520,7 +1519,6 @@ export class InsuranceTicketService {
                     ticket.currentStepStart = Current_Step.PAYMENT_DENIED;
                     ticket.nextStepStart = Current_Step.PAYMENT_LINK_GENERATED;
                     ticket.paymentRemarks = paymentRemarks;
-                    // ticket.nextStepDeadline = addHours(24);
                     break;
 
                 case Current_Step.PAYMENT_CONFIRMED:
@@ -1586,7 +1584,6 @@ export class InsuranceTicketService {
                     ticket.currentStepStart = Current_Step.POLICY_RECEIVED;
                     ticket.nextStepStart = Current_Step.POLICY_DELIVERED;
                     ticket.policyProvisionRemarks = policyProvisionRemarks;
-                    // ticket.nextStepDeadline = addHours(24); // add existing
                     break;
                 case Current_Step.POLICY_DELIVERED:
                     if (ticket.currentStepStart !== Current_Step.POLICY_RECEIVED) {
@@ -1811,7 +1808,7 @@ export class InsuranceTicketService {
             if (existingSubtype) {
                 return standardResponse(
                     false,
-                    'Feature already exists',
+                    'Subtype already exists',
                     409,
                     null,
                     null,
@@ -1832,7 +1829,7 @@ export class InsuranceTicketService {
 
             return standardResponse(
                 true,
-                'Insurance feature created successfully',
+                'Subtype created successfully',
                 201,
                 newSubtype,
                 null,

@@ -42,6 +42,7 @@ import { RedisModule } from '@modules/redis/redis.module';
 import { InsurancePolicyModule } from '@modules/insurance-policy/insurance-policy.module';
 import { InsuranceClaimModule } from '@modules/insurance-claim/insurance-claim.module';
 import { InsuranceFeaturesModule } from '@modules/insurance-features/insurance-features.module';
+import { EndorsementModule } from '@modules/insurance-endorsement/endorsement.module';
 @Module({
     imports: [
         AwsModule,
@@ -72,6 +73,7 @@ import { InsuranceFeaturesModule } from '@modules/insurance-features/insurance-f
         InsurancePolicyModule,
         InsuranceClaimModule,
         InsuranceFeaturesModule,
+        EndorsementModule,
 
         BullModule.forRoot({
             redis: {

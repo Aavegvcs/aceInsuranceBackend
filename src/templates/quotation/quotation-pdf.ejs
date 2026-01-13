@@ -1,327 +1,171 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8" />
   <style>
     /* body { font-family: Arial; font-size: 12px;  } */
-    /* body {font-family: Arial, Helvetica, sans-serif;
+      body {font-family: Arial, Helvetica, sans-serif;
   font-size: 12px; }
-   */
-    body {
-      font-family: "Liberation Sans", Arial, Helvetica, sans-serif;
-      font-size: 12px;
-      line-height: 1.4;
-    }
+  
 
-    .center {
-      text-align: center;
-    }
-
-    .bold {
-      font-weight: bold;
-    }
-
-    /* table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-     */
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      /* font-size: 12px; */
-      table-layout: fixed;
-    }
-
-    /* th, td { border: 1px solid #ccc; padding: 5px; text-align: center; } */
-    th,
-    td {
-      padding: 6px 8px;
-      font-size: 12px;
-       word-wrap: break-word;
-    }
-
-    th {
-      background: #f2f2f2;
-      font-weight: bold;
-    }
-
-    .left {
-      text-align: left;
-    }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    
+    th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
+    th { background: #f2f2f2; }
+    .left { text-align: left; }
 
     .header {
-      position: relative;
-      width: 100%;
-      min-height: 40px;
-      margin-bottom: 20px;
-    }
+  position: relative;
+  width: 100%;
+  min-height: 40px;
+  margin-bottom: 20px;
+}
 
-    .header-right {
-      position: absolute;
-      top: 0;
-      right: 0;
-      text-align: right;
-      font-size: 12px;
-      color: #666;
-    }
+.header-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  text-align: right;
+  font-size: 12px;
+  color: #666;
+}
+.quotation-title {
+  color: #0055A5;          /* same as fillColor */
+  font-size: 18px;         /* same as fontSize */
+  font-weight: 700;        /* bold */
+  margin: 20px 0 6px 0px; /* matches x=50 */
+}
 
-    .quotation-title {
-      color: #0055A5;
-      /* same as fillColor */
-      font-size: 18px;
-      /* same as fontSize */
-      font-weight: 700;
-      /* bold */
-      margin: 20px 0 6px 0px;
-      /* matches x=50 */
-    }
+.quotation-line {
+  position: relative;
+  height: 1px;             /* lineWidth(2) */
+  background-color: #0055A5; /* colors.accent */
+  /* margin-left: 50px; */
+  width: calc(100% - 100px); /* approx 50 → 560 */
+}
 
-    .quotation-line {
-      position: relative;
-      height: 1px;
-      /* lineWidth(2) */
-      background-color: #0055A5;
-      /* colors.accent */
-      /* margin-left: 50px; */
-      width: calc(100% - 100px);
-      /* approx 50 → 560 */
-    }
+
   </style>
 </head>
-
 <body>
-  <div class="header">
-    <!-- LEFT: Logo -->
-    <img src="data:image/png;base64,<%= logoBase64 %>" width="160" height="28"
-      style="width:160px; height:28px; display:block;" />
+<div class="header">
+  <!-- LEFT: Logo -->
+  <img
+    src="data:image/png;base64,<%= logoBase64 %>"
+    width="160"
+    height="28"
+    style="width:160px; height:28px; display:block;"
+  />
 
-    <!-- RIGHT: Generated / Validity -->
-    <div class="header-right">
-      Generated: <%= generatedOn %><br />
-        Validity: <%= validity %>
-    </div>
+  <!-- RIGHT: Generated / Validity -->
+  <div class="header-right">
+    Generated: <%= generatedOn %><br/>
+    Validity: <%= validity %>
   </div>
+</div>
 
-  <div class="quotation-title">
-    INSURANCE QUOTATION
-  </div>
-  <div class="quotation-line"></div>
-  <p>
-    `Dear <b>
-      <%= proposer.name %>
-    </b>,<br />
-    Warm greetings from Acumen! We truly appreciate the trust you've placed in us to safeguard your family’s health and
-    wellbeing.`
-  </p>
+<div class="quotation-title">
+  INSURANCE QUOTATION
+</div>
+<div class="quotation-line"></div>
+<p>
+  `Dear <b><%= proposer.name %></b>,<br/>
+  Warm greetings from Acumen! We truly appreciate the trust you've placed in us to safeguard your family’s health and wellbeing.`
+</p>
 
-  <h4>Proposer Information</h4>
-  <table>
-    <tr>
-      <td>Name</td>
-      <td>
-        <%= proposer.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>Mobile No</td>
-      <td>
-        <%= proposer.mobile %>
-      </td>
-    </tr>
-    <tr>
-      <td>Email ID</td>
-      <td>
-        <%= proposer.email %>
-      </td>
-    </tr>
-    <tr>
-      <td>PIN Code</td>
-      <td>
-        <%= proposer.pincode %>
-      </td>
-    </tr>
-    <tr>
-      <td>DOB</td>
-      <td>
-        <%= proposer.dob %>
-      </td>
-    </tr>
-    <tr>
-      <td>Gender</td>
-      <td>
-        <%= proposer.gender %>
-      </td>
-    </tr>
-    <tr>
-      <td>Height</td>
-      <td>
-        <%= proposer.height %>
-      </td>
-    </tr>
-    <tr>
-      <td>Weight</td>
-      <td>
-        <%= proposer.weight %>
-      </td>
-    </tr>
-    <tr>
-      <td>PED Declared</td>
-      <td>
-        <%= proposer.ped %>
-      </td>
-    </tr>
-    <tr>
-      <td>Ticket No</td>
-      <td>
-        <%= proposer.ticketNo %>
-      </td>
-    </tr>
-    <tr>
-      <td>Quotation No</td>
-      <td>
-        <%= proposer.quotationNo %>
-      </td>
-    </tr>
-    <tr>
-      <td>Insurance Type</td>
-      <td>
-        <%= proposer.insuranceType %>
-      </td>
-    </tr>
-    <tr>
-      <td>Date</td>
-      <td>
-        <%= proposer.date %>
-      </td>
-    </tr>
-  </table>
+<h4>Proposer Information</h4>
+<table>
+<tr><td>Name</td><td><%= proposer.name %></td></tr>
+<tr><td>Mobile No</td><td><%= proposer.mobile %></td></tr>
+<tr><td>Email ID</td><td><%= proposer.email %></td></tr>
+<tr><td>PIN Code</td><td><%= proposer.pincode %></td></tr>
+<tr><td>DOB</td><td><%= proposer.dob %></td></tr>
+<tr><td>Gender</td><td><%= proposer.gender %></td></tr>
+<tr><td>Height</td><td><%= proposer.height %></td></tr>
+<tr><td>Weight</td><td><%= proposer.weight %></td></tr>
+<tr><td>PED Declared</td><td><%= proposer.ped %></td></tr>
+<tr><td>Ticket No</td><td><%= proposer.ticketNo %></td></tr>
+<tr><td>Quotation No</td><td><%= proposer.quotationNo %></td></tr>
+<tr><td>Insurance Type</td><td><%= proposer.insuranceType %></td></tr>
+<tr><td>Date</td><td><%= proposer.date %></td></tr>
+</table>
 
-  <h4>Dependent Details</h4>
-  <table>
-    <tr>
-      <th>Name</th>
-      <th>DOB</th>
-      <th>Gender</th>
-      <th>Height</th>
-      <th>Weight</th>
-    </tr>
-    <% dependents.forEach(d=> { %>
-      <tr>
-        <td>
-          <%= d.name %>
-        </td>
-        <td>
-          <%= d.dob %>
-        </td>
-        <td>
-          <%= d.gender %>
-        </td>
-        <td>
-          <%= d.height %>
-        </td>
-        <td>
-          <%= d.weight %>
-        </td>
-      </tr>
-      <% }) %>
-  </table>
+<h4>Dependent Details</h4>
+<table>
+<tr>
+  <th>Name</th><th>DOB</th><th>Gender</th><th>Height</th><th>Weight</th>
+</tr>
+<% dependents.forEach(d => { %>
+<tr>
+  <td><%= d.name %></td>
+  <td><%= d.dob %></td>
+  <td><%= d.gender %></td>
+  <td><%= d.height %></td>
+  <td><%= d.weight %></td>
+</tr>
+<% }) %>
+</table>
 
-  <h4>Quotation Comparison</h4>
-  <table>
-    <tr>
-      <th>Details</th>
-      <th>Quote 1</th>
-      <th>Quote 2</th>
-      <th>Quote 3</th>
-    </tr>
-    <tr>
-      <td>Company</td>
-      <% quotes.forEach(q=> { %><td>
-          <%= q.company %>
-        </td>
-        <% }) %>
-    </tr>
-    <tr>
-      <td>Product</td>
-      <% quotes.forEach(q=> { %><td>
-          <%= q.product %>
-        </td>
-        <% }) %>
-    </tr>
-    <tr>
-      <td>Coverage</td>
-      <% quotes.forEach(q=> { %><td>
-          <%= q.coverage %>
-        </td>
-        <% }) %>
-    </tr>
-    <tr>
-      <td>Premium</td>
-      <% quotes.forEach(q=> { %><td>
-          <%= q.premium %>
-        </td>
-        <% }) %>
-    </tr>
-  </table>
+<h4>Quotation Comparison</h4>
+<table>
+<tr>
+  <th>Details</th>
+  <th>Quote 1</th>
+  <th>Quote 2</th>
+  <th>Quote 3</th>
+</tr>
+<tr>
+  <td>Company</td>
+  <% quotes.forEach(q => { %><td><%= q.company %></td><% }) %>
+</tr>
+<tr>
+  <td>Product</td>
+  <% quotes.forEach(q => { %><td><%= q.product %></td><% }) %>
+</tr>
+<tr>
+  <td>Coverage</td>
+  <% quotes.forEach(q => { %><td><%= q.coverage %></td><% }) %>
+</tr>
+<tr>
+  <td>Premium</td>
+  <% quotes.forEach(q => { %><td><%= q.premium %></td><% }) %>
+</tr>
+</table>
 
-  <h4>Basic Features</h4>
-  <table>
-    <tr>
-      <th>Feature</th>
-      <th>Q1</th>
-      <th>Q2</th>
-      <th>Q3</th>
-    </tr>
-    <% basicFeatures.forEach(f=> { %>
-      <tr>
-        <td class="left">
-          <%= f.name %>
-        </td>
-        <td>
-          <%= f.q1 ? '✓' : '×' %>
-        </td>
-        <td>
-          <%= f.q2 ? '✓' : '×' %>
-        </td>
-        <td>
-          <%= f.q3 ? '✓' : '×' %>
-        </td>
-      </tr>
-      <% }) %>
-  </table>
+<h4>Basic Features</h4>
+<table>
+<tr><th>Feature</th><th>Q1</th><th>Q2</th><th>Q3</th></tr>
+<% basicFeatures.forEach(f => { %>
+<tr>
+  <td class="left"><%= f.name %></td>
+  <td><%= f.q1 ? '✓' : '×' %></td>
+  <td><%= f.q2 ? '✓' : '×' %></td>
+  <td><%= f.q3 ? '✓' : '×' %></td>
+</tr>
+<% }) %>
+</table>
 
-  <h4>Add-on Features</h4>
-  <table>
-    <tr>
-      <th>Feature</th>
-      <th>Q1</th>
-      <th>Q2</th>
-      <th>Q3</th>
-    </tr>
-    <% addOnFeatures.forEach(f=> { %>
-      <tr>
-        <td class="left">
-          <%= f.name %>
-        </td>
-        <td>
-          <%= f.q1 ? '✓' : '×' %>
-        </td>
-        <td>
-          <%= f.q2 ? '✓' : '×' %>
-        </td>
-        <td>
-          <%= f.q3 ? '✓' : '×' %>
-        </td>
-      </tr>
-      <% }) %>
-  </table>
+<h4>Add-on Features</h4>
+<table>
+<tr><th>Feature</th><th>Q1</th><th>Q2</th><th>Q3</th></tr>
+<% addOnFeatures.forEach(f => { %>
+<tr>
+  <td class="left"><%= f.name %></td>
+  <td><%= f.q1 ? '✓' : '×' %></td>
+  <td><%= f.q2 ? '✓' : '×' %></td>
+  <td><%= f.q3 ? '✓' : '×' %></td>
+</tr>
+<% }) %>
+</table>
 
-  <p class="center">
-    <%= footer.phone %><br />
-      <%= footer.location %>
-  </p>
+<p class="center">
+  <%= footer.phone %><br/>
+  <%= footer.location %>
+</p>
 
-  <p class="center">© 2025 Acumen Insurance. All rights reserved.</p>
+<p class="center">© 2025 Acumen Insurance. All rights reserved.</p>
 
 </body>
-
 </html>

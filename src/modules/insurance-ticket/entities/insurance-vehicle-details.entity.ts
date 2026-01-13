@@ -68,6 +68,9 @@ export class InsuranceVehicleDetails extends BaseEntity {
     @Column({ name: 'no_claim_bonus_on_prePolicy', nullable: true })
     noClaimBonusOnPrePolicy: number;
  
+    @Column({ name: 'cc', nullable: true })
+    cc: number;
+ 
     @Column({ name: 'making_year', nullable: true })
     makingYear: string;
 
