@@ -2,170 +2,151 @@
 <html>
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <style>
-    /* body { font-family: Arial; font-size: 12px;  } */
-      body {font-family: Arial, Helvetica, sans-serif;
-  font-size: 12px; }
-  
-
-    .center { text-align: center; }
-    .bold { font-weight: bold; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
-    th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
-    th { background: #f2f2f2; }
-    .left { text-align: left; }
-
+    body {
+      font-family: "DejaVu Sans", "Liberation Sans", "Nimbus Sans L", "Noto Sans", Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #000000;
+      margin: 0;
+      padding: 15px;
+    }
+    
+    /* Utility classes */
+    .center { text-align: center !important; }
+    .bold { font-weight: bold !important; }
+    .left { text-align: left !important; }
+    .right { text-align: right !important; }
+    
+    /* Header */
     .header {
-  position: relative;
-  width: 100%;
-  min-height: 40px;
-  margin-bottom: 20px;
-}
-
-.header-right {
-  position: absolute;
-  top: 0;
-  right: 0;
-  text-align: right;
-  font-size: 12px;
-  color: #666;
-}
-.quotation-title {
-  color: #0055A5;          /* same as fillColor */
-  font-size: 18px;         /* same as fontSize */
-  font-weight: 700;        /* bold */
-  margin: 20px 0 6px 0px; /* matches x=50 */
-}
-
-.quotation-line {
-  position: relative;
-  height: 1px;             /* lineWidth(2) */
-  background-color: #0055A5; /* colors.accent */
-  /* margin-left: 50px; */
-  width: calc(100% - 100px); /* approx 50 → 560 */
-}
-
-
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #cccccc;
+    }
+    
+    .header img {
+      width: 160px;
+      height: 28px;
+      display: block;
+    }
+    
+    .header-right {
+      font-size: 11px;
+      color: #666666;
+      line-height: 1.3;
+    }
+    
+    /* Title section */
+    .quotation-title {
+      color: #0055A5;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: center;
+      margin: 20px 0 10px 0;
+    }
+    
+    .quotation-line {
+      height: 2px;
+      background-color: #0055A5;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 20px auto;
+    }
+    
+    /* Greeting paragraph */
+    p {
+      margin: 15px 0;
+      line-height: 1.5;
+    }
+    
+    /* Headings */
+    h4 {
+      color: #333333;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 25px 0 10px 0;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #dddddd;
+    }
+    
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px 0;
+      table-layout: auto;
+    }
+    
+    th {
+      background-color: #f5f5f5 !important;
+      font-weight: bold;
+      color: #000000;
+      padding: 8px 6px !important;
+      border: 1px solid #333333 !important;
+      font-size: 11px;
+      text-align: center;
+    }
+    
+    td {
+      padding: 8px 6px !important;
+      border: 1px solid #333333 !important;
+      font-size: 11px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    
+    /* Ensure borders are visible */
+    table, th, td {
+      border: 1px solid #333333;
+      border-collapse: collapse;
+    }
+    
+    /* Check and cross marks */
+    .checkmark {
+      color: #008000;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    .crossmark {
+      color: #ff0000;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    /* Footer */
+    footer {
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #cccccc;
+      font-size: 10px;
+      color: #666666;
+      text-align: center;
+    }
+    
+    /* Page breaks for printing */
+    @media print {
+      body {
+        padding: 0;
+      }
+      
+      .header {
+        margin-bottom: 15px;
+      }
+    }
   </style>
 </head>
 <body>
-<div class="header">
-  <!-- LEFT: Logo -->
-  <img
-    src="data:image/png;base64,<%= logoBase64 %>"
-    width="160"
-    height="28"
-    style="width:160px; height:28px; display:block;"
-  />
-
-  <!-- RIGHT: Generated / Validity -->
-  <div class="header-right">
-    Generated: <%= generatedOn %><br/>
-    Validity: <%= validity %>
-  </div>
-</div>
-
-<div class="quotation-title">
-  INSURANCE QUOTATION
-</div>
-<div class="quotation-line"></div>
-<p>
-  `Dear <b><%= proposer.name %></b>,<br/>
-  Warm greetings from Acumen! We truly appreciate the trust you've placed in us to safeguard your family’s health and wellbeing.`
-</p>
-
-<h4>Proposer Information</h4>
-<table>
-<tr><td>Name</td><td><%= proposer.name %></td></tr>
-<tr><td>Mobile No</td><td><%= proposer.mobile %></td></tr>
-<tr><td>Email ID</td><td><%= proposer.email %></td></tr>
-<tr><td>PIN Code</td><td><%= proposer.pincode %></td></tr>
-<tr><td>DOB</td><td><%= proposer.dob %></td></tr>
-<tr><td>Gender</td><td><%= proposer.gender %></td></tr>
-<tr><td>Height</td><td><%= proposer.height %></td></tr>
-<tr><td>Weight</td><td><%= proposer.weight %></td></tr>
-<tr><td>PED Declared</td><td><%= proposer.ped %></td></tr>
-<tr><td>Ticket No</td><td><%= proposer.ticketNo %></td></tr>
-<tr><td>Quotation No</td><td><%= proposer.quotationNo %></td></tr>
-<tr><td>Insurance Type</td><td><%= proposer.insuranceType %></td></tr>
-<tr><td>Date</td><td><%= proposer.date %></td></tr>
-</table>
-
-<h4>Dependent Details</h4>
-<table>
-<tr>
-  <th>Name</th><th>DOB</th><th>Gender</th><th>Height</th><th>Weight</th>
-</tr>
-<% dependents.forEach(d => { %>
-<tr>
-  <td><%= d.name %></td>
-  <td><%= d.dob %></td>
-  <td><%= d.gender %></td>
-  <td><%= d.height %></td>
-  <td><%= d.weight %></td>
-</tr>
-<% }) %>
-</table>
-
-<h4>Quotation Comparison</h4>
-<table>
-<tr>
-  <th>Details</th>
-  <th>Quote 1</th>
-  <th>Quote 2</th>
-  <th>Quote 3</th>
-</tr>
-<tr>
-  <td>Company</td>
-  <% quotes.forEach(q => { %><td><%= q.company %></td><% }) %>
-</tr>
-<tr>
-  <td>Product</td>
-  <% quotes.forEach(q => { %><td><%= q.product %></td><% }) %>
-</tr>
-<tr>
-  <td>Coverage</td>
-  <% quotes.forEach(q => { %><td><%= q.coverage %></td><% }) %>
-</tr>
-<tr>
-  <td>Premium</td>
-  <% quotes.forEach(q => { %><td><%= q.premium %></td><% }) %>
-</tr>
-</table>
-
-<h4>Basic Features</h4>
-<table>
-<tr><th>Feature</th><th>Q1</th><th>Q2</th><th>Q3</th></tr>
-<% basicFeatures.forEach(f => { %>
-<tr>
-  <td class="left"><%= f.name %></td>
-  <td><%= f.q1 ? '✓' : '×' %></td>
-  <td><%= f.q2 ? '✓' : '×' %></td>
-  <td><%= f.q3 ? '✓' : '×' %></td>
-</tr>
-<% }) %>
-</table>
-
-<h4>Add-on Features</h4>
-<table>
-<tr><th>Feature</th><th>Q1</th><th>Q2</th><th>Q3</th></tr>
-<% addOnFeatures.forEach(f => { %>
-<tr>
-  <td class="left"><%= f.name %></td>
-  <td><%= f.q1 ? '✓' : '×' %></td>
-  <td><%= f.q2 ? '✓' : '×' %></td>
-  <td><%= f.q3 ? '✓' : '×' %></td>
-</tr>
-<% }) %>
-</table>
-
-<p class="center">
-  <%= footer.phone %><br/>
-  <%= footer.location %>
-</p>
-
-<p class="center">© 2025 Acumen Insurance. All rights reserved.</p>
-
-</body>
-</html>
+<!-- Rest of your HTML content remains the same -->

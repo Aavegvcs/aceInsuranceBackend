@@ -2973,97 +2973,209 @@ export class InsuranceQuotationService {
     //     });
     // }
 
-    async quotationPdf(data: any): Promise<Buffer> {
-        const logoPath = path.join(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
+    // async quotationPdf(data: any): Promise<Buffer> {
+    //     const logoPath = path.join(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
 
-        const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+    //     const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
-        const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
+    //     const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
 
-        const html: string = await ejs.renderFile(templatePath, {
-            ...data,
-            logoBase64
+    //     const html: string = await ejs.renderFile(templatePath, {
+    //         ...data,
+    //         logoBase64
+    //     });
+
+    //     if (!html || html.trim().length === 0) {
+    //         throw new Error('Rendered HTML is empty');
+    //     }
+
+    //     const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    //     const tmpDir = os.tmpdir();
+    //     const htmlPath = path.join(tmpDir, `quotation-${uid}.html`);
+    //     const pdfPath = path.join(tmpDir, `quotation-${uid}.pdf`);
+
+    //     fs.writeFileSync(htmlPath, html, 'utf8');
+
+    //     const wkhtmlPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
+
+    //     return new Promise((resolve, reject) => {
+    //         // const child = spawn(wkhtmlPath, ['--enable-local-file-access', htmlPath, pdfPath], { shell: false });
+    //         const child = spawn(
+    //             wkhtmlPath,
+    //             [
+    //                 '--dpi',
+    //                 '96',
+    //                 '--zoom',
+    //                 '1',
+    //                 '--page-size',
+    //                 'A4',
+    //                 '--margin-top',
+    //                 '10mm',
+    //                 '--margin-bottom',
+    //                 '10mm',
+    //                 '--margin-left',
+    //                 '10mm',
+    //                 '--margin-right',
+    //                 '10mm',
+    //                 '--disable-smart-shrinking',
+    //                 '--enable-local-file-access',
+    //                 htmlPath,
+    //                 pdfPath
+    //             ],
+    //             { shell: false }
+    //         );
+
+    //         let stderr = '';
+
+    //         child.stderr.on('data', (d) => {
+    //             stderr += d.toString();
+    //         });
+
+    //         child.on('error', (err) => {
+    //             cleanup();
+    //             reject(err);
+    //         });
+
+    //         child.on('close', (code) => {
+    //             try {
+    //                 if (code !== 0) {
+    //                     throw new Error(stderr || 'wkhtmltopdf failed');
+    //                 }
+
+    //                 if (!fs.existsSync(pdfPath)) {
+    //                     throw new Error('PDF not created');
+    //                 }
+
+    //                 const pdfBuffer = fs.readFileSync(pdfPath);
+
+    //                 if (!pdfBuffer || pdfBuffer.length === 0) {
+    //                     throw new Error('Generated PDF is empty');
+    //                 }
+
+    //                 resolve(pdfBuffer);
+    //             } catch (err) {
+    //                 reject(err);
+    //             } finally {
+    //                 cleanup();
+    //             }
+    //         });
+
+    //         function cleanup() {
+    //             if (fs.existsSync(htmlPath)) fs.unlinkSync(htmlPath);
+    //             if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    //         }
+    //     });
+    // }
+async quotationPdf(data: any): Promise<Buffer> {
+    const logoPath = path.join(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
+    const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+
+    const templatePath = path.join(__dirname, '../../templates/quotation/quotation-pdf.ejs');
+    const html: string = await ejs.renderFile(templatePath, {
+        ...data,
+        logoBase64
+    });
+
+    console.log('HTML generated successfully, length:', html.length);
+
+    const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const tmpDir = os.tmpdir();
+    const htmlPath = path.join(tmpDir, `quotation-${uid}.html`);
+    const pdfPath = path.join(tmpDir, `quotation-${uid}.pdf`);
+
+    fs.writeFileSync(htmlPath, html, 'utf8');
+    console.log('HTML written to:', htmlPath);
+
+    const wkhtmlPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
+
+    return new Promise((resolve, reject) => {
+        // Use minimal, reliable options
+        const args = [
+            '--quiet',
+            '--dpi', '96',
+            '--page-size', 'A4',
+            '--margin-top', '15mm',
+            '--margin-bottom', '15mm',
+            '--margin-left', '10mm',
+            '--margin-right', '10mm',
+            htmlPath,
+            pdfPath
+        ];
+
+        console.log('Running wkhtmltopdf with args:', args);
+
+        const child = spawn(wkhtmlPath, args, { 
+            shell: false,
+            stdio: ['pipe', 'pipe', 'pipe']
         });
 
-        if (!html || html.trim().length === 0) {
-            throw new Error('Rendered HTML is empty');
-        }
+        let stderr = '';
+        let stdout = '';
 
-        const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const tmpDir = os.tmpdir();
-        const htmlPath = path.join(tmpDir, `quotation-${uid}.html`);
-        const pdfPath = path.join(tmpDir, `quotation-${uid}.pdf`);
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
 
-        fs.writeFileSync(htmlPath, html, 'utf8');
+        child.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
 
-        const wkhtmlPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
+        child.on('error', (error) => {
+            console.error('Failed to start wkhtmltopdf:', error);
+            cleanup();
+            reject(error);
+        });
 
-        return new Promise((resolve, reject) => {
-            // const child = spawn(wkhtmlPath, ['--enable-local-file-access', htmlPath, pdfPath], { shell: false });
-            const child = spawn(
-                wkhtmlPath,
-                [
-                    '--dpi',
-                    '96',
-                    '--zoom',
-                    '1',
-                    '--page-size',
-                    'A4',
-                    '--margin-top',
-                    '10mm',
-                    '--margin-bottom',
-                    '10mm',
-                    '--margin-left',
-                    '10mm',
-                    '--margin-right',
-                    '10mm',
-                    '--disable-smart-shrinking',
-                    '--enable-local-file-access',
-                    htmlPath,
-                    pdfPath
-                ],
-                { shell: false }
-            );
+        child.on('close', (code) => {
+            console.log(`wkhtmltopdf exited with code: ${code}`);
+            
+            if (stderr) {
+                console.error('wkhtmltopdf stderr:', stderr);
+            }
+            
+            if (stdout) {
+                console.log('wkhtmltopdf stdout:', stdout);
+            }
 
-            let stderr = '';
-
-            child.stderr.on('data', (d) => {
-                stderr += d.toString();
-            });
-
-            child.on('error', (err) => {
-                cleanup();
-                reject(err);
-            });
-
-            child.on('close', (code) => {
-                try {
-                    if (code !== 0) {
-                        throw new Error(stderr || 'wkhtmltopdf failed');
-                    }
-
-                    if (!fs.existsSync(pdfPath)) {
-                        throw new Error('PDF not created');
-                    }
-
-                    const pdfBuffer = fs.readFileSync(pdfPath);
-
-                    if (!pdfBuffer || pdfBuffer.length === 0) {
-                        throw new Error('Generated PDF is empty');
-                    }
-
-                    resolve(pdfBuffer);
-                } catch (err) {
-                    reject(err);
-                } finally {
-                    cleanup();
+            try {
+                if (code !== 0) {
+                    throw new Error(`wkhtmltopdf failed with code ${code}: ${stderr}`);
                 }
-            });
 
-            function cleanup() {
-                if (fs.existsSync(htmlPath)) fs.unlinkSync(htmlPath);
-                if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+                if (!fs.existsSync(pdfPath)) {
+                    throw new Error(`PDF file not created at ${pdfPath}`);
+                }
+
+                const stats = fs.statSync(pdfPath);
+                console.log(`PDF file created, size: ${stats.size} bytes`);
+
+                if (stats.size === 0) {
+                    throw new Error('Generated PDF is empty');
+                }
+
+                const pdfBuffer = fs.readFileSync(pdfPath);
+                resolve(pdfBuffer);
+
+            } catch (error) {
+                console.error('Error processing PDF:', error);
+                reject(error);
+            } finally {
+                cleanup();
             }
         });
-    }
+
+        function cleanup() {
+            try {
+                if (fs.existsSync(htmlPath)) {
+                    fs.unlinkSync(htmlPath);
+                }
+                if (fs.existsSync(pdfPath)) {
+                    fs.unlinkSync(pdfPath);
+                }
+            } catch (error) {
+                console.error('Error during cleanup:', error);
+            }
+        }
+    });
+}
 }
