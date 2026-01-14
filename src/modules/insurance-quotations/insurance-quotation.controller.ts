@@ -23,12 +23,12 @@ export class InsuranceQuotationController {
     constructor(private readonly quotationService: InsuranceQuotationService) {}
 
     @UseGuards(JwtInsAuthGuard)
-    @Post('generateQuotation')
-    async generateQuotation(@Body() reqBody: any) {
+    @Post('createQuotation')
+    async createQuotation(@Body() reqBody: any) {
         try {
-            return await this.quotationService.generateQuotation(reqBody);
+            return await this.quotationService.createQuotation(reqBody);
         } catch (error) {
-            throw new HttpException('Failed to generate quotation', HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new HttpException('Failed to create quotation', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

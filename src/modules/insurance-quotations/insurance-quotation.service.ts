@@ -110,51 +110,41 @@ export class InsuranceQuotationService {
                     background: '#FFFFFF',
                     error: '#FF2C2C'
                 };
+
                 const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
                 // === Include Logo ===
                 const logoPath = fs.existsSync(path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG'))
-                    ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG'); // for dev
+                    ? path.resolve(__dirname, 'assets/images/ACUMEN-BLUE-LOGO.PNG')
+                    : path.resolve(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
 
-                // console.log('Resolved logo path:', logoPath);
-                // console.log('Exists?', fs.existsSync(logoPath));
                 // === Watermark logic ===
                 const watermarksPath = fs.existsSync(path.resolve(__dirname, 'assets/images/logo-accumen.png'))
-                    ? path.resolve(__dirname, 'assets/images/logo-accumen.png') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/logo-accumen.png'); // for dev
-
-                // console.log('watermarksPath logo path:', watermarksPath);
-                // console.log('Exists?', fs.existsSync(watermarksPath));
+                    ? path.resolve(__dirname, 'assets/images/logo-accumen.png')
+                    : path.resolve(__dirname, '../../assets/images/logo-accumen.png');
 
                 const locationPath = fs.existsSync(path.resolve(__dirname, 'assets/images/placeholder.png'))
-                    ? path.resolve(__dirname, 'assets/images/placeholder.png') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/placeholder.png'); // for dev
-                // console.log('placeholder logo path:', locationPath);
-                // console.log('Exists?', fs.existsSync(locationPath));
+                    ? path.resolve(__dirname, 'assets/images/placeholder.png')
+                    : path.resolve(__dirname, '../../assets/images/placeholder.png');
+
                 const phonePath = fs.existsSync(path.resolve(__dirname, 'assets/images/phone.png'))
-                    ? path.resolve(__dirname, 'assets/images/phone.png') // for build / Docker
-                    : path.resolve(__dirname, '../../assets/images/phone.png'); // for dev
+                    ? path.resolve(__dirname, 'assets/images/phone.png')
+                    : path.resolve(__dirname, '../../assets/images/phone.png');
 
                 function addWatermark() {
                     const pageWidth = doc.page.width;
                     const pageHeight = doc.page.height;
-
-                    // Logo size (adjust as needed)
                     const logoWidth = 200;
                     const logoHeight = 100;
-
-                    // Center position
                     const x = (pageWidth - logoWidth) / 2;
                     const y = (pageHeight - logoHeight) / 2;
 
-                    doc.opacity(0.1); // very faint watermark
+                    doc.opacity(0.1);
                     doc.image(watermarksPath, x, y, { width: logoWidth, height: logoHeight });
-                    doc.opacity(1); // reset opacity for normal content
+                    doc.opacity(1);
                 }
-                // Add watermark to first page
-                addWatermark();
 
-                // Automatically add watermark on every new page
+                addWatermark();
                 doc.on('pageAdded', () => {
                     addWatermark();
                 });
@@ -168,7 +158,6 @@ export class InsuranceQuotationService {
                 doc.font('DejaVuSans');
 
                 const buffers: Buffer[] = [];
-
                 doc.on('data', buffers.push.bind(buffers));
                 doc.on('end', () => resolve(Buffer.concat(buffers)));
                 doc.on('error', reject);
@@ -186,10 +175,7 @@ export class InsuranceQuotationService {
                     .andWhere('quotation.ticketId = :ticketId', { ticketId: parseInt(ticket.id) })
                     .getOne();
 
-                // console.log('line no 172 quotation details, ', quotation);
-
                 const ticketDetails = await this.quotationService.getTicketDetails(ticket);
-                // console.log('ticket details line no 190', ticketDetails);
 
                 const data = {
                     customerName: ticketDetails.data.insuranceUser.name,
@@ -208,7 +194,6 @@ export class InsuranceQuotationService {
                             ? ticketDetails.data?.medicalDetails?.weight || 0
                             : null
                     },
-
                     vehicleDetails: ticketDetails?.data?.vehicleDetails
                         ? {
                               vehicleNumber: ticketDetails.data.vehicleDetails?.vehicleNumber || 'N/A',
@@ -261,7 +246,6 @@ export class InsuranceQuotationService {
                         coverageIncluded: quote.coverageIncluded || 'N/A',
                         ncb: quote.ncb || 'N/A'
                     })),
-
                     validityDate: quotation.validityDate.toISOString().split('T')[0],
                     branch: {
                         name: ticketDetails.data?.branch?.ContactPerson,
@@ -269,67 +253,9 @@ export class InsuranceQuotationService {
                         address: ticketDetails.data?.branch?.address
                     }
                 };
-                //  console.log('line no 250 data is here', data);
 
-                // Step 1: Collect all features across products
-                // console.log('testing line no 268', ticket.insuranceSubType?.insuranceTypes?.code);
-
-                // const insuranceFeatures = await this.insurncetFeaturesRepo.find({
-                //     where: { isActive: true, insuranceTypes: ticket.insuranceSubType?.insuranceTypes?.code },
-                //     relations: ['insuranceTypes']
-                // });
-
-                // commented old code 23-12-2025
-                // const insuranceFeatures = await this.insurncetFeaturesRepo.find({
-                //     where: {
-                //         isActive: true,
-                //         insuranceTypes: {
-                //             code: ticket.insuranceSubType?.insuranceTypes?.code
-                //         }
-                //     },
-                //     relations: ['insuranceTypes']
-                // });
-
-                // console.log('line no 272 insurance features', insuranceFeatures);
-
-                // const basicFeatures: InsuranceFeatures[] = [];
-                // const addOnFeatures: InsuranceFeatures[] = [];
-
-                // Separate based on isStandard
-                // insuranceFeatures.forEach((feature) => {
-                //     if (feature.isStandard) {
-                //         basicFeatures.push(feature);
-                //     } else {
-                //         addOnFeatures.push(feature);
-                //     }
-                // });
-
-                // Split into basic and add-on based on name containing 'Cover' (assumption for categorization)
-                // Prepare final comparison data for basic
-                // const finalBasicData: { feature: string; quoteValues: string[] }[] = basicFeatures.map((feature) => {
-                //     return {
-                //         feature: feature.featuresName,
-                //         quoteValues: quotation.quotes.map((quote) => {
-                //             const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
-                //             return includedFeatures.includes(feature.id) ? '✓' : '×';
-                //         })
-                //     };
-                // });
-
-                // Prepare final comparison data for add-on
-                // const finalAddOnData: { feature: string; quoteValues: string[] }[] = addOnFeatures.map((feature) => {
-                //     return {
-                //         feature: feature.featuresName,
-                //         quoteValues: quotation.quotes.map((quote) => {
-                //             const includedFeatures = quote.quoteFeatures.map((qf) => qf.insuranceFeatures.id);
-                //             return includedFeatures.includes(feature.id) ? '✓' : '×';
-                //         })
-                //     };
-                // });
-
-                // --- new logic for product features
+                // === NEW CODE: Simplified feature collection ===
                 const productFeatureMap = new Map<number, InsuranceFeatures>();
-
                 quotation.quotes.forEach((quote) => {
                     quote.product?.productFeatures?.forEach((pf) => {
                         const feature = pf.insuranceFeatures;
@@ -341,8 +267,8 @@ export class InsuranceQuotationService {
 
                 const allProductFeatures = Array.from(productFeatureMap.values());
                 const basicFeatures = allProductFeatures.filter((feature) => feature.isStandard === true);
-
                 const addOnFeatures = allProductFeatures.filter((feature) => feature.isStandard === false);
+
                 const finalBasicData = basicFeatures.map((feature) => ({
                     feature: feature.featuresName,
                     quoteValues: quotation.quotes.map((quote) => {
@@ -350,6 +276,7 @@ export class InsuranceQuotationService {
                         return selectedFeatureIds.includes(feature.id) ? '✓' : '×';
                     })
                 }));
+
                 const finalAddOnData = addOnFeatures.map((feature) => ({
                     feature: feature.featuresName,
                     quoteValues: quotation.quotes.map((quote) => {
@@ -357,8 +284,6 @@ export class InsuranceQuotationService {
                         return selectedFeatureIds.includes(feature.id) ? '✓' : '×';
                     })
                 }));
-
-                //--- end new logic for product features
 
                 function ensureSpace(doc: any, neededHeight: number, startY: number) {
                     const bottomMargin = 50;
@@ -382,8 +307,7 @@ export class InsuranceQuotationService {
                     let y = startY;
 
                     if (!skipHeader) {
-                        // Header row
-                        doc.font('DejaVuSans').fontSize(9); // Changed from 7 to 10
+                        doc.font('DejaVuSans').fontSize(9);
                         y = ensureSpace(doc, 20, y);
                         doc.rect(startX, y, labelWidth, 20).fillAndStroke('#CCCCCC', '#0055A5');
                         doc.fillColor('black').text('Feature Details', startX + 5, y + 5);
@@ -398,15 +322,12 @@ export class InsuranceQuotationService {
                         y += 20;
                     }
 
-                    // Rows with dynamic height
-                    doc.font('DejaVuSans').fontSize(9); // Changed from 6 to 10
+                    doc.font('DejaVuSans').fontSize(9);
                     data.forEach((row) => {
-                        // Calculate dynamic height for feature column
                         const featureHeight = doc.heightOfString(row.feature, { width: labelWidth - 10 });
                         const lineCountFeature = Math.ceil(featureHeight / doc.currentLineHeight());
                         const rowHeightFeature = Math.max(lineCountFeature * 15, 30);
 
-                        // Calculate dynamic height for quote values
                         const quoteHeights = row.quoteValues.map((val) => {
                             const height = doc.heightOfString(val, { width: quoteWidth - 10 });
                             const lineCount = Math.ceil(height / doc.currentLineHeight());
@@ -416,14 +337,12 @@ export class InsuranceQuotationService {
 
                         y = ensureSpace(doc, rowHeight, y);
 
-                        // Feature column
                         doc.rect(startX, y, labelWidth, rowHeight).fillAndStroke('#FFFFFF', '#0055A5');
                         doc.fillColor('black').text(row.feature, startX + 5, y + 5, {
                             width: labelWidth - 10,
                             align: 'center'
                         });
 
-                        // Quote columns
                         doc.font('DejaVuSans').fontSize(10).fillColor(colors.success);
                         row.quoteValues.forEach((val, i) => {
                             const x = startX + labelWidth + i * quoteWidth;
@@ -438,15 +357,13 @@ export class InsuranceQuotationService {
                     return y;
                 }
 
+                // === Header ===
                 doc.image(logoPath, 50, 25, { width: 140, height: 22 });
-
-                // Header info on the right
                 doc.fontSize(8).fillColor(colors.lightText).font('DejaVuSans');
                 doc.text(`Generated: ${new Date().toLocaleDateString()}`, 350, 35, { align: 'right' });
                 doc.text(`Validity: ${data.validityDate}`, 350, 48, { align: 'right' });
 
                 doc.moveDown(1);
-
                 doc.fillColor('#0055A5')
                     .fontSize(18)
                     .font('DejaVuSans-Bold')
@@ -457,7 +374,7 @@ export class InsuranceQuotationService {
 
                 // Customer Greeting
                 doc.fillColor('#242424')
-                    .fontSize(11) // Reduced from 10
+                    .fontSize(11)
                     .font('DejaVuSans-Bold')
                     .text(`Dear ${data.customerName},`, 50, doc.y + 5);
                 doc.moveDown(0.3);
@@ -470,13 +387,13 @@ export class InsuranceQuotationService {
                     );
                 } else if (data.insuranceType === Insurance_Type.Life) {
                     doc.text(
-                        `Warm greetings from Acumen! We truly appreciate the trust you’ve placed in us to safeguard your family’s future and financial wellbeing.`,
+                        `Warm greetings from Acumen! We truly appreciate the trust you've placed in us to safeguard your family's future and financial wellbeing.`,
                         50,
                         doc.y
                     );
                 } else if (data.insuranceType === Insurance_Type.Motor) {
                     doc.text(
-                        `Warm greetings from Acumen! We truly appreciate the trust you’ve placed in us to protect your vehicle and ensure your peace of mind on the road.`,
+                        `Warm greetings from Acumen! We truly appreciate the trust you've placed in us to protect your vehicle and ensure your peace of mind on the road.`,
                         50,
                         doc.y
                     );
@@ -489,7 +406,7 @@ export class InsuranceQuotationService {
                 }
 
                 doc.moveDown(1);
-                // draw table is for dependent details, insured details, vehicle details
+
                 const drawTable = (
                     title: string,
                     headers: string[],
@@ -499,27 +416,22 @@ export class InsuranceQuotationService {
                     colWidths: number[]
                 ) => {
                     const columnX: number[] = [startX];
-
                     for (let i = 0; i < colWidths.length - 1; i++) {
                         columnX.push(columnX[i] + colWidths[i]);
                     }
 
                     doc.font('DejaVuSans-Bold').fontSize(10).fillColor('#003087').text(title, startX, startY);
-
                     let y = startY + 20;
 
-                    // --- Draw Header ---
+                    // Draw Header
                     doc.font('DejaVuSans-Bold').fontSize(9).fillColor('#242424');
-
-                    // First, calculate max header height
                     const headerHeights = headers.map((header, i) => {
                         return doc.heightOfString(header, { width: colWidths[i] - 10, align: 'center' });
                     });
-                    const headerHeight = Math.max(...headerHeights) + 10; // Add some padding
+                    const headerHeight = Math.max(...headerHeights) + 10;
 
                     headers.forEach((header, i) => {
                         const x = columnX[i];
-                        // doc.strokeColor('#0055A5').lineWidth(1);
                         doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                         doc.fillColor('#0055A5');
                         doc.rect(x, y, colWidths[i], headerHeight).stroke().fill();
@@ -531,20 +443,18 @@ export class InsuranceQuotationService {
                     });
                     y += headerHeight;
 
-                    // --- Draw Rows ---
+                    // Draw Rows
                     doc.font('DejaVuSans').fontSize(9).fillColor('black');
-
                     rows.forEach((row, rowIndex) => {
                         if (!Array.isArray(row)) {
                             console.error(`Invalid row at index ${rowIndex}:`, row);
                             throw new Error(`Invalid row data for table: ${title}`);
                         }
 
-                        // Calculate dynamic row height based on cell content
                         const rowHeights = row.map((cell, i) => {
                             return doc.heightOfString(cell, { width: colWidths[i] - 10, align: 'center' });
                         });
-                        const rowHeight = Math.max(...rowHeights) + 10; // Add padding
+                        const rowHeight = Math.max(...rowHeights) + 10;
 
                         row.forEach((cell, i) => {
                             const x = columnX[i];
@@ -564,32 +474,27 @@ export class InsuranceQuotationService {
                     return y;
                 };
 
+                // === Proposer Information ===
                 doc.fontSize(11)
                     .font('DejaVuSans-Bold')
                     .fillColor('black')
                     .text('Proposer Information', 50, doc.y + 15);
                 doc.moveDown(0.1);
-                const proposerStartY = doc.y + 10; // Add a bit of padding
+                const proposerStartY = doc.y + 10;
 
                 // LEFT SIDE DETAILS
                 let currentY = proposerStartY;
-
-                // Helper function to draw label and value
                 function addDetail(label, value) {
                     const startX = 50;
-                    const labelWidth = 60; // adjust for alignment
-
-                    // Label in bold
+                    const labelWidth = 60;
                     doc.font('DejaVuSans-Bold').fontSize(8).fillColor('#525252').text(label, startX, currentY);
-
-                    // Value in normal
                     doc.font('DejaVuSans')
                         .fontSize(9)
                         .fillColor('black')
                         .text(value, startX + 75, currentY);
                     currentY += 12;
                 }
-                // Add details
+
                 addDetail('Name:', data.proposer.name);
                 doc.moveDown(0.2);
                 addDetail('Mobile No:', data.mobileNo);
@@ -612,57 +517,48 @@ export class InsuranceQuotationService {
                 }
 
                 // RIGHT SIDE DETAILS
-                const rightX = 370; // adjust as needed for alignment
+                const rightX = 370;
                 let rightY = proposerStartY;
+                const formattedDate = new Date().toISOString().split('T')[0]; // Added missing variable
 
                 doc.fontSize(9).font('DejaVuSans-Bold').fillColor('#0055A5').text(`Ticket No:`, rightX, rightY);
-
                 doc.font('DejaVuSans')
                     .fillColor('black')
                     .text(`${data.ticketNumber}`, rightX + 60, rightY);
 
                 rightY += 2;
-
                 doc.font('DejaVuSans-Bold')
                     .fillColor('#0055A5')
                     .text(`Quotation No.:`, rightX, rightY + 15);
-
                 doc.font('DejaVuSans')
                     .fillColor('black')
                     .text(`${quotation.quotationNo || '-'}`, rightX + 90, rightY + 15);
 
                 rightY += 2;
-
                 doc.font('DejaVuSans-Bold')
                     .fillColor('#0055A5')
                     .text(`Insurance Type:`, rightX, rightY + 30);
-
                 doc.font('DejaVuSans')
                     .fillColor('black')
                     .text(`${formatToCamelCase(data.insuranceSubTypeName)}`, rightX + 90, rightY + 30);
 
                 rightY += 2;
-
                 doc.font('DejaVuSans-Bold')
                     .fillColor('#0055A5')
                     .text(`Date:`, rightX, rightY + 45);
-
                 doc.font('DejaVuSans')
                     .fillColor('black')
                     .text(formattedDate, rightX + 50, rightY + 45);
 
                 doc.moveDown(1);
-                // === After drawing left and right details ===
-                const leftHeight = currentY - proposerStartY; // left column height
-                const rightHeight = rightY + 12 - proposerStartY; // right column height, + line spacing
+                const leftHeight = currentY - proposerStartY;
+                const rightHeight = rightY + 12 - proposerStartY;
                 const maxHeight = Math.max(leftHeight, rightHeight);
-
-                // Move doc.y below the taller column
-                doc.y = proposerStartY + maxHeight + 10; // 10 = padding before next section
+                doc.y = proposerStartY + maxHeight + 10;
 
                 let yPosition = doc.y;
 
-                // === Conditional Tables Based on Insurance Type ===
+                // === Conditional Tables ===
                 if (data.insuranceType === Insurance_Type.Motor) {
                     const vehicleHeaders = [
                         'RC Owner',
@@ -672,15 +568,14 @@ export class InsuranceQuotationService {
                         'Vehicle No.',
                         'Vehicle Model-Make'
                     ];
-
                     const vehicleRows = [
                         [
-                            data.vehicleDetails.rcOwnerName || 'N/A',
-                            data.vehicleDetails.engineNumber || 'N/A',
-                            data.vehicleDetails.chassisNumber || 'N/A',
-                            data.vehicleDetails.dateOfReg || 'N/A',
-                            data.vehicleDetails.vehicleNumber || 'N/A',
-                            `${data.vehicleDetails.modelNumber || 'N/A'} - ${data.vehicleDetails.makingYear || 'N/A'}`
+                            data.vehicleDetails?.rcOwnerName || 'N/A',
+                            data.vehicleDetails?.engineNumber || 'N/A',
+                            data.vehicleDetails?.chassisNumber || 'N/A',
+                            data.vehicleDetails?.dateOfReg || 'N/A',
+                            data.vehicleDetails?.vehicleNumber || 'N/A',
+                            `${data.vehicleDetails?.modelNumber || 'N/A'} - ${data.vehicleDetails?.makingYear || 'N/A'}`
                         ]
                     ];
                     yPosition = drawTable(
@@ -737,27 +632,28 @@ export class InsuranceQuotationService {
                     );
                     doc.moveDown(1);
                 }
-                // this is for message 1
+
+                // Message 1
                 const tableBottomY = yPosition;
                 const padding = 15;
                 if (data.insuranceType === Insurance_Type.Health) {
                     doc.fillColor('#242424').fontSize(10).font('DejaVuSans');
                     doc.text(
-                        `Your family’s health and peace of mind are our top priority. We’ve carefully designed this insurance quotation keeping in mind both your present needs and your loved ones’ future security.`,
+                        `Your family's health and peace of mind are our top priority. We've carefully designed this insurance quotation keeping in mind both your present needs and your loved ones' future security.`,
                         50,
                         tableBottomY + padding,
                         { width: 500 }
                     );
                 } else if (data.insuranceType === Insurance_Type.Life) {
                     doc.text(
-                        `Your family’s financial security and peace of mind are our top priority. We’ve carefully designed this insurance quotation keeping in mind both your present needs and your loved ones’ future wellbeing.`,
+                        `Your family's financial security and peace of mind are our top priority. We've carefully designed this insurance quotation keeping in mind both your present needs and your loved ones' future wellbeing.`,
                         50,
                         tableBottomY + padding,
                         { width: 500 }
                     );
                 } else if (data.insuranceType === Insurance_Type.Motor) {
                     doc.text(
-                        `Your vehicle’s protection and your peace of mind are our top priority. We’ve carefully designed this insurance quotation keeping in mind both your present requirements and your future security on the road.`,
+                        `Your vehicle's protection and your peace of mind are our top priority. We've carefully designed this insurance quotation keeping in mind both your present requirements and your future security on the road.`,
                         50,
                         tableBottomY + padding,
                         { width: 500 }
@@ -773,26 +669,20 @@ export class InsuranceQuotationService {
 
                 doc.moveDown(1);
 
-                // === Quotes Table code start from here ===
+                // === MAIN CHANGE: Modified Quotes Table Structure ===
                 const tableTop = doc.y + 10;
-                const labelWidth = 130; // Increased from 100 → wider "Details" column
-                const quoteWidth = 120; // Slightly reduced to balance table width if needed
+                const labelWidth = 130;
+                const quoteWidth = 120;
 
+                // Define fields WITHOUT premium in initial table
                 let fields = [];
                 if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
-                    fields = ['Company', 'Product', 'Coverage', 'Premium', 'Remarks'];
-                    // fields = ['Company', 'Product', 'Coverage', 'Benefits', 'Advantages', 'Remarks', 'Premium'];
+                    fields = ['Company', 'Product', 'Coverage'];
+                    // 'Remarks'
                 }
                 if (data.insuranceType === Insurance_Type.Motor) {
-                    fields = ['Company', 'IDV', 'Cover Type', 'NCB(%)', 'Premium', 'Coverage Included', 'Remarks'];
-                }
-
-                let fieldsBeforePremium = fields;
-                let fieldsAfterPremium = [];
-                if (data.insuranceType === Insurance_Type.Health || data.insuranceType === Insurance_Type.Life) {
-                    const premiumIndex = fields.indexOf('Premium'); // is premium ke jagah coverage rakhna hai.
-                    fieldsBeforePremium = fields.slice(0, premiumIndex + 1);
-                    fieldsAfterPremium = fields.slice(premiumIndex + 1);
+                    fields = ['Company', 'IDV', 'Cover Type', 'NCB(%)', 'Coverage Included'];
+                    // 'Remarks'
                 }
 
                 const fieldKeyMap = {
@@ -800,8 +690,6 @@ export class InsuranceQuotationService {
                     Product: 'productName',
                     Coverage: 'coverage',
                     Premium: 'premium',
-                    // Benefits: 'benefits',
-                    // Advantages: 'advantages',
                     Remarks: 'remarks',
                     IDV: 'idv',
                     'Cover Type': 'coverType',
@@ -810,15 +698,14 @@ export class InsuranceQuotationService {
                 };
 
                 let y = tableTop;
-                // --- Draw Header Row ("Details" and Company Logos) ---
-                doc.font('DejaVuSans-Bold')
-                    .fontSize(9) // Reduced from 10
-                    .fillColor('black');
+
+                // Draw Header Row
+                doc.font('DejaVuSans-Bold').fontSize(9).fillColor('black');
                 doc.rect(50, y, labelWidth, 20).lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                 doc.fillColor('black');
                 doc.text('Details', 50 + 2, y + 5, { width: labelWidth - 4, align: 'center' });
 
-                // Fetch company logos for the header
+                // Fetch company logos
                 const imageBuffers = await Promise.all(
                     data.quotes.map(async (quote) => {
                         try {
@@ -831,11 +718,9 @@ export class InsuranceQuotationService {
                     })
                 );
 
-                // Draw each company logo (or fallback text) in the header
                 data.quotes.forEach((quote, i) => {
                     const x = 50 + labelWidth + i * quoteWidth;
                     doc.rect(x, y, quoteWidth, 20).lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
-
                     const imageBuffer = imageBuffers[i];
                     if (imageBuffer) {
                         doc.image(imageBuffer, x + 5, y + 2, {
@@ -852,40 +737,31 @@ export class InsuranceQuotationService {
                 });
                 y += 20;
 
-                // Quote Details with Adjusted Dynamic Heights
-                doc.font('DejaVuSans')
-                    .fontSize(9) // Reduced from 9
-                    .fillColor('black');
+                // Draw Quote Details (without premium)
+                doc.font('DejaVuSans').fontSize(9).fillColor('black');
 
-                fieldsBeforePremium.forEach((field, fieldIndex) => {
-                    // Step 1: Calculate the height needed for the field name (e.g., "Features")
-                    doc.font('DejaVuSans'); // Set font for the label
+                fields.forEach((field) => {
                     const labelHeight = doc.heightOfString(field, {
                         width: labelWidth - 10,
                         align: 'center'
                     });
 
-                    // Step 2: Calculate the height needed for each quote value in this row
                     const quoteHeights = data.quotes.map((quote) => {
                         const key = fieldKeyMap[field];
                         const value = quote[key] || 'N/A';
-                        doc.font('DejaVuSans'); // Set font for the value
                         const baseHeight = doc.heightOfString(value.toString(), {
                             width: quoteWidth - 10,
                             align: 'center'
                         });
                         const lineCount = Math.ceil(baseHeight / (doc.currentLineHeight() || 9));
-                        const adjustedHeight = baseHeight + (lineCount - 1) * 2;
-                        return adjustedHeight;
+                        return baseHeight + (lineCount - 1) * 2;
                     });
 
-                    // Step 3: Determine the row height as the tallest cell in this row, with padding
                     const baseRowHeight = Math.max(labelHeight, ...quoteHeights, 15);
                     const rowHeight = baseRowHeight + 10;
-
                     y = ensureSpace(doc, rowHeight, y);
 
-                    // Step 4: Draw the field name cell (e.g., "Features") with dynamic height
+                    // Draw field cell
                     doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                     doc.fillColor('#0055A5');
                     doc.rect(50, y, labelWidth, rowHeight).stroke().fill();
@@ -896,12 +772,11 @@ export class InsuranceQuotationService {
                             align: 'center'
                         });
 
-                    // Step 5: Draw each quote value cell in this row with dynamic height
+                    // Draw quote value cells
                     data.quotes.forEach((quote, quoteIndex) => {
                         const x = 50 + labelWidth + quoteIndex * quoteWidth;
                         const key = fieldKeyMap[field];
                         const value = quote[key] || 'N/A';
-
                         doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                         doc.fillColor('#0055A5');
                         doc.rect(x, y, quoteWidth, rowHeight).stroke().fill();
@@ -913,101 +788,144 @@ export class InsuranceQuotationService {
                             });
                     });
 
-                    // Step 6: Move down by the dynamic row height
                     y += rowHeight;
                 });
 
                 const numQuotes = data.quotes.length;
                 const totalWidth = labelWidth + numQuotes * quoteWidth;
 
-                // Merged row for Basic Features
+                // Basic Features Section
                 y = ensureSpace(doc, 20, y);
                 doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                 doc.fillColor('#0055A5');
                 doc.rect(50, y, totalWidth, 20).stroke().fill();
                 doc.fillColor('black');
                 doc.font('DejaVuSans-Bold')
-                    .fontSize(9) // Reduced from 10
+                    .fontSize(9)
                     .text('Basic Features', 50 + 5, y + 5, { width: totalWidth - 10 });
                 y += 20;
-                // here is code for basic features details
+
+                // Draw Basic Features Table
                 y = drawComparisonTable(doc, finalBasicData, 50, y, true);
 
-                // Merged row for Add-on Features
-                y = ensureSpace(doc, 20, y);
+                // Add-on Features Section
                 y = ensureSpace(doc, 20, y);
                 doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
                 doc.fillColor('#0055A5');
                 doc.rect(50, y, totalWidth, 20).stroke().fill();
                 doc.fillColor('black');
                 doc.font('DejaVuSans-Bold')
-                    .fontSize(9) // Reduced from 10
+                    .fontSize(9)
                     .text('Add-on Features', 50 + 5, y + 5, { width: totalWidth - 10 });
                 y += 20;
 
+                // Draw Add-on Features Table
                 y = drawComparisonTable(doc, finalAddOnData, 50, y, true);
 
-                fieldsAfterPremium.forEach((field, fieldIndex) => {
-                    // Step 1: Calculate the height needed for the field name (e.g., "Features")
-                    doc.font('DejaVuSans-Bold'); // Set font for the label
-                    const labelHeight = doc.heightOfString(field, {
+                // === MAIN CHANGE: Draw Premium Row AFTER add-on features ===
+                // y = ensureSpace(doc, 25, y);
+
+                // // Draw Premium Label Cell
+                // doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                // doc.fillColor('#0055A5');
+                // doc.rect(50, y, labelWidth, 25).stroke().fill();
+                // doc.fillColor('black')
+                //     .font('DejaVuSans-Bold')
+                //     .fontSize(10)
+                //     .text('Premium (₹)', 50 + 5, y + 8, {
+                //         width: labelWidth - 10,
+                //         align: 'center'
+                //     });
+
+                // // Draw Premium Values for each quote
+                // data.quotes.forEach((quote, quoteIndex) => {
+                //     const x = 50 + labelWidth + quoteIndex * quoteWidth;
+                //     const premiumValue = `₹${quote.premium.toLocaleString()}`;
+                //     const remarksValue = quote.remarks || 'N/A';
+                //     doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                //     doc.fillColor('#0055A5');
+                //     doc.rect(x, y, quoteWidth, 25).stroke().fill();
+                //     doc.fillColor('black')
+                //         .font('DejaVuSans-Bold')
+                //         .fontSize(10)
+                //         .text(premiumValue, x + 5, y + 8, {
+                //             width: quoteWidth - 10,
+                //             align: 'center'
+                //         });
+
+                // });
+
+                // y += 25;
+
+                // === MAIN CHANGE: Draw Premium and Remarks Rows AFTER add-on features ===
+                y = ensureSpace(doc, 25, y);
+
+                // Draw Premium Label Cell
+                doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                doc.fillColor('#0055A5');
+                doc.rect(50, y, labelWidth, 25).stroke().fill();
+                doc.fillColor('black')
+                    .font('DejaVuSans-Bold')
+                    .fontSize(10)
+                    .text('Premium (₹)', 50 + 5, y + 8, {
                         width: labelWidth - 10,
                         align: 'center'
                     });
 
-                    // Step 2: Calculate the height needed for each quote value in this row
-                    const quoteHeights = data.quotes.map((quote) => {
-                        const key = fieldKeyMap[field];
-                        const value = quote[key] || 'N/A';
-                        doc.font('DejaVuSans'); // Set font for the value
-                        const baseHeight = doc.heightOfString(value.toString(), {
+                // Draw Premium Values for each quote
+                data.quotes.forEach((quote, quoteIndex) => {
+                    const x = 50 + labelWidth + quoteIndex * quoteWidth;
+                    const premiumValue = `₹${quote.premium.toLocaleString()}`;
+                    doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.fillColor('#0055A5');
+                    doc.rect(x, y, quoteWidth, 25).stroke().fill();
+                    doc.fillColor('black')
+                        .font('DejaVuSans-Bold')
+                        .fontSize(10)
+                        .text(premiumValue, x + 5, y + 8, {
                             width: quoteWidth - 10,
                             align: 'center'
                         });
-                        const lineCount = Math.ceil(baseHeight / (doc.currentLineHeight() || 9));
-                        const adjustedHeight = baseHeight + (lineCount - 1) * 2;
-                        return adjustedHeight;
-                    });
-
-                    // Step 3: Determine the row height as the tallest cell in this row, with padding
-                    const baseRowHeight = Math.max(labelHeight, ...quoteHeights, 15);
-                    const rowHeight = baseRowHeight + 5;
-
-                    y = ensureSpace(doc, rowHeight, y);
-
-                    // Step 4: Draw the field name cell (e.g., "Features") with dynamic height
-                    doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
-                    doc.fillColor('#0055A5');
-                    doc.rect(50, y, labelWidth, rowHeight).stroke().fill();
-                    doc.fillColor('black')
-                        .font('DejaVuSans-Bold')
-                        .text(field, 50 + 5, y + 5, {
-                            width: labelWidth - 10,
-                            align: 'center'
-                        });
-
-                    // Step 5: Draw each quote value cell in this row with dynamic height
-                    data.quotes.forEach((quote, quoteIndex) => {
-                        const x = 50 + labelWidth + quoteIndex * quoteWidth;
-                        const key = fieldKeyMap[field];
-                        const value = quote[key] || 'N/A';
-
-                        doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
-                        doc.fillColor('#0055A5');
-                        doc.rect(x, y, quoteWidth, rowHeight).stroke().fill();
-                        doc.fillColor('black')
-                            .font('DejaVuSans')
-                            .text(value.toString(), x + 5, y + 5, {
-                                width: quoteWidth - 10,
-                                align: 'center'
-                            });
-                    });
-
-                    // Step 6: Move down by the dynamic row height
-                    y += rowHeight;
                 });
 
-                // === NEW QUOTES COMPARISON TABLE ===
+                y += 25;
+
+                // Draw Remarks Row (below Premium)
+                y = ensureSpace(doc, 25, y);
+
+                // Draw Remarks Label Cell
+                doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                doc.fillColor('#0055A5');
+                doc.rect(50, y, labelWidth, 25).stroke().fill();
+                doc.fillColor('black')
+                    .font('DejaVuSans-Bold')
+                    .fontSize(10)
+                    .text('Remarks', 50 + 5, y + 8, {
+                        width: labelWidth - 10,
+                        align: 'center'
+                    });
+
+                // Draw Remarks Values for each quote
+                data.quotes.forEach((quote, quoteIndex) => {
+                    const x = 50 + labelWidth + quoteIndex * quoteWidth;
+                    const remarksValue = quote.remarks || 'N/A';
+                    doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.fillColor('#0055A5');
+                    doc.rect(x, y, quoteWidth, 25).stroke().fill();
+                    doc.fillColor('black')
+                        .font('DejaVuSans')
+                        .fontSize(9)
+                        .text(remarksValue, x + 5, y + 8, {
+                            width: quoteWidth - 10,
+                            align: 'center'
+                        });
+                });
+
+                y += 25;
+
+                // Main change end here -------------
+
+                // Final Message
                 doc.moveTo(50, y + 10)
                     .lineTo(530, y + 10)
                     .lineWidth(0.5)
@@ -1017,41 +935,36 @@ export class InsuranceQuotationService {
 
                 doc.fillColor('#242424').fontSize(10).font('DejaVuSans');
                 doc.text(
-                    `We hope this quotation brings clarity and confidence in making the right choice. Our team is always here to walk you through every detail. Please don’t hesitate to reach out if you’d like a personal consultation.`,
+                    `We hope this quotation brings clarity and confidence in making the right choice. Our team is always here to walk you through every detail. Please don't hesitate to reach out if you'd like a personal consultation.`,
                     50,
                     doc.y
                 );
-                // -------------------------------
+
+                // Footer
                 const footerX = 50;
                 const pageWidth = doc.page.width;
                 const bottomMargin = 50;
-
-                // Footer elements' heights
                 const phoneHeight = 12;
                 const addressHeight = 12;
                 const copyrightHeight = 10;
                 const lineHeight = 2;
                 const spacing = 5;
-
                 const footerTotalHeight =
                     phoneHeight + spacing + addressHeight + spacing + copyrightHeight + spacing + lineHeight;
 
-                // Calculate Y to position footer at the bottom
                 let footerY = doc.page.height - bottomMargin - footerTotalHeight;
 
-                // --- Phone Number ---
+                // Phone Number
                 doc.image(phonePath, footerX, footerY, { width: 10, height: 10 });
                 doc.fontSize(9).fillColor(colors.text).font('DejaVuSans');
                 doc.text(`${data.branch.contact}`, footerX + 12, footerY);
 
                 footerY += phoneHeight + spacing;
-                doc.image(locationPath, footerX, footerY, { width: 10, height: 10 }); // adjust y offset if needed
+                doc.image(locationPath, footerX, footerY, { width: 10, height: 10 });
                 doc.fontSize(8.5).fillColor(colors.text).font('DejaVuSans');
-                doc.text(data.branch.address, footerX + 12, footerY); // text starts a bit right of icon
+                doc.text(data.branch.address, footerX + 12, footerY);
 
                 footerY += addressHeight + spacing;
-
-                // --- Copyright (centered) ---
                 doc.fontSize(7.5).fillColor(colors.lightText).font('DejaVuSans');
                 doc.text('© 2025 Acumen Insurance. All rights reserved.', 0, footerY, {
                     align: 'center',
@@ -1059,8 +972,6 @@ export class InsuranceQuotationService {
                 });
 
                 footerY += copyrightHeight + spacing;
-
-                // --- Decorative Line ---
                 doc.moveTo(50, footerY)
                     .lineTo(pageWidth - 50, footerY)
                     .lineWidth(0.5)
@@ -1168,14 +1079,14 @@ export class InsuranceQuotationService {
                 data: pdfBuffer
             };
         } catch (err) {
-            console.error('sendQuotation Error:', err);
+            console.error('download Error:', err);
 
-            throw new Error('Failed to generate quotation PDF: ' + err.message);
+            throw new Error('Failed to download quotation PDF: ' + err.message);
         }
     }
 
     // this is for generating Quotation and sending mail with status changes
-    async generateQuotation(reqBody: any): Promise<any> {
+    async createQuotation(reqBody: any): Promise<any> {
         try {
             const userEntity = await this.loggedInsUserService.getCurrentUser();
 
@@ -1452,7 +1363,7 @@ export class InsuranceQuotationService {
                 // }
             };
         } catch (err) {
-            console.error('generateQuotation Error:', err);
+            console.error('createQuotation Error:', err);
             return {
                 status: 'error',
                 message: 'Failed to generate quotation: ' + err.message,
@@ -2951,7 +2862,6 @@ export class InsuranceQuotationService {
         }
     }
 
-
     async quotationPdf(data: any): Promise<Buffer> {
         const logoPath = path.join(__dirname, '../../assets/images/ACUMEN-BLUE-LOGO.PNG');
 
@@ -3045,5 +2955,4 @@ export class InsuranceQuotationService {
             }
         });
     }
-
 }
