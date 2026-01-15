@@ -37,14 +37,16 @@ export class AwsService {
 
         this.bucketName = process.env.AWS_S3_BUCKET_NAME;
         this.bucketUrl = process.env.AWS_S3_BUCKET_URL;
+        
     }
+    
 // this is aws s3 bucket code to upload file in s3 bucket for insurance
 
 async uploadFile(
     file: Express.Multer.File,
     documentType: string
   ): Promise<{ fileUploaded: boolean; name: string }> {
-    console.log("document type is heere", documentType, file);
+    // console.log("document type is heere", documentType, file);
     this.logger.log(`Uploading file to S3: ${file.originalname} as document type: ${documentType}`);
     
     const validDocumentTypes = [
@@ -68,7 +70,7 @@ async uploadFile(
       const newfiles = `${timestamp}_${file.originalname}`;
       const myFile = newfiles.replace(/\s/g, '_');
       const s3Path = `${documentType}/${myFile}`;
-             console.log('myfile and s3Path', myFile, s3Path);
+            //  console.log('myfile and s3Path', myFile, s3Path);
       const contentType = file.mimetype || mimeTypes.lookup(file.originalname) || 'application/octet-stream';
       let buffer = file.buffer;
 
@@ -86,7 +88,7 @@ async uploadFile(
       };
 
      const res = await this.s3Client.send(new PutObjectCommand(params));
-             console.log('res------', res);
+            //  console.log('res------', res);
       const fileUrl = `${this.bucketUrl}/${s3Path}`;
        this.logger.log(`Uploaded file: ${s3Path}`);
       return { fileUploaded: true, name: myFile };
@@ -163,8 +165,8 @@ async getFile(documentType: string, fileName: string, res: Response): Promise<vo
       'vehicle-document',
       'claims'
     ];
-    console.log("in s3 get file document type", documentType, fileName);
-    
+    // console.log("in s3 get file document type", documentType, fileName);
+    // console.log("jjkjk")
 
     if (!validDocumentTypes.includes(documentType)) {
       throw new NotFoundException('Invalid document type');
@@ -194,9 +196,9 @@ async getFile(documentType: string, fileName: string, res: Response): Promise<vo
       ];
       const disposition = previewableTypes.includes(mimeType) ? 'inline' : 'attachment';
 
-      console.log('Content-Type from S3:', ContentType);
-      console.log('Resolved MIME type:', mimeType);
-      console.log('Content-Disposition:', disposition);
+      // console.log('Content-Type from S3:', ContentType);
+      // console.log('Resolved MIME type:', mimeType);
+      // console.log('Content-Disposition:', disposition);
 
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Content-Disposition', `${disposition}; filename="${fileName}"`);
