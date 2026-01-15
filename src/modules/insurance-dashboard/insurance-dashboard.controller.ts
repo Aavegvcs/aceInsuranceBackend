@@ -14,7 +14,7 @@ export class InsuranceDashboardController {
     @Get('getAdminDashboardDetails')
     @ApiOperation({ summary: 'Get getEscalationDetails' })
     async getAdminDashboardDetails(@Body() reqObj: any) {
-        // console.log('this is getAdminDashboardDetails api 🔴');
+         console.log('this is getAdminDashboardDetails api 🔴');
         return this._dashboardService.getAdminDashboardDetails();
     }
    @UseGuards(JwtInsAuthGuard)

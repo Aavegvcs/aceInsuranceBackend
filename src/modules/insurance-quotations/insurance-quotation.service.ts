@@ -284,6 +284,10 @@ export class InsuranceQuotationService {
                         return selectedFeatureIds.includes(feature.id) ? '✓' : '×';
                     })
                 }));
+                // new code start here 15-01-2026
+
+                // === NEW: Create comma-separated string for basic features ===
+                const basicFeaturesString = finalBasicData.map((item) => item.feature).join(', ');
 
                 function ensureSpace(doc: any, neededHeight: number, startY: number) {
                     const bottomMargin = 50;
@@ -295,6 +299,38 @@ export class InsuranceQuotationService {
                     return startY;
                 }
 
+                // === NEW: Simple function to draw basic features as text ===
+                function drawBasicFeaturesAsText(
+                    doc: any,
+                    basicFeaturesString: string,
+                    startX: number,
+                    startY: number
+                ) {
+                    let y = startY;
+
+                    // Draw "Basic Features" heading
+                    y = ensureSpace(doc, 20, y + 10);
+                    doc.fillColor('#003087').font('DejaVuSans-Bold').fontSize(10).text('Basic Features', startX, y);
+                    y += 15;
+
+                    // Draw the basic features as a single text line
+                    const textHeight = doc.heightOfString(basicFeaturesString, {
+                        width: 500 // Full page width minus margins
+                    });
+                    const lineCount = Math.ceil(textHeight / doc.currentLineHeight());
+                    const rowHeight = Math.max(lineCount * 12, 20);
+
+                    y = ensureSpace(doc, rowHeight, y);
+                    doc.fillColor('black').font('DejaVuSans').fontSize(9).text(basicFeaturesString, startX, y, {
+                        width: 500,
+                        align: 'left'
+                    });
+
+                    y += rowHeight;
+                    return y;
+                }
+
+                // === MODIFIED: Keep original table function for add-on features ===
                 function drawComparisonTable(
                     doc: any,
                     data: { feature: string; quoteValues: string[] }[],
@@ -314,7 +350,7 @@ export class InsuranceQuotationService {
 
                         quotation.quotes.forEach((quote, i) => {
                             const x = startX + labelWidth + i * quoteWidth;
-                            doc.rect(x, y, quoteWidth, 20).fillAndStroke('#0055A5', '#0055A5');
+                            doc.rect(x, y, quoteWidth, 20).fillAndStroke('#CCCCCC', '#0055A5');
                             doc.fillColor('black').text(quote.company.companyName, x + 5, y + 5, {
                                 width: quoteWidth - 10
                             });
@@ -322,7 +358,6 @@ export class InsuranceQuotationService {
                         y += 20;
                     }
 
-                    doc.font('DejaVuSans').fontSize(9);
                     data.forEach((row) => {
                         const featureHeight = doc.heightOfString(row.feature, { width: labelWidth - 10 });
                         const lineCountFeature = Math.ceil(featureHeight / doc.currentLineHeight());
@@ -338,10 +373,13 @@ export class InsuranceQuotationService {
                         y = ensureSpace(doc, rowHeight, y);
 
                         doc.rect(startX, y, labelWidth, rowHeight).fillAndStroke('#FFFFFF', '#0055A5');
-                        doc.fillColor('black').text(row.feature, startX + 5, y + 5, {
-                            width: labelWidth - 10,
-                            align: 'center'
-                        });
+                        doc.fillColor('black')
+                            .font('DejaVuSans')
+                            .fontSize(9)
+                            .text(row.feature, startX + 5, y + 5, {
+                                width: labelWidth - 10,
+                                align: 'center'
+                            });
 
                         doc.font('DejaVuSans').fontSize(10).fillColor(colors.success);
                         row.quoteValues.forEach((val, i) => {
@@ -432,9 +470,9 @@ export class InsuranceQuotationService {
 
                     headers.forEach((header, i) => {
                         const x = columnX[i];
-                        doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                        doc.lineWidth(0.5).fillAndStroke('#CCCCCC', '#0055A5');
                         doc.fillColor('#0055A5');
-                        doc.rect(x, y, colWidths[i], headerHeight).stroke().fill();
+                        doc.rect(x, y, colWidths[i], headerHeight).fillAndStroke('#CCCCCC', '#0055A5');
                         doc.fillColor('#242424');
                         doc.text(header, x + 5, y + 5, {
                             width: colWidths[i] - 10,
@@ -701,7 +739,7 @@ export class InsuranceQuotationService {
 
                 // Draw Header Row
                 doc.font('DejaVuSans-Bold').fontSize(9).fillColor('black');
-                doc.rect(50, y, labelWidth, 20).lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                doc.rect(50, y, labelWidth, 20).lineWidth(0.5).fillAndStroke('#CCCCCC', '#0055A5');
                 doc.fillColor('black');
                 doc.text('Details', 50 + 2, y + 5, { width: labelWidth - 4, align: 'center' });
 
@@ -720,7 +758,7 @@ export class InsuranceQuotationService {
 
                 data.quotes.forEach((quote, i) => {
                     const x = 50 + labelWidth + i * quoteWidth;
-                    doc.rect(x, y, quoteWidth, 20).lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                    doc.rect(x, y, quoteWidth, 20).lineWidth(0.5).fillAndStroke('#CCCCCC', '#0055A5');
                     const imageBuffer = imageBuffers[i];
                     if (imageBuffer) {
                         doc.image(imageBuffer, x + 5, y + 2, {
@@ -728,6 +766,7 @@ export class InsuranceQuotationService {
                             align: 'center',
                             valign: 'center'
                         });
+                        // here change background color for text if image present
                     } else {
                         doc.fillColor('black').text(`Quote ${i + 1}`, x + 5, y + 5, {
                             width: quoteWidth - 10,
@@ -795,32 +834,32 @@ export class InsuranceQuotationService {
                 const totalWidth = labelWidth + numQuotes * quoteWidth;
 
                 // Basic Features Section
-                y = ensureSpace(doc, 20, y);
-                doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
-                doc.fillColor('#0055A5');
-                doc.rect(50, y, totalWidth, 20).stroke().fill();
-                doc.fillColor('black');
-                doc.font('DejaVuSans-Bold')
-                    .fontSize(9)
-                    .text('Basic Features', 50 + 5, y + 5, { width: totalWidth - 10 });
-                y += 20;
+                // y = ensureSpace(doc, 20, y);
+                // doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
+                // doc.fillColor('#0055A5');
+                // doc.rect(50, y, totalWidth, 20).stroke().fill();
+                // doc.fillColor('black');
+                // doc.font('DejaVuSans-Bold')
+                //     .fontSize(9)
+                //     .text('Basic Features', 50 + 5, y + 5, { width: totalWidth - 10 });
+                // y += 20;
 
                 // Draw Basic Features Table
-                y = drawComparisonTable(doc, finalBasicData, 50, y, true);
+                // y = drawComparisonTable(doc, finalBasicData, 50, y, true);
 
-                // Add-on Features Section
-                y = ensureSpace(doc, 20, y);
-                doc.lineWidth(0.5).fillAndStroke('#FFFFFF', '#0055A5');
-                doc.fillColor('#0055A5');
-                doc.rect(50, y, totalWidth, 20).stroke().fill();
-                doc.fillColor('black');
-                doc.font('DejaVuSans-Bold')
-                    .fontSize(9)
-                    .text('Add-on Features', 50 + 5, y + 5, { width: totalWidth - 10 });
+                // === MODIFIED: Draw Basic Features as simple text ===
+                y = drawBasicFeaturesAsText(doc, basicFeaturesString, 50, y);
+                y += 10;
+                // === MODIFIED: Draw Add-on Features Table with header ===
+                // Add-on Features heading
+                y = ensureSpace(doc, 20, y - 10);
+                doc.fillColor('#003087').font('DejaVuSans-Bold').fontSize(10).text('Add-on Features', 50, y);
                 y += 20;
 
                 // Draw Add-on Features Table
-                y = drawComparisonTable(doc, finalAddOnData, 50, y, true);
+                // y = drawComparisonTable(doc, finalAddOnData, 50, y, true);
+                // Draw Add-on Features Table with header
+                y = drawComparisonTable(doc, finalAddOnData, 50, y, false);
 
                 // === MAIN CHANGE: Draw Premium Row AFTER add-on features ===
                 // y = ensureSpace(doc, 25, y);
@@ -966,7 +1005,7 @@ export class InsuranceQuotationService {
 
                 footerY += addressHeight + spacing;
                 doc.fontSize(7.5).fillColor(colors.lightText).font('DejaVuSans');
-                doc.text('© 2025 Acumen Insurance. All rights reserved.', 0, footerY, {
+                doc.text('© 2026 Acumen Insurance. All rights reserved.', 0, footerY, {
                     align: 'center',
                     width: pageWidth
                 });

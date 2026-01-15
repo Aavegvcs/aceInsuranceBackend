@@ -67,7 +67,7 @@ async uploadFile(
       const newfiles = `${timestamp}_${file.originalname}`;
       const myFile = newfiles.replace(/\s/g, '_');
       const s3Path = `${documentType}/${myFile}`;
-            // console.log('myfile and s3Path', myFile, s3Path);
+             console.log('myfile and s3Path', myFile, s3Path);
       const contentType = file.mimetype || mimeTypes.lookup(file.originalname) || 'application/octet-stream';
       let buffer = file.buffer;
 
@@ -85,9 +85,9 @@ async uploadFile(
       };
 
      const res = await this.s3Client.send(new PutObjectCommand(params));
-            // console.log('res', res);
+             console.log('res------', res);
       const fileUrl = `${this.bucketUrl}/${s3Path}`;
-      // this.logger.log(`Uploaded file: ${s3Path}`);
+       this.logger.log(`Uploaded file: ${s3Path}`);
       return { fileUploaded: true, name: myFile };
     } catch (error) {
       this.logger.error(`File upload failed: ${error.message}`);
@@ -162,6 +162,8 @@ async getFile(documentType: string, fileName: string, res: Response): Promise<vo
       'vehicle-document',
       'claims'
     ];
+    console.log("in s3 get file document type", documentType, fileName);
+    
 
     if (!validDocumentTypes.includes(documentType)) {
       throw new NotFoundException('Invalid document type');
@@ -191,9 +193,9 @@ async getFile(documentType: string, fileName: string, res: Response): Promise<vo
       ];
       const disposition = previewableTypes.includes(mimeType) ? 'inline' : 'attachment';
 
-      // console.log('Content-Type from S3:', ContentType);
-      // console.log('Resolved MIME type:', mimeType);
-      // console.log('Content-Disposition:', disposition);
+      console.log('Content-Type from S3:', ContentType);
+      console.log('Resolved MIME type:', mimeType);
+      console.log('Content-Disposition:', disposition);
 
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Content-Disposition', `${disposition}; filename="${fileName}"`);

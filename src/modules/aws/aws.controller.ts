@@ -40,6 +40,8 @@ export class AwsController {
         @Res() res: any
     ) {
         try {
+            console.log("in get document controller", documentType, fileName);
+            
             
             await this.awsService.getFile(documentType, fileName, res);
         } catch (error) {
