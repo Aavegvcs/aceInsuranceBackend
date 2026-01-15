@@ -45,6 +45,7 @@ async uploadFile(
     documentType: string
   ): Promise<{ fileUploaded: boolean; name: string }> {
     console.log("document type is heere", documentType, file);
+    this.logger.log(`Uploading file to S3: ${file.originalname} as document type: ${documentType}`);
     
     const validDocumentTypes = [
       'ticket-document',
