@@ -47,7 +47,7 @@ async uploadFile(
     documentType: string
   ): Promise<{ fileUploaded: boolean; name: string }> {
     // console.log("document type is heere", documentType, file);
-    this.logger.log(`Uploading file to S3: ${file.originalname} as document type: ${documentType}`);
+    // this.logger.log(`Uploading file to S3: ${file.originalname} as document type: ${documentType}`);
     
     const validDocumentTypes = [
       'ticket-document',
@@ -58,9 +58,10 @@ async uploadFile(
       'insured-person',
       'insured-medical',
       'vehicle-document',
-      'claims'
+      'claims',
+      'company-logos'
     ];
-
+// console.log("validDocumentTypes", documentType);
     if (!validDocumentTypes.includes(documentType)) {
       throw new NotFoundException('Invalid document type');
     }
@@ -98,60 +99,6 @@ async uploadFile(
     }
   }
 
-// async getFile(documentType: string, fileName: string, res: Response): Promise<void> {
-//     const validDocumentTypes = [
-//         'ticket-document',
-//         'insurance-user',
-//         'user-medical',
-//         'insurance-dependent',
-//         'dependent-medical',
-//         'insured-person',
-//         'insured-medical',
-//         'vehicle-document',
-//     ];
-
-//     if (!validDocumentTypes.includes(documentType)) {
-//         throw new NotFoundException('Invalid document type');
-//     }
-
-//     const s3Path = `${documentType}/${fileName}`;
-//     try {
-//         const command = new GetObjectCommand({
-//             Bucket: this.bucketName,
-//             Key: s3Path,
-//         });
-
-//         const { Body, ContentType } = await this.s3Client.send(command);
-//         if (!Body) {
-//             throw new NotFoundException('File not found');
-//         }
-
-//         const mimeType = ContentType || mime.lookup(fileName) || 'application/octet-stream';
-//         const previewableTypes = [
-//             'image/jpeg',
-//             'image/png',
-//             'image/gif',
-//             'image/bmp',
-//             'image/webp',
-//             'application/pdf',
-//             'text/plain',
-//             // Add other previewable MIME types as needed
-//         ];
-//         const disposition = previewableTypes.includes(mimeType) ? 'inline' : 'attachment';
-
-//         console.log('Content-Type from S3:', ContentType);
-//         console.log('Resolved MIME type:', mimeType);
-//         console.log('Content-Disposition:', disposition);
-
-//         res.setHeader('Content-Type', mimeType);
-//         res.setHeader('Content-Disposition', `${disposition}; filename="${fileName}"`);
-
-//         (Body as any).pipe(res);
-//     } catch (error: any) {
-//         this.logger.error(`Failed to stream file ${s3Path}: ${error.message}`);
-//         throw new NotFoundException(`File not found or inaccessible: ${error.message}`);
-//     }
-// }
 
 async getFile(documentType: string, fileName: string, res: Response): Promise<void> {
     const validDocumentTypes = [
@@ -163,7 +110,8 @@ async getFile(documentType: string, fileName: string, res: Response): Promise<vo
       'insured-person',
       'insured-medical',
       'vehicle-document',
-      'claims'
+      'claims',
+      'company-logos'
     ];
     // console.log("in s3 get file document type", documentType, fileName);
     // console.log("jjkjk")

@@ -17,8 +17,8 @@ export class InsuranceProductController {
 
     @Post('createCompany')
     @ApiOperation({ summary: 'Create a new company' })
-    async productCompanyCreate(@Body() reqeustParam: CreateInsuranceCompanyDto) {
-        return this._productService.createCompany(reqeustParam);
+    async productCompanyCreate(@Body() reqBody: any) {
+        return this._productService.createCompany(reqBody);
     }
 
     @UseGuards(JwtInsAuthGuard)

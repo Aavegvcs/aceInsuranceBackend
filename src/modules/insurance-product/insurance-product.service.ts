@@ -81,19 +81,67 @@ export class InsuranceProductService {
 
     //------------------------------- company services ------------------------------//
 
-    async createCompany(requestParam: CreateInsuranceCompanyDto): Promise<InsuranceCompanies> {
-        const company = await this.insuranceCompanyRepo.findOne({ where: { companyName: requestParam.companyName } });
+    // async createCompany(requestParam: CreateInsuranceCompanyDto): Promise<InsuranceCompanies> {
+    //     const company = await this.insuranceCompanyRepo.findOne({ where: { companyName: requestParam.companyName } });
 
-        if (company) {
-            throw new ConflictException(`Company with name ${requestParam.companyName} already exists`);
+    //     if (company) {
+    //         throw new ConflictException(`Company with name ${requestParam.companyName} already exists`);
+    //     }
+    //     const newCompany = this.insuranceCompanyRepo.create(requestParam);
+
+    //     return await this.insuranceCompanyRepo.save(newCompany);
+    // }
+    async createCompany(reqBody: any): Promise<InsuranceCompanies> {
+        const {
+            companyName,
+            companyLogoUrl,
+            companyAddress,
+            email,
+            contactPerson,
+            contactNumber,
+            secondaryContactPerson,
+            secondaryContactNumber,
+            secondaryEmail,
+            isActive
+        } = reqBody;
+
+        if (!companyName) {
+            throw new BadRequestException('Company name is required');
         }
-        const newCompany = this.insuranceCompanyRepo.create(requestParam);
+
+        const existingCompany = await this.insuranceCompanyRepo.findOne({
+            where: { companyName }
+        });
+
+        if (existingCompany) {
+            throw new ConflictException(`Company with name ${companyName} already exists`);
+        }
+
+        const loggedInUser = await this.loggedInsUserService.getCurrentUser();
+        if (!loggedInUser) {
+            throw new BadRequestException('Logged user not found');
+        }
+
+        const newCompany = this.insuranceCompanyRepo.create({
+            companyName,
+            companyLogo: companyLogoUrl,
+            companyAddress,
+            email,
+            contactPerson,
+            contactNumber,
+            secondaryContactPerson,
+            secondaryContactNumber,
+            secondaryEmail,
+            isActive: isActive ?? true,
+            createdBy: loggedInUser,
+            createdAt: new Date()
+        });
 
         return await this.insuranceCompanyRepo.save(newCompany);
     }
+
     async updateCompany(reqBody: any, req: any): Promise<any> {
-        let response: any = {};
-        // console.log('in company reqBody', reqBody);
+        console.log('in company reqBody', reqBody);
         try {
             const loggedInUser = this.loggedInsUserService.getCurrentUser();
             // console.log('loggedInUser', loggedInUser);
@@ -118,7 +166,7 @@ export class InsuranceProductService {
 
             const result = await this.insuranceCompanyRepo.update(reqBody.id, {
                 companyName: reqBody.companyName,
-                companyLogo: reqBody.companyLogo,
+                companyLogo: reqBody.companyLogoUrl,
                 companyAddress: reqBody.companyAddress,
                 email: reqBody.email,
                 contactPerson: reqBody.contactPerson,
