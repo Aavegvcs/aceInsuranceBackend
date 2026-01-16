@@ -91,7 +91,7 @@ async uploadFile(
      const res = await this.s3Client.send(new PutObjectCommand(params));
             //  console.log('res------', res);
       const fileUrl = `${this.bucketUrl}/${s3Path}`;
-       this.logger.log(`Uploaded file: ${s3Path}`);
+      //  this.logger.log(`Uploaded file: ${s3Path}`);
       return { fileUploaded: true, name: myFile };
     } catch (error) {
       this.logger.error(`File upload failed: ${error.message}`);

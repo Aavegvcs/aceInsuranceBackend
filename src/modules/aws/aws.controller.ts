@@ -25,7 +25,7 @@ export class AwsController {
         if (!file) {
             throw new BadRequestException('No file uploaded');
         }
-         console.log("in aws controller-------------");
+        //  console.log("in aws controller-------------");
         
         // const result =  this.awsService.uploadFile(file, documentType);
           return this.awsService.uploadFile(file, documentType);
@@ -40,7 +40,7 @@ export class AwsController {
         @Res() res: any
     ) {
         try {
-            console.log("in get document controller", documentType, fileName);
+            // console.log("in get document controller", documentType, fileName);
             
             
             await this.awsService.getFile(documentType, fileName, res);
