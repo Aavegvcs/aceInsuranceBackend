@@ -5,8 +5,11 @@ import { Repository } from 'typeorm';
 import { InsuranceClaim } from './entities/insurance-claim.entity';
 import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { standardResponse } from 'src/utils/helper/response.helper';
-import { Claim_Status } from 'src/utils/app.utils';
+import { Claim_Final_Status, Claim_Status } from 'src/utils/app.utils';
 import { InsuranceClaimLogs } from './entities/insurance-claim-logs.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { InsuranceSubType } from '@modules/insurance-ticket/entities/insurance-subtype.entity';
+import { ClaimDocuments } from './entities/claim-documents.entity';
 
 @Injectable()
 export class InsuranceClaimService {
@@ -19,6 +22,14 @@ export class InsuranceClaimService {
 
         @InjectRepository(InsuranceClaimLogs)
         private readonly _claimLogsRepo: Repository<InsuranceClaimLogs>,
+
+        @InjectRepository(ClaimDocuments)
+        private readonly _claimDocumentsRepo: Repository<ClaimDocuments>,
+        @InjectRepository(InsuranceTypeMaster)
+        private readonly _insuranceTypeMasterRepo: Repository<InsuranceTypeMaster>,
+
+        @InjectRepository(InsuranceSubType)
+        private readonly _insuranceSubTypeRepo: Repository<InsuranceSubType>,
 
         private readonly loggedInsUserService: LoggedInsUserService
     ) {}
@@ -84,7 +95,7 @@ export class InsuranceClaimService {
                 incidentDescription: incidentDescription,
                 claimType: claimType,
                 status: Claim_Status.REGISTERED,
-                claimAmount: claimAmount,
+                claimAmountRequested: claimAmount,
                 createdBy: userEntity
             });
             // Save to DB
@@ -212,8 +223,7 @@ export class InsuranceClaimService {
                 pageNo,
                 pageSize
             ]);
-           
-            
+
             // return result[0];
             res = standardResponse(
                 true,
@@ -350,7 +360,8 @@ export class InsuranceClaimService {
 
     async changeClaimStatus(reqBody: any): Promise<any> {
         try {
-            const { claimId, newStatus, remarks } = reqBody;
+            const { claimId, status, remarks } = reqBody;
+            console.log('in this change claim status service', reqBody);
             const userEntity = await this.loggedInsUserService.getCurrentUser();
 
             if (!userEntity) {
@@ -363,28 +374,31 @@ export class InsuranceClaimService {
             }
 
             const allowedStatuses = [
-                Claim_Status.APPROVED,
+                // Claim_Status.APPROVED,
                 Claim_Status.REJECTED,
                 Claim_Status.ESCALATED,
                 Claim_Status.CLOSED
             ];
-
-            if (!allowedStatuses.includes(newStatus)) {
+            console.log('allowedStatuses', allowedStatuses, status, allowedStatuses.includes(status));
+            if (!allowedStatuses.includes(status)) {
                 return standardResponse(false, 'Invalid status transition', 400);
             }
 
             const oldStatus = claim.status;
 
-            claim.status = newStatus;
+            claim.status = status;
             claim.updatedRemarks = remarks || claim.updatedRemarks;
             claim.updatedBy = userEntity;
             claim.updatedAt = new Date();
+            if (status === Claim_Status.REJECTED) {
+                claim.finalStatus = Claim_Final_Status.REJECTED;
+            }
 
             await this._claimRepo.save(claim);
 
-            await this.createClaimLogs(claim, claim.policyNumber, oldStatus, newStatus, remarks || '', userEntity);
+            await this.createClaimLogs(claim, claim.policyNumber, oldStatus, status, remarks || '', userEntity);
 
-            return standardResponse(true, `Claim status changed to ${newStatus}`, 200);
+            return standardResponse(true, `Claim status changed to ${status}`, 200);
         } catch (error) {
             console.error('Error in changeClaimStatus:', error);
             return standardResponse(false, error.message, 500);
@@ -402,7 +416,7 @@ export class InsuranceClaimService {
             switch (currentStatus) {
                 case Claim_Status.PROCESSED:
                     allowedStatuses = [
-                        Claim_Status.APPROVED,
+                        // Claim_Status.APPROVED,
                         Claim_Status.REJECTED,
                         Claim_Status.ESCALATED,
                         Claim_Status.CLOSED
@@ -436,6 +450,267 @@ export class InsuranceClaimService {
                 null,
                 error.message,
                 'insurance-claim/getClaimsStatusForChange'
+            );
+        }
+
+        return res;
+    }
+
+    async approveClaim(reqBody: any): Promise<any> {
+        try {
+            const { claimId, approvedAmount, remarks } = reqBody;
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+
+            if (!userEntity) {
+                return standardResponse(false, 'Logged user not found', 404);
+            }
+
+            const claim = await this._claimRepo.findOne({
+                where: { id: claimId }
+            });
+
+            if (!claim) {
+                return standardResponse(false, 'Claim not found', 404);
+            }
+
+            // ---- STATUS VALIDATION ----
+            if (claim.status !== Claim_Status.PROCESSED) {
+                return standardResponse(false, 'Claim must be PROCESSED before approval', 400);
+            }
+
+            // ---- AMOUNT VALIDATIONS ----
+            if (approvedAmount == null || approvedAmount <= 0) {
+                return standardResponse(false, 'Approved amount must be greater than 0', 400);
+            }
+
+            if (approvedAmount > claim.claimAmountRequested) {
+                return standardResponse(false, 'Approved amount cannot exceed claimed amount', 400);
+            }
+
+            // ---- UPDATE CLAIM ----
+            const oldStatus = claim.status;
+
+            claim.claimAmountApproved = approvedAmount;
+            claim.deductionAmount = claim.claimAmountRequested - approvedAmount;
+            claim.approvalRemarks = remarks || null;
+            claim.approvedBy = userEntity;
+            claim.approvedAt = new Date();
+            claim.status = Claim_Status.APPROVED;
+            claim.updatedBy = userEntity;
+            claim.updatedAt = new Date();
+
+            await this._claimRepo.save(claim);
+
+            // ---- CREATE LOG ----
+            await this.createClaimLogs(
+                claim,
+                claim.policyNumber,
+                oldStatus,
+                Claim_Status.APPROVED,
+                remarks || 'Claim approved',
+                userEntity
+            );
+
+            return standardResponse(
+                true,
+                'Claim approved successfully',
+                200,
+                {
+                    claimId: claim.id,
+                    claimedAmount: claim.claimAmountRequested,
+                    approvedAmount: claim.claimAmountApproved,
+                    deductionAmount: claim.deductionAmount
+                },
+                null,
+                'insurance-claim/approveClaim'
+            );
+        } catch (error) {
+            console.error('Error in approveClaim:', error);
+            return standardResponse(false, error.message, 500);
+        }
+    }
+
+    async settleClaim(reqBody: any): Promise<any> {
+        const { claimId, settlementAmount, remarks } = reqBody;
+        const user = await this.loggedInsUserService.getCurrentUser();
+
+        const claim = await this._claimRepo.findOne({ where: { id: claimId } });
+        if (!claim) return standardResponse(false, 'Claim not found', 404);
+
+        if (claim.status !== Claim_Status.APPROVED) {
+            return standardResponse(false, 'Claim must be APPROVED before settlement', 400);
+        }
+
+        if (settlementAmount > claim.claimAmountApproved) {
+            return standardResponse(false, 'Settlement amount cannot exceed approved amount', 400);
+        }
+
+        const oldStatus = claim.status;
+
+        claim.settlementAmount = settlementAmount;
+        claim.status = Claim_Status.CLOSED;
+        claim.finalStatus = Claim_Final_Status.APPROVED;
+        claim.updatedBy = user;
+        claim.updatedAt = new Date();
+
+        await this._claimRepo.save(claim);
+
+        await this.createClaimLogs(
+            claim,
+            claim.policyNumber,
+            oldStatus,
+            Claim_Status.CLOSED,
+            remarks || 'Claim settled',
+            user
+        );
+
+        return standardResponse(true, 'Claim settled successfully', 200);
+    }
+
+    async createClaimDocument(reqBody: any): Promise<any> {
+        try {
+            const {
+                documentCode,
+                documentName,
+                insuranceTypeId,
+                insuranceSubTypeId,
+                allowedFormats,
+                maxSizeMb,
+                isActive
+            } = reqBody;
+
+            const userEntity = await this.loggedInsUserService.getCurrentUser();
+
+            if (!userEntity) {
+                return standardResponse(false, 'Logged user not found', 404, null, null, 'insurance-claim/create');
+            }
+
+            // ---------- Validate Insurance Type ----------
+            const insuranceType = await this._insuranceTypeMasterRepo.findOne({
+                where: { id: insuranceTypeId }
+            });
+
+            if (!insuranceType) {
+                return standardResponse(false, 'Insurance type not found', 404, null, null, 'insurance-claim/create');
+            }
+
+            // ---------- Validate Insurance Sub Type (Optional) ----------
+            let insuranceSubType = null;
+            if (insuranceSubTypeId) {
+                insuranceSubType = await this._insuranceSubTypeRepo.findOne({
+                    where: { id: insuranceSubTypeId }
+                });
+
+                if (!insuranceSubType) {
+                    return standardResponse(
+                        false,
+                        'Insurance sub type not found',
+                        404,
+                        null,
+                        null,
+                        'insurance-claim/create'
+                    );
+                }
+            }
+
+            // ---------- Check Duplicate Document Code ----------
+            const existingDoc = await this._claimDocumentsRepo.findOne({
+                where: { documentName }
+            });
+
+            if (existingDoc) {
+                return standardResponse(
+                    false,
+                    'Document code already exists',
+                    409,
+                    null,
+                    null,
+                    'insurance-claim/create'
+                );
+            }
+
+            // ---------- Create Entity ----------
+            const newDocument = this._claimDocumentsRepo.create({
+                documentName: documentName,
+                insuranceTypes: insuranceType,
+                insuranceSubType: insuranceSubType,
+                allowedFormats: allowedFormats,
+                maxSizeMb: maxSizeMb,
+                isActive: isActive ?? true,
+                createdBy: userEntity
+            });
+
+            // ---------- Save ----------
+            const result = await this._claimDocumentsRepo.save(newDocument);
+
+            if (result) {
+                return standardResponse(
+                    true,
+                    'Claim document created successfully',
+                    201,
+                    result,
+                    null,
+                    'insurance-claim/create'
+                );
+            } else {
+                return standardResponse(
+                    false,
+                    'Failed to create claim document',
+                    500,
+                    null,
+                    null,
+                    'insurance-claim/create'
+                );
+            }
+        } catch (error) {
+            console.log('-api- insurance-claim/create', error.message);
+
+            return standardResponse(false, error.message, 500, null, null, 'insurance-claim/create');
+        }
+    }
+
+    async getClaimDocuments(reqObj: any): Promise<any> {
+        const { insuranceSubType } = reqObj;
+        console.log('in this claim get status', reqObj);
+        const subType = await this._insuranceSubTypeRepo.findOne({ where: { code: insuranceSubType } });
+        if (!subType) {
+            return standardResponse(
+                false,
+                'Insurance sub type not found',
+                404,
+                null,
+                null,
+                'insurance-claim/getClaimDocuments'
+            );
+        }
+
+        let res = null;
+        try {
+            const documents = await this._claimDocumentsRepo
+                .createQueryBuilder('cd')
+                .where('cd.insuranceSubType = :id', { id: subType.id })
+                .getMany();
+
+            console.log('existing doucments = ', documents);
+
+            res = standardResponse(
+                true,
+                'Data fetched successfully',
+                200,
+                documents,
+                null,
+                'insurance-claim/getClaimDocuments'
+            );
+        } catch (error) {
+            console.log('-api: insurance-claim/getClaimDocuments ', error.message);
+
+            res = standardResponse(
+                false,
+                'Error fetching data',
+                500,
+                null,
+                error.message,
+                'insurance-claim/getClaimDocuments'
             );
         }
 

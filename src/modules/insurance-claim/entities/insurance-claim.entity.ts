@@ -43,8 +43,14 @@ export class InsuranceClaim {
     @Column({ name: 'claim_type', type: 'enum', enum: Claim_Type, nullable: false })
     claimType: Claim_Type;
 
-    @Column({ name: 'claim_amount', type: 'decimal', precision: 12, scale: 2, nullable: true })
-    claimAmount: number;
+    @Column({ name: 'claim_amount_requested', type: 'decimal', precision: 12, scale: 2, nullable: true })
+    claimAmountRequested: number;
+
+    @Column({ name: 'claim_amount_approved', type: 'decimal', precision: 12, scale: 2, nullable: true })
+    claimAmountApproved: number;
+
+    @Column({ name: 'deduction_amount', type: 'decimal', precision: 12, scale: 2, nullable: true })
+    deductionAmount: number;
 
     @Column({ name: 'settlement_amount', type: 'decimal', precision: 12, scale: 2, nullable: true })
     settlementAmount: number;
@@ -61,11 +67,14 @@ export class InsuranceClaim {
     @Column({ type: 'json', name: 'documents', nullable: true })
     documents: any;
 
-     @Column({ name: 'updated_remarks', type: 'varchar', length: 255, nullable: true })
+    @Column({ name: 'updated_remarks', type: 'varchar', length: 255, nullable: true })
     updatedRemarks: string;
 
+    @Column({ name: 'approval_remarks', type: 'varchar', length: 255, nullable: true })
+    approvalRemarks: string;
+
     @Column({ name: 'is_document_collected', type: 'boolean', default: false })
-    isDocumentCollected : boolean;
+    isDocumentCollected: boolean;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'created_by' })
@@ -75,11 +84,18 @@ export class InsuranceClaim {
     @JoinColumn({ name: 'updated_by' })
     updatedBy: User;
 
+    @ManyToOne(() => User)
+    @JoinColumn({ name: 'approved_by' })
+    approvedBy: User;
+
     @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
+
+    @UpdateDateColumn({ name: 'approved_at', type: 'timestamp' })
+    approvedAt: Date;
 
     @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
     deletedAt: Date;

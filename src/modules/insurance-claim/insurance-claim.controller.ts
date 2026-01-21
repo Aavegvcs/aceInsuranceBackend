@@ -39,10 +39,33 @@ export class InsuranceClaimController {
         const response = await this._claimService.changeClaimStatus(reqBody);
         return response;
     }
+
     @Post('getClaimsStatusForChange')
     @ApiOperation({ summary: 'this api getClaimsStatusForChange' })
     async getClaimsStatusForChange(@Body() reqBody: any) {
         const response = await this._claimService.getClaimsStatusForChange(reqBody);
+        return response;
+    }
+
+    @UseGuards(JwtInsAuthGuard)
+    @Post('approveClaim')
+    @ApiOperation({ summary: 'this api approveClaim' })
+    async approveClaim(@Body() reqBody: any) {
+        const response = await this._claimService.approveClaim(reqBody);
+        return response;
+    }
+    @UseGuards(JwtInsAuthGuard)
+    @Post('settleClaim')
+    @ApiOperation({ summary: 'this api settleClaim' })
+    async settleClaim(@Body() reqBody: any) {
+        const response = await this._claimService.settleClaim(reqBody);
+        return response;
+    }
+
+    @Post('getClaimDocuments')
+    @ApiOperation({ summary: 'this api getClaimDocuments' })
+    async getClaimDocuments(@Body() reqBody: any) {
+        const response = await this._claimService.getClaimDocuments(reqBody);
         return response;
     }
 }

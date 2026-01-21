@@ -10,6 +10,9 @@ import { LoggedInsUserService } from '@modules/auth/logged-ins-user.service';
 import { InsuranceClaimLogs } from './entities/insurance-claim-logs.entity';
 import { InsuranceUser } from '@modules/insurance-ticket/entities/insurance-user.entity';
 import { User } from '@modules/user/user.entity';
+import { ClaimDocuments } from './entities/claim-documents.entity';
+import { InsuranceTypeMaster } from '@modules/insurance-ticket/entities/insurance-type-master.entity';
+import { InsuranceSubType } from '@modules/insurance-ticket/entities/insurance-subtype.entity';
 
 @Module({
     imports: [
@@ -18,7 +21,10 @@ import { User } from '@modules/user/user.entity';
             InsurancePolicy,
             InsuranceClaimLogs,
             InsuranceUser,
-            User
+            User,
+            ClaimDocuments,
+            InsuranceTypeMaster,
+            InsuranceSubType
         ]),
          forwardRef(() => UserModule),
          forwardRef(() => AuthModule)
