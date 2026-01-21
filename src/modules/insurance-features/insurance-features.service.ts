@@ -609,14 +609,16 @@ export class InsuranceFeaturesService {
 
     async getAllWaitingPeriod(reqBody: any): Promise<any> {
         try {
-            const { pageNo, pageSize } = reqBody;
+            const { pageNo, pageSize, filterType } = reqBody;
 
             const skip = Number((pageNo - 1) * pageSize);
             // console.log(pageNo, pageSize, skip);
 
             // Build query
             const qb = this.waitingPeriodRepo.createQueryBuilder('w').leftJoinAndSelect('w.insuranceTypes', 'it');
-
+            if (filterType) {
+                qb.where('it.code = :code', { code: filterType });
+            }
             qb.skip(skip).take(pageSize).orderBy('w.createdAt', 'DESC');
 
             const [data, total] = await qb.getManyAndCount();
