@@ -317,7 +317,7 @@ export class InsurancePolicyService {
 
             const result = await this._policyRepo.query(query, [policyId]);
             const policyDetails = result[0][0];
-            console.log('policy details 1', policyDetails);
+            // console.log('policy details 1', policyDetails);
             const returnMsz = result[1][0].RETURNMSZ;
             if (returnMsz !== 'SUCCESS') {
                 return standardResponse(
@@ -329,7 +329,7 @@ export class InsurancePolicyService {
                     'insurance-policy/getInsurancePolicyDetails'
                 );
             }
-            console.log('policy details 1', returnMsz);
+            // console.log('policy details 1', returnMsz);
             //  policy details 1 [ { RETURNMSZ: 'SUCCESS' } ]
 
             if (policyDetails.claimProcess) {
